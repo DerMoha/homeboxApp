@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View, Text } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import SettingsScreen from './src/screens/SettingsScreen';
 import ServerConfigScreen from './src/screens/ServerConfigScreen';
 import AppearanceScreen from './src/screens/AppearanceScreen';
@@ -77,7 +78,7 @@ const SettingsStackScreen = () => {
         name="ServerConfig" 
         component={ServerConfigScreen}
         options={{ 
-          title: 'Server Configuration',
+          headerShown: false,
         }}
       />
       <SettingsStack.Screen 
@@ -180,7 +181,7 @@ const AppContent = () => {
           name="SettingsTab" 
           component={SettingsStackScreen}
           options={{
-            title: 'Settings',
+            headerShown: false,
             tabBarIcon: ({ color, size }) => (
               <Text style={{ color, fontSize: size }}>⚙️</Text>
             ),
@@ -193,9 +194,11 @@ const AppContent = () => {
 
 const App = () => {
   return (
-    <ThemeProvider>
-      <AppContent />
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <AppContent />
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 };
 

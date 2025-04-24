@@ -189,7 +189,7 @@ const ServerConfigScreen: React.FC = () => {
   const handleInputChange = (field: keyof ServerConfig, value: string): void => {
     setNewServer((prev: ServerConfig) => ({
       ...prev,
-      [field]: value
+      [field]: field === 'username' ? value.toLowerCase() : value
     }));
   };
 
@@ -201,9 +201,11 @@ const ServerConfigScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f7f9fc" />
-      <ScrollView style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
+      <ScrollView 
+        style={[styles.container, { backgroundColor: theme.colors.background.primary }]}
+        contentContainerStyle={{ paddingTop: 30 }}
+      >
         <View style={styles.header}>
           <Text style={[styles.headerTitle, { color: theme.colors.text.primary }]}>Server Configuration</Text>
           <Text style={[styles.headerSubtitle, { color: theme.colors.text.primary }]}>Configure and manage your server connections</Text>
@@ -313,7 +315,12 @@ const ServerConfigScreen: React.FC = () => {
                 <TouchableOpacity
                   style={[
                     styles.serverItem,
-                    selectedServer === server.id && { backgroundColor: theme.colors.button.primary + '20' },
+                    selectedServer === server.id && {
+                      borderColor: theme.colors.button.primary,
+                      borderWidth: 2,
+                      backgroundColor: theme.colors.button.primary + '10',
+                    },
+                    { backgroundColor: theme.colors.background.primary }
                   ]}
                   onPress={() => handleServerSelect(server)}
                 >
@@ -344,10 +351,6 @@ const ServerConfigScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#f7f9fc',
-  },
   container: {
     flex: 1,
   },
@@ -437,10 +440,6 @@ const styles = StyleSheet.create({
     borderColor: '#E1E1E1',
     borderRadius: 10,
     backgroundColor: '#FAFAFA',
-  },
-  selectedServer: {
-    backgroundColor: '#EAF2FF',
-    borderColor: '#4285F4',
   },
   serverContent: {
     flexDirection: 'row',
