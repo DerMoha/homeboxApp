@@ -8,16 +8,19 @@ import {
   Alert,
   ScrollView,
   ActivityIndicator,
+  Switch,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import ServerService, { ServerConfig } from '../services/serverService';
+import { useTheme } from '../theme/ThemeContext';
 
 type RootStackParamList = {
   Settings: undefined;
   ServerConfig: { server?: ServerWithStatus };
+  Appearance: undefined;
 };
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Settings'>;
@@ -28,6 +31,7 @@ interface ServerWithStatus extends ServerConfig {
 
 const SettingsScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
+  const { theme, isDarkMode, toggleTheme } = useTheme();
   const [servers, setServers] = useState<ServerWithStatus[]>([]);
   const [selectedServer, setSelectedServer] = useState<string>('');
   const [isServerSettingsOpen, setIsServerSettingsOpen] = useState(false);
@@ -38,6 +42,7 @@ const SettingsScreen: React.FC = () => {
     password: '',
   });
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
+  const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'auto' | 'oled'>('auto');
 
   useFocusEffect(
     React.useCallback(() => {
@@ -215,27 +220,27 @@ const SettingsScreen: React.FC = () => {
 
   const StatusIndicator: React.FC<{ status: ServerWithStatus['status'] }> = ({ status }) => {
     if (status === 'checking') {
-      return <ActivityIndicator size="small" color="#666" style={styles.statusIndicator} />;
+      return <ActivityIndicator size="small" color={theme.colors.text.primary} style={styles.statusIndicator} />;
     }
     return (
       <View
         style={[
           styles.statusDot,
-          { backgroundColor: status === 'online' ? '#34C759' : '#FF3B30' }
+          { backgroundColor: status === 'online' ? theme.colors.success : theme.colors.error }
         ]}
       />
     );
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.serverSwitcher}>
-        <Text style={styles.serverSwitcherLabel}>Current Server:</Text>
-        <View style={styles.pickerContainer}>
+    <ScrollView style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
+      <View style={[styles.serverSwitcher, { backgroundColor: theme.colors.background.secondary }]}>
+        <Text style={[styles.serverSwitcherLabel, { color: theme.colors.text.primary }]}>Current Server:</Text>
+        <View style={[styles.pickerContainer, { borderColor: theme.colors.border }]}>
           <Picker
             selectedValue={selectedServer}
             onValueChange={handleServerChange}
-            style={styles.picker}
+            style={[styles.picker, { color: theme.colors.text.primary }]}
           >
             {servers.length > 0 ? (
               servers.map((server) => (
@@ -254,76 +259,24 @@ const SettingsScreen: React.FC = () => {
       </View>
 
       <TouchableOpacity 
-        style={styles.sectionHeader}
+        style={[styles.sectionHeader, { backgroundColor: theme.colors.background.secondary }]}
         onPress={() => navigation.navigate('ServerConfig', { server: undefined })}
       >
         <View style={styles.sectionHeaderContent}>
-          <Text style={styles.chevron}>▶</Text>
-          <Text style={styles.sectionTitle}>Server Settings</Text>
+          <Text style={[styles.chevron, { color: theme.colors.text.primary }]}>▶</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Server Configuration</Text>
         </View>
       </TouchableOpacity>
 
-      {isServerSettingsOpen && (
-        <View style={styles.serverSettingsContent}>
-          <View style={styles.form}>
-            <Text style={styles.formTitle}>Add New Server</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Host"
-              value={newServer.host}
-              onChangeText={(text: string) => handleInputChange('host', text)}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Username"
-              value={newServer.username}
-              onChangeText={(text: string) => handleInputChange('username', text)}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              value={newServer.password}
-              onChangeText={(text: string) => handleInputChange('password', text)}
-              secureTextEntry
-            />
-            
-            <TouchableOpacity style={styles.button} onPress={saveServer}>
-              <Text style={styles.buttonText}>Add Server</Text>
-            </TouchableOpacity>
-          </View>
-
-          {servers.length > 0 && (
-            <View style={styles.serversList}>
-              <Text style={styles.subtitle}>Saved Servers</Text>
-              {servers.map((server) => (
-                <View key={server.id} style={styles.serverItemContainer}>
-                  <TouchableOpacity
-                    style={[
-                      styles.serverItem,
-                      selectedServer === server.id && styles.selectedServer,
-                    ]}
-                    onPress={() => handleServerItemPress(server)}
-                  >
-                    <View style={styles.serverInfo}>
-                      <View style={styles.serverInfoLeft}>
-                        <StatusIndicator status={server.status} />
-                        <Text style={styles.serverText}>{server.name || server.host}</Text>
-                      </View>
-                      <Text style={styles.serverUsername}>{server.username}</Text>
-                    </View>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={styles.deleteButton}
-                    onPress={() => deleteServer(server.id)}
-                  >
-                    <Text style={styles.deleteButtonText}>×</Text>
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </View>
-          )}
+      <TouchableOpacity 
+        style={[styles.sectionHeader, { backgroundColor: theme.colors.background.secondary }]}
+        onPress={() => navigation.navigate('Appearance')}
+      >
+        <View style={styles.sectionHeaderContent}>
+          <Text style={[styles.chevron, { color: theme.colors.text.primary }]}>▶</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Appearance</Text>
         </View>
-      )}
+      </TouchableOpacity>
     </ScrollView>
   );
 };
@@ -331,25 +284,19 @@ const SettingsScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   serverSwitcher: {
     padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    backgroundColor: '#f8f8f8',
   },
   serverSwitcherLabel: {
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 8,
-    color: '#333',
   },
   pickerContainer: {
     borderWidth: 1,
-    borderColor: '#ddd',
     borderRadius: 8,
-    backgroundColor: '#fff',
     overflow: 'hidden',
     marginHorizontal: 10,
   },
@@ -360,7 +307,9 @@ const styles = StyleSheet.create({
   sectionHeader: {
     padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   sectionHeaderContent: {
     flexDirection: 'row',
@@ -369,12 +318,10 @@ const styles = StyleSheet.create({
   chevron: {
     fontSize: 16,
     marginRight: 10,
-    color: '#666',
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
   },
   serverSettingsContent: {
     padding: 15,
@@ -473,6 +420,51 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: '#ff3b30',
     fontWeight: 'bold',
+  },
+  section: {
+    padding: 15,
+    borderBottomWidth: 1,
+  },
+  sectionText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  serverLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  serverStatus: {
+    fontSize: 14,
+    color: '#666',
+  },
+  addServerText: {
+    fontSize: 14,
+    color: '#007AFF',
+  },
+  themeModeContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 10,
+  },
+  themeModeButton: {
+    padding: 10,
+    borderRadius: 8,
+    marginRight: 10,
+    marginBottom: 10,
+    borderWidth: 1,
+  },
+  selectedThemeMode: {
+    borderColor: '#007AFF',
+    borderWidth: 2,
+  },
+  themeModeText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  placeholderText: {
+    fontSize: 14,
+    marginTop: 5,
   },
 });
 

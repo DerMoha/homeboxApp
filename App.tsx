@@ -5,71 +5,139 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View, Text } from 'react-native';
 import SettingsScreen from './src/screens/SettingsScreen';
 import ServerConfigScreen from './src/screens/ServerConfigScreen';
+import AppearanceScreen from './src/screens/AppearanceScreen';
+import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
+import { darkTheme } from './src/theme/theme';
 
 const Tab = createBottomTabNavigator();
 const SettingsStack = createNativeStackNavigator();
 
 // Placeholder screens
-const HomeScreen = () => (
-  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-    <Text>Home Screen</Text>
-  </View>
-);
-
-const InventoryScreen = () => (
-  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-    <Text>Inventory Screen</Text>
-  </View>
-);
-
-const SearchScreen = () => (
-  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-    <Text>Search Screen</Text>
-  </View>
-);
-
-const ProfileScreen = () => (
-  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-    <Text>Profile Screen</Text>
-  </View>
-);
-
-const SettingsStackScreen = () => (
-  <SettingsStack.Navigator
-    screenOptions={{
-      headerStyle: {
-        backgroundColor: '#f8f8f8',
-      },
-      headerTintColor: '#333',
-      headerTitleStyle: {
-        fontWeight: '600',
-      },
-      headerShadowVisible: false,
-      headerBackTitle: '',
-    }}
-  >
-    <SettingsStack.Screen 
-      name="Settings" 
-      component={SettingsScreen}
-      options={{ headerShown: false }}
-    />
-    <SettingsStack.Screen 
-      name="ServerConfig" 
-      component={ServerConfigScreen}
-      options={{ 
-        title: 'Server Configuration',
-      }}
-    />
-  </SettingsStack.Navigator>
-);
-
-const App = () => {
+const HomeScreen = () => {
+  const { theme } = useTheme();
   return (
-    <NavigationContainer>
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background.primary }}>
+      <Text style={{ color: theme.colors.text.primary }}>Home Screen</Text>
+    </View>
+  );
+};
+
+const InventoryScreen = () => {
+  const { theme } = useTheme();
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background.primary }}>
+      <Text style={{ color: theme.colors.text.primary }}>Inventory Screen</Text>
+    </View>
+  );
+};
+
+const SearchScreen = () => {
+  const { theme } = useTheme();
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background.primary }}>
+      <Text style={{ color: theme.colors.text.primary }}>Search Screen</Text>
+    </View>
+  );
+};
+
+const ProfileScreen = () => {
+  const { theme } = useTheme();
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background.primary }}>
+      <Text style={{ color: theme.colors.text.primary }}>Profile Screen</Text>
+    </View>
+  );
+};
+
+const SettingsStackScreen = () => {
+  const { theme } = useTheme();
+  return (
+    <SettingsStack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: theme.colors.background.primary,
+        },
+        headerTintColor: theme.colors.text.primary,
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+        headerShadowVisible: false,
+        headerBackTitle: '',
+        contentStyle: {
+          backgroundColor: theme.colors.background.primary,
+        },
+      }}
+    >
+      <SettingsStack.Screen 
+        name="Settings" 
+        component={SettingsScreen}
+        options={{ headerShown: false }}
+      />
+      <SettingsStack.Screen 
+        name="ServerConfig" 
+        component={ServerConfigScreen}
+        options={{ 
+          title: 'Server Configuration',
+        }}
+      />
+      <SettingsStack.Screen 
+        name="Appearance" 
+        component={AppearanceScreen}
+        options={{ 
+          title: 'Appearance',
+        }}
+      />
+    </SettingsStack.Navigator>
+  );
+};
+
+const AppContent = () => {
+  const { theme, isDarkMode } = useTheme();
+  return (
+    <NavigationContainer theme={{
+      dark: isDarkMode,
+      colors: {
+        primary: theme.colors.button.primary,
+        background: theme.colors.background.primary,
+        card: theme.colors.background.secondary,
+        text: theme.colors.text.primary,
+        border: theme.colors.border,
+        notification: theme.colors.error,
+      },
+      fonts: {
+        regular: {
+          fontFamily: 'System',
+          fontWeight: '400',
+        },
+        medium: {
+          fontFamily: 'System',
+          fontWeight: '500',
+        },
+        bold: {
+          fontFamily: 'System',
+          fontWeight: '700',
+        },
+        heavy: {
+          fontFamily: 'System',
+          fontWeight: '800',
+        },
+      },
+    }}>
       <Tab.Navigator
         screenOptions={{
-          tabBarActiveTintColor: '#007AFF',
-          tabBarInactiveTintColor: 'gray',
+          tabBarActiveTintColor: theme.colors.button.primary,
+          tabBarInactiveTintColor: theme.colors.text.secondary,
+          tabBarStyle: {
+            backgroundColor: theme.colors.background.secondary,
+            borderTopColor: theme.colors.border,
+          },
+          headerStyle: {
+            backgroundColor: theme.colors.background.primary,
+          },
+          headerTintColor: theme.colors.text.primary,
+          headerTitleStyle: {
+            color: theme.colors.text.primary,
+          },
         }}
       >
         <Tab.Screen 
@@ -120,6 +188,14 @@ const App = () => {
         />
       </Tab.Navigator>
     </NavigationContainer>
+  );
+};
+
+const App = () => {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 };
 
