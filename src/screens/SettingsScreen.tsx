@@ -12,6 +12,7 @@ import { Picker } from '@react-native-picker/picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import ServerService, { ServerConfig } from '../services/serverService';
 
 type RootStackParamList = {
   Settings: undefined;
@@ -19,14 +20,6 @@ type RootStackParamList = {
 };
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Settings'>;
-
-interface ServerConfig {
-  id: string;
-  host: string;
-  port: string;
-  username: string;
-  password: string; // TODO: Hide password or hash it for security
-}
 
 const SettingsScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
@@ -36,7 +29,6 @@ const SettingsScreen: React.FC = () => {
   const [newServer, setNewServer] = useState<ServerConfig>({
     id: Date.now().toString(),
     host: '',
-    port: '',
     username: '',
     password: '',
   });
@@ -47,13 +39,11 @@ const SettingsScreen: React.FC = () => {
 
   const loadServers = async (): Promise<void> => {
     try {
-      const savedServers = await AsyncStorage.getItem('servers');
-      if (savedServers) {
-        const parsedServers = JSON.parse(savedServers) as ServerConfig[];
-        setServers(parsedServers);
-        if (parsedServers.length > 0) {
-          setSelectedServer(parsedServers[0].id);
-        }
+      const serverService = ServerService.getInstance();
+      const savedServers = await serverService.getServers();
+      setServers(savedServers);
+      if (savedServers.length > 0) {
+        setSelectedServer(savedServers[0].id);
       }
     } catch (error) {
       console.error('Error loading servers:', error);
@@ -61,24 +51,22 @@ const SettingsScreen: React.FC = () => {
   };
 
   const saveServer = async (): Promise<void> => {
-    if (!newServer.host || !newServer.port || !newServer.username || !newServer.password) {
+    if (!newServer.host || !newServer.username || !newServer.password) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
     try {
-      const updatedServers = [...servers, newServer];
-      await AsyncStorage.setItem('servers', JSON.stringify(updatedServers));
-      setServers(updatedServers);
-      setSelectedServer(newServer.id);
-      setNewServer({
-        id: Date.now().toString(),
-        host: '',
-        port: '',
-        username: '',
-        password: '',
-      });
-      Alert.alert('Success', 'Server configuration saved');
+      const serverService = ServerService.getInstance();
+      const saved = await serverService.saveServer(newServer);
+      if (saved) {
+        await loadServers();
+        setSelectedServer(newServer.id);
+        resetNewServer();
+        Alert.alert('Success', 'Server configuration saved');
+      } else {
+        Alert.alert('Error', 'Failed to save server configuration');
+      }
     } catch (error) {
       console.error('Error saving server:', error);
       Alert.alert('Error', 'Failed to save server configuration');
@@ -87,11 +75,16 @@ const SettingsScreen: React.FC = () => {
 
   const deleteServer = async (serverId: string): Promise<void> => {
     try {
-      const updatedServers = servers.filter(server => server.id !== serverId);
-      await AsyncStorage.setItem('servers', JSON.stringify(updatedServers));
-      setServers(updatedServers);
-      if (selectedServer === serverId) {
-        setSelectedServer(updatedServers.length > 0 ? updatedServers[0].id : '');
+      const serverService = ServerService.getInstance();
+      const deleted = await serverService.deleteServer(serverId);
+      if (deleted) {
+        await loadServers();
+        if (selectedServer === serverId) {
+          setSelectedServer('');
+        }
+        Alert.alert('Success', 'Server deleted');
+      } else {
+        Alert.alert('Error', 'Failed to delete server');
       }
     } catch (error) {
       console.error('Error deleting server:', error);
@@ -106,12 +99,26 @@ const SettingsScreen: React.FC = () => {
     }));
   };
 
-  const handleServerChange = (value: string): void => {
+  const handleServerChange = async (value: string): Promise<void> => {
     if (value === 'add_new') {
       navigation.navigate('ServerConfig');
     } else {
       setSelectedServer(value);
+      const server = servers.find(s => s.id === value);
+      if (server) {
+        const serverService = ServerService.getInstance();
+        await serverService.initialize(server);
+      }
     }
+  };
+
+  const resetNewServer = (): void => {
+    setNewServer({
+      id: Date.now().toString(),
+      host: '',
+      username: '',
+      password: '',
+    });
   };
 
   return (
@@ -128,7 +135,7 @@ const SettingsScreen: React.FC = () => {
               servers.map((server) => (
                 <Picker.Item 
                   key={server.id} 
-                  label={`${server.host}:${server.port}`} 
+                  label={server.name || server.host} 
                   value={server.id} 
                 />
               ))
@@ -162,13 +169,6 @@ const SettingsScreen: React.FC = () => {
             />
             <TextInput
               style={styles.input}
-              placeholder="Port"
-              value={newServer.port}
-              onChangeText={(text: string) => handleInputChange('port', text)}
-              keyboardType="numeric"
-            />
-            <TextInput
-              style={styles.input}
               placeholder="Username"
               value={newServer.username}
               onChangeText={(text: string) => handleInputChange('username', text)}
@@ -199,7 +199,7 @@ const SettingsScreen: React.FC = () => {
                     onPress={() => setSelectedServer(server.id)}
                   >
                     <View style={styles.serverInfo}>
-                      <Text style={styles.serverText}>{server.host}:{server.port}</Text>
+                      <Text style={styles.serverText}>{server.host}</Text>
                       <Text style={styles.serverUsername}>{server.username}</Text>
                     </View>
                   </TouchableOpacity>

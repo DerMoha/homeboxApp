@@ -7,28 +7,23 @@ import {
   TouchableOpacity,
   Alert,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
-
-interface ServerConfig {
-  id: string;
-  host: string;
-  port: string;
-  username: string;
-  password: string;
-}
+import ServerService, { ServerConfig } from '../services/serverService';
 
 const ServerConfigScreen: React.FC = () => {
   const navigation = useNavigation();
   const [servers, setServers] = useState<ServerConfig[]>([]);
   const [selectedServer, setSelectedServer] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(false);
   const [newServer, setNewServer] = useState<ServerConfig>({
     id: Date.now().toString(),
     host: '',
-    port: '',
     username: '',
     password: '',
+    name: '',
   });
 
   useEffect(() => {
@@ -37,51 +32,89 @@ const ServerConfigScreen: React.FC = () => {
 
   const loadServers = async (): Promise<void> => {
     try {
-      const savedServers = await AsyncStorage.getItem('servers');
-      if (savedServers) {
-        const parsedServers = JSON.parse(savedServers) as ServerConfig[];
-        setServers(parsedServers);
-        if (parsedServers.length > 0) {
-          setSelectedServer(parsedServers[0].id);
-        }
+      const serverService = ServerService.getInstance();
+      const savedServers = await serverService.getServers();
+      setServers(savedServers);
+      if (savedServers.length > 0) {
+        setSelectedServer(savedServers[0].id);
       }
     } catch (error) {
       console.error('Error loading servers:', error);
+      Alert.alert('Error', 'Failed to load server configurations');
     }
   };
 
-  const saveServer = async (): Promise<void> => {
-    if (!newServer.host || !newServer.port || !newServer.username || !newServer.password) {
+  const testConnection = async (): Promise<void> => {
+    if (!newServer.host || !newServer.username || !newServer.password) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
+    setIsLoading(true);
     try {
-      const updatedServers = [...servers, newServer];
-      await AsyncStorage.setItem('servers', JSON.stringify(updatedServers));
-      setServers(updatedServers);
-      setSelectedServer(newServer.id);
-      setNewServer({
-        id: Date.now().toString(),
-        host: '',
-        port: '',
-        username: '',
-        password: '',
-      });
-      Alert.alert('Success', 'Server configuration saved');
+      const serverService = ServerService.getInstance();
+      const result = await serverService.testConnection(newServer);
+      
+      if (result.success) {
+        Alert.alert('Success', 'Connection successful!');
+      } else {
+        Alert.alert('Error', result.error || 'Failed to connect to server');
+      }
+    } catch (error) {
+      console.error('Error testing connection:', error);
+      Alert.alert('Error', 'Failed to test connection');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const saveServer = async (): Promise<void> => {
+    if (!newServer.host || !newServer.username || !newServer.password) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const serverService = ServerService.getInstance();
+      const result = await serverService.testConnection(newServer);
+      
+      if (!result.success) {
+        Alert.alert('Error', result.error || 'Failed to connect to server');
+        return;
+      }
+
+      const saved = await serverService.saveServer(newServer);
+      if (saved) {
+        await loadServers();
+        setNewServer({
+          id: Date.now().toString(),
+          host: '',
+          username: '',
+          password: '',
+          name: '',
+        });
+        Alert.alert('Success', 'Server configuration saved');
+      } else {
+        Alert.alert('Error', 'Failed to save server configuration');
+      }
     } catch (error) {
       console.error('Error saving server:', error);
       Alert.alert('Error', 'Failed to save server configuration');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const deleteServer = async (serverId: string): Promise<void> => {
     try {
-      const updatedServers = servers.filter(server => server.id !== serverId);
-      await AsyncStorage.setItem('servers', JSON.stringify(updatedServers));
-      setServers(updatedServers);
-      if (selectedServer === serverId) {
-        setSelectedServer(updatedServers.length > 0 ? updatedServers[0].id : '');
+      const serverService = ServerService.getInstance();
+      const deleted = await serverService.deleteServer(serverId);
+      if (deleted) {
+        await loadServers();
+        Alert.alert('Success', 'Server deleted');
+      } else {
+        Alert.alert('Error', 'Failed to delete server');
       }
     } catch (error) {
       console.error('Error deleting server:', error);
@@ -102,16 +135,15 @@ const ServerConfigScreen: React.FC = () => {
         <Text style={styles.formTitle}>Add New Server</Text>
         <TextInput
           style={styles.input}
-          placeholder="Host"
-          value={newServer.host}
-          onChangeText={(text: string) => handleInputChange('host', text)}
+          placeholder="Server Name (optional)"
+          value={newServer.name}
+          onChangeText={(text: string) => handleInputChange('name', text)}
         />
         <TextInput
           style={styles.input}
-          placeholder="Port"
-          value={newServer.port}
-          onChangeText={(text: string) => handleInputChange('port', text)}
-          keyboardType="numeric"
+          placeholder="Host (e.g., localhost:8080 or 192.168.1.100:8080)"
+          value={newServer.host}
+          onChangeText={(text: string) => handleInputChange('host', text)}
         />
         <TextInput
           style={styles.input}
@@ -127,9 +159,31 @@ const ServerConfigScreen: React.FC = () => {
           secureTextEntry
         />
         
-        <TouchableOpacity style={styles.button} onPress={saveServer}>
-          <Text style={styles.buttonText}>Add Server</Text>
-        </TouchableOpacity>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity 
+            style={[styles.button, styles.testButton]} 
+            onPress={testConnection}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Test Connection</Text>
+            )}
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.button, styles.saveButton]} 
+            onPress={saveServer}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Save Server</Text>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
 
       {servers.length > 0 && (
@@ -145,7 +199,9 @@ const ServerConfigScreen: React.FC = () => {
                 onPress={() => setSelectedServer(server.id)}
               >
                 <View style={styles.serverInfo}>
-                  <Text style={styles.serverText}>{server.host}:{server.port}</Text>
+                  <Text style={styles.serverText}>
+                    {server.name || server.host}
+                  </Text>
                   <Text style={styles.serverUsername}>{server.username}</Text>
                 </View>
               </TouchableOpacity>
@@ -188,12 +244,23 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: '#fff',
   },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
   button: {
-    backgroundColor: '#007AFF',
+    flex: 1,
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 10,
+    marginHorizontal: 5,
+  },
+  testButton: {
+    backgroundColor: '#34C759',
+  },
+  saveButton: {
+    backgroundColor: '#007AFF',
   },
   buttonText: {
     color: '#fff',
@@ -202,6 +269,7 @@ const styles = StyleSheet.create({
   },
   serversList: {
     marginTop: 20,
+    padding: 15,
   },
   subtitle: {
     fontSize: 16,
