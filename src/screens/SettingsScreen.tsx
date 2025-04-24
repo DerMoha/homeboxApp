@@ -88,8 +88,17 @@ const SettingsScreen: React.FC = () => {
       setServers(updatedServers);
       setIsCheckingStatus(false);
 
-      if (updatedServers.length > 0) {
+      // Set the selected server based on current configuration
+      const currentConfig = serverService.getCurrentConfig();
+      if (currentConfig) {
+        setSelectedServer(currentConfig.id);
+      } else if (updatedServers.length > 0) {
+        // If no current config, set the first server as selected
         setSelectedServer(updatedServers[0].id);
+        // Also initialize the first server as active
+        await serverService.initialize(updatedServers[0]);
+      } else {
+        setSelectedServer('');
       }
     } catch (error) {
       console.error('Error loading servers:', error);
@@ -165,16 +174,23 @@ const SettingsScreen: React.FC = () => {
     }));
   };
 
-  const handleServerChange = async (value: string): Promise<void> => {
-    if (value === 'add_new') {
+  const handleServerChange = async (serverId: string): Promise<void> => {
+    if (serverId === 'add_new') {
       navigation.navigate('ServerConfig', { server: undefined });
-    } else {
-      setSelectedServer(value);
-      const server = servers.find(s => s.id === value);
+      return;
+    }
+
+    try {
+      const serverService = ServerService.getInstance();
+      const server = servers.find(s => s.id === serverId);
+      
       if (server) {
-        const serverService = ServerService.getInstance();
         await serverService.initialize(server);
+        setSelectedServer(serverId);
       }
+    } catch (error) {
+      console.error('Error changing server:', error);
+      Alert.alert('Error', 'Failed to change server. Please try again.');
     }
   };
 

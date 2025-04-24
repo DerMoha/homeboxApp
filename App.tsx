@@ -45,6 +45,7 @@ const SettingsStackScreen = () => (
         fontWeight: '600',
       },
       headerShadowVisible: false,
+      headerBackTitle: '',
     }}
   >
     <SettingsStack.Screen 
