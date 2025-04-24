@@ -7,23 +7,28 @@ import {
   TouchableOpacity,
   Alert,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import ServerService, { ServerConfig } from '../services/serverService';
 
 type RootStackParamList = {
   Settings: undefined;
-  ServerConfig: undefined;
+  ServerConfig: { server?: ServerWithStatus };
 };
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Settings'>;
 
+interface ServerWithStatus extends ServerConfig {
+  status: 'checking' | 'online' | 'offline';
+}
+
 const SettingsScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
-  const [servers, setServers] = useState<ServerConfig[]>([]);
+  const [servers, setServers] = useState<ServerWithStatus[]>([]);
   const [selectedServer, setSelectedServer] = useState<string>('');
   const [isServerSettingsOpen, setIsServerSettingsOpen] = useState(false);
   const [newServer, setNewServer] = useState<ServerConfig>({
@@ -32,18 +37,59 @@ const SettingsScreen: React.FC = () => {
     username: '',
     password: '',
   });
+  const [isCheckingStatus, setIsCheckingStatus] = useState(false);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadServers();
+      // Get the current active server from ServerService
+      const serverService = ServerService.getInstance();
+      const currentConfig = serverService.getCurrentConfig();
+      if (currentConfig) {
+        setSelectedServer(currentConfig.id);
+      }
+    }, [])
+  );
 
   useEffect(() => {
     loadServers();
   }, []);
 
+  const checkServerStatus = async (server: ServerConfig): Promise<'online' | 'offline'> => {
+    try {
+      const serverService = ServerService.getInstance();
+      const result = await serverService.testConnection(server);
+      return result.success ? 'online' : 'offline';
+    } catch (error) {
+      return 'offline';
+    }
+  };
+
   const loadServers = async (): Promise<void> => {
     try {
       const serverService = ServerService.getInstance();
       const savedServers = await serverService.getServers();
-      setServers(savedServers);
-      if (savedServers.length > 0) {
-        setSelectedServer(savedServers[0].id);
+      
+      // Initialize servers with checking status
+      const serversWithStatus: ServerWithStatus[] = savedServers.map(server => ({
+        ...server,
+        status: 'checking'
+      }));
+      setServers(serversWithStatus);
+
+      // Check status for each server
+      setIsCheckingStatus(true);
+      const updatedServers = await Promise.all(
+        serversWithStatus.map(async (server) => {
+          const status = await checkServerStatus(server);
+          return { ...server, status };
+        })
+      );
+      setServers(updatedServers);
+      setIsCheckingStatus(false);
+
+      if (updatedServers.length > 0) {
+        setSelectedServer(updatedServers[0].id);
       }
     } catch (error) {
       console.error('Error loading servers:', error);
@@ -74,22 +120,42 @@ const SettingsScreen: React.FC = () => {
   };
 
   const deleteServer = async (serverId: string): Promise<void> => {
-    try {
-      const serverService = ServerService.getInstance();
-      const deleted = await serverService.deleteServer(serverId);
-      if (deleted) {
-        await loadServers();
-        if (selectedServer === serverId) {
-          setSelectedServer('');
-        }
-        Alert.alert('Success', 'Server deleted');
-      } else {
-        Alert.alert('Error', 'Failed to delete server');
-      }
-    } catch (error) {
-      console.error('Error deleting server:', error);
-      Alert.alert('Error', 'Failed to delete server');
-    }
+    const serverToDelete = servers.find(server => server.id === serverId);
+    const serverName = serverToDelete?.name || serverToDelete?.host || 'this server';
+    
+    Alert.alert(
+      'Delete Server',
+      `Are you sure you want to delete ${serverName}?`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const serverService = ServerService.getInstance();
+              const deleted = await serverService.deleteServer(serverId);
+              if (deleted) {
+                await loadServers();
+                if (selectedServer === serverId) {
+                  setSelectedServer('');
+                }
+                Alert.alert('Success', 'Server deleted');
+              } else {
+                Alert.alert('Error', 'Failed to delete server');
+              }
+            } catch (error) {
+              console.error('Error deleting server:', error);
+              Alert.alert('Error', 'Failed to delete server');
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
   };
 
   const handleInputChange = (field: keyof ServerConfig, value: string): void => {
@@ -101,7 +167,7 @@ const SettingsScreen: React.FC = () => {
 
   const handleServerChange = async (value: string): Promise<void> => {
     if (value === 'add_new') {
-      navigation.navigate('ServerConfig');
+      navigation.navigate('ServerConfig', { server: undefined });
     } else {
       setSelectedServer(value);
       const server = servers.find(s => s.id === value);
@@ -121,6 +187,30 @@ const SettingsScreen: React.FC = () => {
     });
   };
 
+  const handleServerItemPress = async (server: ServerWithStatus): Promise<void> => {
+    // Set as active server
+    setSelectedServer(server.id);
+    const serverService = ServerService.getInstance();
+    await serverService.initialize(server);
+    
+    // Navigate to ServerConfig with the server data
+    navigation.navigate('ServerConfig', { server });
+  };
+
+  const StatusIndicator: React.FC<{ status: ServerWithStatus['status'] }> = ({ status }) => {
+    if (status === 'checking') {
+      return <ActivityIndicator size="small" color="#666" style={styles.statusIndicator} />;
+    }
+    return (
+      <View
+        style={[
+          styles.statusDot,
+          { backgroundColor: status === 'online' ? '#34C759' : '#FF3B30' }
+        ]}
+      />
+    );
+  };
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.serverSwitcher}>
@@ -135,7 +225,7 @@ const SettingsScreen: React.FC = () => {
               servers.map((server) => (
                 <Picker.Item 
                   key={server.id} 
-                  label={server.name || server.host} 
+                  label={server.name || server.host}
                   value={server.id} 
                 />
               ))
@@ -149,7 +239,7 @@ const SettingsScreen: React.FC = () => {
 
       <TouchableOpacity 
         style={styles.sectionHeader}
-        onPress={() => navigation.navigate('ServerConfig')}
+        onPress={() => navigation.navigate('ServerConfig', { server: undefined })}
       >
         <View style={styles.sectionHeaderContent}>
           <Text style={styles.chevron}>▶</Text>
@@ -189,17 +279,20 @@ const SettingsScreen: React.FC = () => {
           {servers.length > 0 && (
             <View style={styles.serversList}>
               <Text style={styles.subtitle}>Saved Servers</Text>
-              {servers.map((server: ServerConfig) => (
+              {servers.map((server) => (
                 <View key={server.id} style={styles.serverItemContainer}>
                   <TouchableOpacity
                     style={[
                       styles.serverItem,
                       selectedServer === server.id && styles.selectedServer,
                     ]}
-                    onPress={() => setSelectedServer(server.id)}
+                    onPress={() => handleServerItemPress(server)}
                   >
                     <View style={styles.serverInfo}>
-                      <Text style={styles.serverText}>{server.host}</Text>
+                      <View style={styles.serverInfoLeft}>
+                        <StatusIndicator status={server.status} />
+                        <Text style={styles.serverText}>{server.name || server.host}</Text>
+                      </View>
                       <Text style={styles.serverUsername}>{server.username}</Text>
                     </View>
                   </TouchableOpacity>
@@ -242,9 +335,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: '#fff',
     overflow: 'hidden',
+    marginHorizontal: 10,
   },
   picker: {
     height: 50,
+    marginLeft: 10,
   },
   sectionHeader: {
     padding: 15,
@@ -331,9 +426,24 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  serverInfoLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  statusDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 12,
+  },
+  statusIndicator: {
+    marginRight: 12,
+  },
   serverText: {
     fontSize: 16,
     fontWeight: '500',
+    flex: 1,
   },
   serverUsername: {
     fontSize: 14,

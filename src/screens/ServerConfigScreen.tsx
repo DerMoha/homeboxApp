@@ -9,12 +9,21 @@ import {
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import ServerService, { ServerConfig } from '../services/serverService';
 
+type RootStackParamList = {
+  Settings: undefined;
+  ServerConfig: { server?: ServerConfig };
+};
+
+type ServerConfigRouteProp = RouteProp<RootStackParamList, 'ServerConfig'>;
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'ServerConfig'>;
+
 const ServerConfigScreen: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<ServerConfigRouteProp>();
   const [servers, setServers] = useState<ServerConfig[]>([]);
   const [selectedServer, setSelectedServer] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
@@ -28,7 +37,13 @@ const ServerConfigScreen: React.FC = () => {
 
   useEffect(() => {
     loadServers();
-  }, []);
+    if (route.params?.server) {
+      setNewServer(route.params.server);
+      // Set as active server
+      const serverService = ServerService.getInstance();
+      serverService.initialize(route.params.server);
+    }
+  }, [route.params]);
 
   const loadServers = async (): Promise<void> => {
     try {
@@ -107,19 +122,39 @@ const ServerConfigScreen: React.FC = () => {
   };
 
   const deleteServer = async (serverId: string): Promise<void> => {
-    try {
-      const serverService = ServerService.getInstance();
-      const deleted = await serverService.deleteServer(serverId);
-      if (deleted) {
-        await loadServers();
-        Alert.alert('Success', 'Server deleted');
-      } else {
-        Alert.alert('Error', 'Failed to delete server');
-      }
-    } catch (error) {
-      console.error('Error deleting server:', error);
-      Alert.alert('Error', 'Failed to delete server');
-    }
+    const serverToDelete = servers.find(server => server.id === serverId);
+    const serverName = serverToDelete?.name || serverToDelete?.host || 'this server';
+    
+    Alert.alert(
+      'Delete Server',
+      `Are you sure you want to delete ${serverName}?`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const serverService = ServerService.getInstance();
+              const deleted = await serverService.deleteServer(serverId);
+              if (deleted) {
+                await loadServers();
+                Alert.alert('Success', 'Server deleted');
+              } else {
+                Alert.alert('Error', 'Failed to delete server');
+              }
+            } catch (error) {
+              console.error('Error deleting server:', error);
+              Alert.alert('Error', 'Failed to delete server');
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
   };
 
   const handleInputChange = (field: keyof ServerConfig, value: string): void => {
@@ -129,10 +164,17 @@ const ServerConfigScreen: React.FC = () => {
     }));
   };
 
+  const handleServerSelect = async (server: ServerConfig): Promise<void> => {
+    setSelectedServer(server.id);
+    setNewServer(server);
+    const serverService = ServerService.getInstance();
+    await serverService.initialize(server);
+  };
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.form}>
-        <Text style={styles.formTitle}>Add New Server</Text>
+        <Text style={styles.formTitle}>Server Configuration</Text>
         <TextInput
           style={styles.input}
           placeholder="Server Name (optional)"
@@ -189,14 +231,14 @@ const ServerConfigScreen: React.FC = () => {
       {servers.length > 0 && (
         <View style={styles.serversList}>
           <Text style={styles.subtitle}>Saved Servers</Text>
-          {servers.map((server: ServerConfig) => (
+          {servers.map((server) => (
             <View key={server.id} style={styles.serverItemContainer}>
               <TouchableOpacity
                 style={[
                   styles.serverItem,
                   selectedServer === server.id && styles.selectedServer,
                 ]}
-                onPress={() => setSelectedServer(server.id)}
+                onPress={() => handleServerSelect(server)}
               >
                 <View style={styles.serverInfo}>
                   <Text style={styles.serverText}>
