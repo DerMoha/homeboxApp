@@ -1,10 +1,13 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View, Text } from 'react-native';
 import SettingsScreen from './src/screens/SettingsScreen';
+import ServerConfigScreen from './src/screens/ServerConfigScreen';
 
 const Tab = createBottomTabNavigator();
+const SettingsStack = createNativeStackNavigator();
 
 // Placeholder screens
 const HomeScreen = () => (
@@ -29,6 +32,34 @@ const ProfileScreen = () => (
   <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
     <Text>Profile Screen</Text>
   </View>
+);
+
+const SettingsStackScreen = () => (
+  <SettingsStack.Navigator
+    screenOptions={{
+      headerStyle: {
+        backgroundColor: '#f8f8f8',
+      },
+      headerTintColor: '#333',
+      headerTitleStyle: {
+        fontWeight: '600',
+      },
+      headerShadowVisible: false,
+    }}
+  >
+    <SettingsStack.Screen 
+      name="Settings" 
+      component={SettingsScreen}
+      options={{ headerShown: false }}
+    />
+    <SettingsStack.Screen 
+      name="ServerConfig" 
+      component={ServerConfigScreen}
+      options={{ 
+        title: 'Server Configuration',
+      }}
+    />
+  </SettingsStack.Navigator>
 );
 
 const App = () => {
@@ -77,9 +108,10 @@ const App = () => {
           }}
         />
         <Tab.Screen 
-          name="Settings" 
-          component={SettingsScreen}
+          name="SettingsTab" 
+          component={SettingsStackScreen}
           options={{
+            title: 'Settings',
             tabBarIcon: ({ color, size }) => (
               <Text style={{ color, fontSize: size }}>⚙️</Text>
             ),
