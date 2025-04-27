@@ -160,10 +160,8 @@ const InventoryScreen: React.FC = () => {
   // Listen for preference changes from InventorySettingsScreen
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
-      // Only reload preferences if we're coming from InventorySettings
-      if (navigation.getState().routes[navigation.getState().index - 1]?.name === 'InventorySettings') {
-        loadDisplayPreferences();
-      }
+      // Reload preferences whenever the screen comes into focus
+      loadDisplayPreferences();
     });
 
     return unsubscribe;
