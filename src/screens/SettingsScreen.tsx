@@ -234,6 +234,11 @@ const SettingsScreen: React.FC = () => {
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
+      <View style={styles.header}>
+        <Text style={[styles.headerTitle, { color: theme.colors.text.primary }]}>Settings</Text>
+        <Text style={[styles.headerSubtitle, { color: theme.colors.text.primary }]}>Manage your app preferences and configurations</Text>
+      </View>
+
       <View style={[styles.serverSwitcher, { backgroundColor: theme.colors.background.secondary }]}>
         <Text style={[styles.serverSwitcherLabel, { color: theme.colors.text.primary }]}>Current Server:</Text>
         <View style={[styles.pickerContainer, { borderColor: theme.colors.border }]}>
@@ -284,6 +289,21 @@ const SettingsScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  header: {
+    padding: 20,
+    marginBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    lineHeight: 20,
   },
   serverSwitcher: {
     padding: 15,

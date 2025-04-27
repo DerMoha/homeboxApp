@@ -15,6 +15,28 @@ export interface ServerResponse {
   error?: string;
 }
 
+export interface InventoryItem {
+  id: string;
+  name: string;
+  description?: string;
+  quantity: number;
+  location?: {
+    id: string;
+    name: string;
+  };
+  labels?: Array<{
+    id: string;
+    name: string;
+  }>;
+  archived: boolean;
+  assetId: string;
+  createdAt: string;
+  updatedAt: string;
+  imageId?: string;
+  insured: boolean;
+  purchasePrice: number;
+}
+
 interface ErrorResponse {
   message?: string;
   [key: string]: any;
@@ -24,6 +46,7 @@ class ServerService {
   private static instance: ServerService;
   private axiosInstance: AxiosInstance | null = null;
   private currentConfig: ServerConfig | null = null;
+  private token: string | null = null;
 
   private constructor() {}
 
@@ -44,18 +67,27 @@ class ServerService {
         headers: {
           'Content-Type': 'application/json',
         },
-        auth: {
-          username: config.username,
-          password: config.password,
-        },
       });
 
-      // Test connection
-      const response = await this.axiosInstance.get('/api/status');
-      return {
-        success: true,
-        data: response.data,
-      };
+      // First authenticate to get token
+      const loginResponse = await this.axiosInstance.post('/api/v1/users/login', {
+        username: config.username,
+        password: config.password,
+      });
+
+      if (loginResponse.data && loginResponse.data.token) {
+        this.token = loginResponse.data.token;
+        this.axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
+        return {
+          success: true,
+          data: loginResponse.data,
+        };
+      } else {
+        return {
+          success: false,
+          error: 'Failed to get authentication token',
+        };
+      }
     } catch (error) {
       return this.handleError(error as AxiosError);
     }
@@ -70,17 +102,25 @@ class ServerService {
         headers: {
           'Content-Type': 'application/json',
         },
-        auth: {
-          username: config.username,
-          password: config.password,
-        },
       });
 
-      const response = await testInstance.get('/api/status');
-      return {
-        success: true,
-        data: response.data,
-      };
+      // Test authentication
+      const loginResponse = await testInstance.post('/api/v1/users/login', {
+        username: config.username,
+        password: config.password,
+      });
+
+      if (loginResponse.data && loginResponse.data.token) {
+        return {
+          success: true,
+          data: loginResponse.data,
+        };
+      } else {
+        return {
+          success: false,
+          error: 'Failed to authenticate',
+        };
+      }
     } catch (error) {
       return this.handleError(error as AxiosError);
     }
@@ -133,6 +173,25 @@ class ServerService {
 
   public getAxiosInstance(): AxiosInstance | null {
     return this.axiosInstance;
+  }
+
+  public async getInventory(): Promise<ServerResponse> {
+    try {
+      if (!this.axiosInstance || !this.token) {
+        return {
+          success: false,
+          error: 'No active server connection or authentication token',
+        };
+      }
+
+      const response = await this.axiosInstance.get('/api/v1/items');
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
   }
 
   private handleError(error: AxiosError): ServerResponse {

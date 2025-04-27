@@ -3,10 +3,11 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View, Text } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import SettingsScreen from './src/screens/SettingsScreen';
 import ServerConfigScreen from './src/screens/ServerConfigScreen';
 import AppearanceScreen from './src/screens/AppearanceScreen';
+import InventoryScreen from './src/screens/InventoryScreen';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import { darkTheme } from './src/theme/theme';
 
@@ -19,15 +20,6 @@ const HomeScreen = () => {
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background.primary }}>
       <Text style={{ color: theme.colors.text.primary }}>Home Screen</Text>
-    </View>
-  );
-};
-
-const InventoryScreen = () => {
-  const { theme } = useTheme();
-  return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background.primary }}>
-      <Text style={{ color: theme.colors.text.primary }}>Inventory Screen</Text>
     </View>
   );
 };
@@ -53,42 +45,44 @@ const ProfileScreen = () => {
 const SettingsStackScreen = () => {
   const { theme } = useTheme();
   return (
-    <SettingsStack.Navigator
-      screenOptions={{
-        headerStyle: {
-          backgroundColor: theme.colors.background.primary,
-        },
-        headerTintColor: theme.colors.text.primary,
-        headerTitleStyle: {
-          fontWeight: 'bold',
-        },
-        headerShadowVisible: false,
-        headerBackTitle: '',
-        contentStyle: {
-          backgroundColor: theme.colors.background.primary,
-        },
-      }}
-    >
-      <SettingsStack.Screen 
-        name="Settings" 
-        component={SettingsScreen}
-        options={{ headerShown: false }}
-      />
-      <SettingsStack.Screen 
-        name="ServerConfig" 
-        component={ServerConfigScreen}
-        options={{ 
-          headerShown: false,
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
+      <SettingsStack.Navigator
+        screenOptions={{
+          headerStyle: {
+            backgroundColor: theme.colors.background.primary,
+          },
+          headerTintColor: theme.colors.text.primary,
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+          headerShadowVisible: false,
+          headerBackTitle: '',
+          contentStyle: {
+            backgroundColor: theme.colors.background.primary,
+          },
         }}
-      />
-      <SettingsStack.Screen 
-        name="Appearance" 
-        component={AppearanceScreen}
-        options={{ 
-          title: 'Appearance',
-        }}
-      />
-    </SettingsStack.Navigator>
+      >
+        <SettingsStack.Screen 
+          name="Settings" 
+          component={SettingsScreen}
+          options={{ headerShown: false }}
+        />
+        <SettingsStack.Screen 
+          name="ServerConfig" 
+          component={ServerConfigScreen}
+          options={{ 
+            headerShown: false,
+          }}
+        />
+        <SettingsStack.Screen 
+          name="Appearance" 
+          component={AppearanceScreen}
+          options={{ 
+            title: 'Appearance',
+          }}
+        />
+      </SettingsStack.Navigator>
+    </SafeAreaView>
   );
 };
 
