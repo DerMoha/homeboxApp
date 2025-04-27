@@ -13,24 +13,19 @@ import {
 import { Picker } from '@react-native-picker/picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { StackNavigationProp } from '@react-navigation/stack';
 import ServerService, { ServerConfig } from '../services/serverService';
 import { useTheme } from '../theme/ThemeContext';
+import { SettingsStackParamList } from '../types/navigation';
 
-type RootStackParamList = {
-  Settings: undefined;
-  ServerConfig: { server?: ServerWithStatus };
-  Appearance: undefined;
-};
-
-type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Settings'>;
+type SettingsScreenNavigationProp = StackNavigationProp<SettingsStackParamList, 'Settings'>;
 
 interface ServerWithStatus extends ServerConfig {
   status: 'checking' | 'online' | 'offline';
 }
 
 const SettingsScreen: React.FC = () => {
-  const navigation = useNavigation<NavigationProp>();
+  const navigation = useNavigation<SettingsScreenNavigationProp>();
   const { theme, isDarkMode, toggleTheme } = useTheme();
   const [servers, setServers] = useState<ServerWithStatus[]>([]);
   const [selectedServer, setSelectedServer] = useState<string>('');
@@ -282,6 +277,16 @@ const SettingsScreen: React.FC = () => {
           <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Appearance</Text>
         </View>
       </TouchableOpacity>
+
+      <TouchableOpacity 
+        style={[styles.sectionHeader, { backgroundColor: theme.colors.background.secondary }]}
+        onPress={() => navigation.navigate('InventorySettings')}
+      >
+        <View style={styles.sectionHeaderContent}>
+          <Text style={[styles.chevron, { color: theme.colors.text.primary }]}>▶</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Inventory Display</Text>
+        </View>
+      </TouchableOpacity>
     </ScrollView>
   );
 };
@@ -485,7 +490,7 @@ const styles = StyleSheet.create({
   placeholderText: {
     fontSize: 14,
     marginTop: 5,
-  },
+  }
 });
 
 export default SettingsScreen; 

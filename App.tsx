@@ -8,6 +8,7 @@ import SettingsScreen from './src/screens/SettingsScreen';
 import ServerConfigScreen from './src/screens/ServerConfigScreen';
 import AppearanceScreen from './src/screens/AppearanceScreen';
 import InventoryScreen from './src/screens/InventoryScreen';
+import InventorySettingsScreen from './src/screens/InventorySettingsScreen';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import { darkTheme } from './src/theme/theme';
 
@@ -78,7 +79,14 @@ const SettingsStackScreen = () => {
           name="Appearance" 
           component={AppearanceScreen}
           options={{ 
-            title: 'Appearance',
+            headerShown: false,
+          }}
+        />
+        <SettingsStack.Screen 
+          name="InventorySettings" 
+          component={InventorySettingsScreen}
+          options={{ 
+            headerShown: false,
           }}
         />
       </SettingsStack.Navigator>

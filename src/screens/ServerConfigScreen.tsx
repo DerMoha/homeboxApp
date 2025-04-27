@@ -35,6 +35,7 @@ const ServerConfigScreen: React.FC = () => {
   const [servers, setServers] = useState<ServerWithStatus[]>([]);
   const [selectedServer, setSelectedServer] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isAddServerVisible, setIsAddServerVisible] = useState(false);
   const [newServer, setNewServer] = useState<ServerConfig>({
     id: Date.now().toString(),
     host: '',
@@ -111,6 +112,7 @@ const ServerConfigScreen: React.FC = () => {
       
       if (result.success) {
         Alert.alert('Success', 'Connection successful! Server is reachable.');
+        await serverService.setLastUsedServer(newServer.id);
       } else {
         Alert.alert('Connection Failed', result.error || 'Could not connect to the server. Please check your settings.');
       }
@@ -170,6 +172,7 @@ const ServerConfigScreen: React.FC = () => {
           name: '',
         });
         Alert.alert('Success', 'Server configuration saved successfully');
+        await serverService.setLastUsedServer(newServer.id);
       } else {
         Alert.alert('Error', 'Failed to save server configuration');
       }
@@ -280,15 +283,33 @@ const ServerConfigScreen: React.FC = () => {
               password: '',
               name: '',
             });
+            setIsAddServerVisible(true);
           }}
         >
           <Text style={[styles.addServerButtonText, { color: theme.colors.button.text }]}>+ Add Server</Text>
         </TouchableOpacity>
       </View>
 
-      {!selectedServer && (
+      {isAddServerVisible && (
         <View style={[styles.card, { backgroundColor: theme.colors.background.secondary }]}>
-          <Text style={[styles.formTitle, { color: theme.colors.text.primary }]}>Add New Server</Text>
+          <View style={styles.editHeader}>
+            <Text style={[styles.formTitle, { color: theme.colors.text.primary }]}>Add New Server</Text>
+            <TouchableOpacity 
+              style={styles.cancelEditButton}
+              onPress={() => {
+                setIsAddServerVisible(false);
+                setNewServer({
+                  id: Date.now().toString(),
+                  host: '',
+                  username: '',
+                  password: '',
+                  name: '',
+                });
+              }}
+            >
+              <Text style={[styles.cancelEditButtonText, { color: theme.colors.text.primary }]}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
           
           <View style={styles.inputContainer}>
             <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>Server Name</Text>

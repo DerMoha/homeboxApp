@@ -171,6 +171,14 @@ class ServerService {
     return this.currentConfig;
   }
 
+  public getBaseUrl(): string {
+    if (!this.currentConfig) {
+      throw new Error('No active server configuration');
+    }
+    const protocol = this.currentConfig.host.startsWith('http') ? '' : 'http://';
+    return `${protocol}${this.currentConfig.host}`;
+  }
+
   public getAxiosInstance(): AxiosInstance | null {
     return this.axiosInstance;
   }
@@ -189,6 +197,43 @@ class ServerService {
         success: true,
         data: response.data,
       };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
+  }
+
+  public async getLastUsedServer(): Promise<ServerConfig | null> {
+    try {
+      const lastUsedId = await AsyncStorage.getItem('lastUsedServerId');
+      if (!lastUsedId) return null;
+
+      const servers = await this.getServers();
+      return servers.find(server => server.id === lastUsedId) || null;
+    } catch (error) {
+      console.error('Error getting last used server:', error);
+      return null;
+    }
+  }
+
+  public async setLastUsedServer(serverId: string): Promise<void> {
+    try {
+      await AsyncStorage.setItem('lastUsedServerId', serverId);
+    } catch (error) {
+      console.error('Error setting last used server:', error);
+    }
+  }
+
+  public async autoConnect(): Promise<ServerResponse> {
+    try {
+      const lastUsedServer = await this.getLastUsedServer();
+      if (!lastUsedServer) {
+        return {
+          success: false,
+          error: 'No last used server found',
+        };
+      }
+
+      return await this.initialize(lastUsedServer);
     } catch (error) {
       return this.handleError(error as AxiosError);
     }
