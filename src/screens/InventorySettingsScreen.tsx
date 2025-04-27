@@ -7,6 +7,7 @@ import {
   ScrollView,
   SafeAreaView,
   TouchableOpacity,
+  Animated,
 } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -16,14 +17,15 @@ interface DisplayPreference {
   id: string;
   label: string;
   enabled: boolean;
+  isCore?: boolean;
 }
 
 const defaultPreferences: DisplayPreference[] = [
-  { id: 'quantity', label: 'Quantity', enabled: true },
-  { id: 'location', label: 'Location', enabled: true },
+  { id: 'quantity', label: 'Quantity', enabled: true, isCore: true },
+  { id: 'description', label: 'Description', enabled: true, isCore: true },
+  { id: 'location', label: 'Location', enabled: true, isCore: true },
   { id: 'labels', label: 'Labels', enabled: true },
   { id: 'image', label: 'Image', enabled: true },
-  { id: 'description', label: 'Description', enabled: true },
   { id: 'purchasePrice', label: 'Purchase Price', enabled: false },
   { id: 'insured', label: 'Insurance Status', enabled: false },
   { id: 'archived', label: 'Archive Status', enabled: false },
@@ -35,6 +37,7 @@ const InventorySettingsScreen: React.FC = () => {
   const { theme } = useTheme();
   const [preferences, setPreferences] = useState<DisplayPreference[]>(defaultPreferences);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
+  const [draggedItem, setDraggedItem] = useState<number | null>(null);
 
   useEffect(() => {
     loadPreferences();
@@ -47,13 +50,16 @@ const InventorySettingsScreen: React.FC = () => {
       
       if (savedPreferences) {
         const parsedPreferences = JSON.parse(savedPreferences);
-        console.log('Parsed preferences:', parsedPreferences);
-        setPreferences(parsedPreferences);
+        // Ensure core preferences are in the correct order
+        const corePreferences = defaultPreferences.filter(p => p.isCore);
+        const nonCorePreferences = parsedPreferences.filter((p: DisplayPreference) => !p.isCore);
+        const mergedPreferences = [...corePreferences, ...nonCorePreferences];
+        console.log('Loaded preferences:', mergedPreferences);
+        setPreferences(mergedPreferences);
         setIsFirstLoad(false);
       } else {
         console.log('No saved preferences, using defaults:', defaultPreferences);
         setPreferences(defaultPreferences);
-        // Save default preferences only on first load
         if (isFirstLoad) {
           await AsyncStorage.setItem(STORAGE_KEYS.INVENTORY_DISPLAY_PREFERENCES, JSON.stringify(defaultPreferences));
           setIsFirstLoad(false);
@@ -91,40 +97,121 @@ const InventorySettingsScreen: React.FC = () => {
     savePreferences(newPreferences);
   };
 
+  const moveItem = (fromIndex: number, toIndex: number) => {
+    const corePreferences = preferences.filter(p => p.isCore);
+    const nonCorePreferences = preferences.filter(p => !p.isCore);
+    
+    // Adjust indices for non-core items
+    const adjustedFromIndex = fromIndex - corePreferences.length;
+    const adjustedToIndex = toIndex - corePreferences.length;
+    
+    if (adjustedFromIndex < 0 || adjustedToIndex < 0) {
+      return; // Don't move core items
+    }
+
+    const newNonCorePreferences = [...nonCorePreferences];
+    const [movedItem] = newNonCorePreferences.splice(adjustedFromIndex, 1);
+    newNonCorePreferences.splice(adjustedToIndex, 0, movedItem);
+
+    const newPreferences = [...corePreferences, ...newNonCorePreferences];
+    savePreferences(newPreferences);
+  };
+
+  const handleDragStart = (index: number) => {
+    if (!preferences[index].isCore) {
+      setDraggedItem(index);
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDraggedItem(null);
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { color: theme.colors.text.primary }]}>Inventory Display</Text>
-        <Text style={[styles.headerSubtitle, { color: theme.colors.text.secondary }]}>Customize which item attributes to display</Text>
+        <Text style={[styles.headerSubtitle, { color: theme.colors.text.secondary }]}>
+          Customize which item attributes to display and their order
+        </Text>
       </View>
 
       <ScrollView 
         style={[styles.scrollView, { backgroundColor: theme.colors.background.primary }]}
         contentContainerStyle={styles.contentContainer}
       >
-        <View style={styles.preferencesContainer}>
-          {preferences.map((preference) => (
-            <View 
-              key={preference.id}
-              style={[
-                styles.preferenceItem,
-                { 
-                  backgroundColor: theme.colors.background.secondary,
-                  borderColor: theme.colors.border
-                }
-              ]}
-            >
-              <Text style={[styles.preferenceLabel, { color: theme.colors.text.primary }]}>
-                {preference.label}
-              </Text>
-              <Switch
-                value={preference.enabled}
-                onValueChange={() => togglePreference(preference.id)}
-                trackColor={{ false: theme.colors.border, true: theme.colors.button.primary }}
-                thumbColor={theme.colors.button.text}
-              />
-            </View>
-          ))}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Core Attributes</Text>
+          <Text style={[styles.sectionSubtitle, { color: theme.colors.text.secondary }]}>
+            Essential information that cannot be reordered and should stay toggled on
+          </Text>
+          <View style={styles.preferencesContainer}>
+            {preferences.filter(p => p.isCore).map((preference) => (
+              <View 
+                key={preference.id}
+                style={[
+                  styles.preferenceItem,
+                  { 
+                    backgroundColor: theme.colors.background.secondary,
+                    borderColor: theme.colors.border,
+                  }
+                ]}
+              >
+                <Text style={[styles.preferenceLabel, { color: theme.colors.text.primary }]}>
+                  {preference.label}
+                </Text>
+                <Switch
+                  value={preference.enabled}
+                  onValueChange={() => togglePreference(preference.id)}
+                  trackColor={{ false: theme.colors.border, true: theme.colors.button.primary }}
+                  thumbColor={theme.colors.button.text}
+                />
+              </View>
+            ))}
+          </View>
+        </View>
+
+        <View style={[styles.section, { marginTop: 24 }]}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Additional Attributes</Text>
+          <Text style={[styles.sectionSubtitle, { color: theme.colors.text.secondary }]}>
+            Optional information that can be reordered
+          </Text>
+          <View style={styles.preferencesContainer}>
+            {preferences.filter(p => !p.isCore).map((preference, index) => (
+              <Animated.View
+                key={preference.id}
+                style={[
+                  styles.preferenceItem,
+                  { 
+                    backgroundColor: theme.colors.background.secondary,
+                    borderColor: theme.colors.border,
+                    opacity: draggedItem === index ? 0.5 : 1,
+                    transform: [
+                      { translateY: draggedItem === index ? 10 : 0 }
+                    ]
+                  }
+                ]}
+              >
+                <TouchableOpacity
+                  style={styles.dragHandle}
+                  onPressIn={() => handleDragStart(index)}
+                  onPressOut={handleDragEnd}
+                >
+                  <View style={[styles.dragHandleDots, { backgroundColor: theme.colors.text.secondary }]} />
+                  <View style={[styles.dragHandleDots, { backgroundColor: theme.colors.text.secondary }]} />
+                </TouchableOpacity>
+                <Text style={[styles.preferenceLabel, { color: theme.colors.text.primary }]}>
+                  {preference.label}
+                </Text>
+                <Switch
+                  value={preference.enabled}
+                  onValueChange={() => togglePreference(preference.id)}
+                  trackColor={{ false: theme.colors.border, true: theme.colors.button.primary }}
+                  thumbColor={theme.colors.button.text}
+                />
+              </Animated.View>
+            ))}
+          </View>
         </View>
 
         <TouchableOpacity
@@ -165,6 +252,18 @@ const styles = StyleSheet.create({
   contentContainer: {
     padding: 16,
   },
+  section: {
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    marginBottom: 12,
+  },
   preferencesContainer: {
     gap: 12,
   },
@@ -176,8 +275,21 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
   },
+  dragHandle: {
+    marginRight: 12,
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dragHandleDots: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    marginVertical: 2,
+  },
   preferenceLabel: {
     fontSize: 16,
+    flex: 1,
   },
   resetButton: {
     marginTop: 24,

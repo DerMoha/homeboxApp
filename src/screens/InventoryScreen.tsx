@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,26 +8,30 @@ import {
   ActivityIndicator,
   RefreshControl,
   Image,
+  Modal,
+  SafeAreaView,
 } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
-import ServerService from '../services/serverService';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS } from '../constants/storage';
-import { useNavigation, useIsFocused } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import ServerService from '../services/serverService';
+import { useFocusEffect } from '@react-navigation/native';
 
 type RootStackParamList = {
   Inventory: undefined;
   InventorySettings: undefined;
+  AddItem: undefined;
+  ServerConfig: undefined;
   SettingsTab: {
-    screen: string;
+    screen: 'Settings';
     params?: {
-      screen: string;
+      screen: 'ServerConfig';
     };
   };
 };
-
-type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Inventory'>;
 
 interface Label {
   id: string;
@@ -74,15 +78,18 @@ interface DisplayPreference {
   enabled: boolean;
 }
 
+type SortOption = 'name-asc' | 'name-desc' | 'date-asc' | 'date-desc' | 'quantity-asc' | 'quantity-desc';
+
 const InventoryScreen: React.FC = () => {
   const { theme } = useTheme();
-  const navigation = useNavigation<NavigationProp>();
-  const isFocused = useIsFocused();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [displayPreferences, setDisplayPreferences] = useState<DisplayPreference[]>([]);
+  const [sortModalVisible, setSortModalVisible] = useState(false);
+  const [sortOption, setSortOption] = useState<SortOption>('name-asc');
 
   const loadDisplayPreferences = async () => {
     try {
@@ -127,8 +134,8 @@ const InventoryScreen: React.FC = () => {
       setError(null);
 
       // Try to auto-connect to last used server
-      const serverService = ServerService.getInstance();
-      const autoConnectResult = await serverService.autoConnect();
+      const service = ServerService.getInstance();
+      const autoConnectResult = await service.autoConnect();
 
       if (!autoConnectResult.success) {
         // If auto-connect fails, navigate to settings and then to server config
@@ -172,10 +179,31 @@ const InventoryScreen: React.FC = () => {
     return preference?.enabled ?? false;
   };
 
+  const sortInventory = useCallback((items: InventoryItem[]) => {
+    return [...items].sort((a, b) => {
+      switch (sortOption) {
+        case 'name-asc':
+          return a.name.localeCompare(b.name);
+        case 'name-desc':
+          return b.name.localeCompare(a.name);
+        case 'date-asc':
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        case 'date-desc':
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        case 'quantity-asc':
+          return a.quantity - b.quantity;
+        case 'quantity-desc':
+          return b.quantity - a.quantity;
+        default:
+          return 0;
+      }
+    });
+  }, [sortOption]);
+
   const loadInventory = async (): Promise<void> => {
     try {
-      const serverService = ServerService.getInstance();
-      const result = await serverService.getInventory();
+      const service = ServerService.getInstance();
+      const result = await service.getInventory();
       
       console.log('Inventory API Response:', result);
       
@@ -183,7 +211,8 @@ const InventoryScreen: React.FC = () => {
         const response = result.data as InventoryResponse;
         console.log('Items:', response.items);
         
-        setInventory(response.items);
+        const sortedItems = sortInventory(response.items);
+        setInventory(sortedItems);
         setError(null);
       } else {
         setError(result.error || 'Failed to load inventory');
@@ -208,12 +237,12 @@ const InventoryScreen: React.FC = () => {
   };
 
   const getImageUrl = (itemId: string, imageId: string): string => {
-    const serverService = ServerService.getInstance();
-    const axiosInstance = serverService.getAxiosInstance();
+    const service = ServerService.getInstance();
+    const axiosInstance = service.getAxiosInstance();
     if (!axiosInstance) {
       throw new Error('No active server connection');
     }
-    return `${serverService.getBaseUrl()}/api/v1/items/${itemId}/attachments/${imageId}`;
+    return `${service.getBaseUrl()}/api/v1/items/${itemId}/attachments/${imageId}`;
   };
 
   const renderItem = ({ item, index }: { item: InventoryItem; index: number }): React.ReactElement => {
@@ -338,6 +367,106 @@ const InventoryScreen: React.FC = () => {
     );
   };
 
+  const SortModal = () => (
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={sortModalVisible}
+      onRequestClose={() => setSortModalVisible(false)}
+    >
+      <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0, 0, 0, 0.5)' }]}>
+        <View style={[styles.modalContent, { backgroundColor: theme.colors.background.primary }]}>
+          <Text style={[styles.modalTitle, { color: theme.colors.text.primary }]}>Sort By</Text>
+          
+          <TouchableOpacity
+            style={[styles.sortOption, { borderColor: theme.colors.border }]}
+            onPress={() => {
+              setSortOption('name-asc');
+              setSortModalVisible(false);
+            }}
+          >
+            <Text style={[styles.sortOptionText, { color: theme.colors.text.primary }]}>Name (A-Z)</Text>
+            {sortOption === 'name-asc' && (
+              <MaterialIcons name="check" size={24} color={theme.colors.button.primary} />
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.sortOption, { borderColor: theme.colors.border }]}
+            onPress={() => {
+              setSortOption('name-desc');
+              setSortModalVisible(false);
+            }}
+          >
+            <Text style={[styles.sortOptionText, { color: theme.colors.text.primary }]}>Name (Z-A)</Text>
+            {sortOption === 'name-desc' && (
+              <MaterialIcons name="check" size={24} color={theme.colors.button.primary} />
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.sortOption, { borderColor: theme.colors.border }]}
+            onPress={() => {
+              setSortOption('date-asc');
+              setSortModalVisible(false);
+            }}
+          >
+            <Text style={[styles.sortOptionText, { color: theme.colors.text.primary }]}>Date (Oldest First)</Text>
+            {sortOption === 'date-asc' && (
+              <MaterialIcons name="check" size={24} color={theme.colors.button.primary} />
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.sortOption, { borderColor: theme.colors.border }]}
+            onPress={() => {
+              setSortOption('date-desc');
+              setSortModalVisible(false);
+            }}
+          >
+            <Text style={[styles.sortOptionText, { color: theme.colors.text.primary }]}>Date (Newest First)</Text>
+            {sortOption === 'date-desc' && (
+              <MaterialIcons name="check" size={24} color={theme.colors.button.primary} />
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.sortOption, { borderColor: theme.colors.border }]}
+            onPress={() => {
+              setSortOption('quantity-asc');
+              setSortModalVisible(false);
+            }}
+          >
+            <Text style={[styles.sortOptionText, { color: theme.colors.text.primary }]}>Quantity (Low to High)</Text>
+            {sortOption === 'quantity-asc' && (
+              <MaterialIcons name="check" size={24} color={theme.colors.button.primary} />
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.sortOption, { borderColor: theme.colors.border }]}
+            onPress={() => {
+              setSortOption('quantity-desc');
+              setSortModalVisible(false);
+            }}
+          >
+            <Text style={[styles.sortOptionText, { color: theme.colors.text.primary }]}>Quantity (High to Low)</Text>
+            {sortOption === 'quantity-desc' && (
+              <MaterialIcons name="check" size={24} color={theme.colors.button.primary} />
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.modalCloseButton, { backgroundColor: theme.colors.button.primary }]}
+            onPress={() => setSortModalVisible(false)}
+          >
+            <Text style={[styles.modalCloseButtonText, { color: theme.colors.button.text }]}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+
   if (isLoading) {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
@@ -363,7 +492,20 @@ const InventoryScreen: React.FC = () => {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
+      <View style={styles.header}>
+        <Text style={[styles.headerTitle, { color: theme.colors.text.primary }]}>Inventory</Text>
+        <TouchableOpacity
+          style={[styles.sortButton, { backgroundColor: theme.colors.button.primary }]}
+          onPress={() => {
+            console.log('Sort button pressed');
+            setSortModalVisible(true);
+          }}
+        >
+          <MaterialIcons name="sort" size={24} color={theme.colors.button.text} />
+        </TouchableOpacity>
+      </View>
+
       <FlatList
         data={inventory}
         renderItem={renderItem}
@@ -373,7 +515,7 @@ const InventoryScreen: React.FC = () => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={theme.colors.button.primary}
+            colors={[theme.colors.button.primary]}
           />
         }
         ListEmptyComponent={
@@ -384,7 +526,16 @@ const InventoryScreen: React.FC = () => {
           </View>
         }
       />
-    </View>
+
+      <TouchableOpacity
+        style={[styles.addButton, { backgroundColor: theme.colors.button.primary }]}
+        onPress={() => navigation.navigate('AddItem')}
+      >
+        <MaterialIcons name="add" size={24} color={theme.colors.button.text} />
+      </TouchableOpacity>
+
+      <SortModal />
+    </SafeAreaView>
   );
 };
 
@@ -478,6 +629,82 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 200,
     borderRadius: 8,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+  },
+  sortButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    width: '80%',
+    maxWidth: 400,
+    borderRadius: 12,
+    padding: 16,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  sortOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 12,
+    borderWidth: 1,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  sortOptionText: {
+    fontSize: 16,
+  },
+  modalCloseButton: {
+    marginTop: 16,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  modalCloseButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  addButton: {
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    alignSelf: 'center',
+    marginTop: 16,
   },
 });
 
