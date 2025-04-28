@@ -9,8 +9,8 @@ import {
   RefreshControl,
   Image,
   Modal,
-  SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -200,31 +200,26 @@ const InventoryScreen: React.FC = () => {
     });
   }, [sortOption]);
 
-  const loadInventory = async (): Promise<void> => {
+  const loadInventory = useCallback(async () => {
     try {
-      const service = ServerService.getInstance();
-      const result = await service.getInventory();
-      
-      console.log('Inventory API Response:', result);
-      
-      if (result.success && result.data) {
-        const response = result.data as InventoryResponse;
-        console.log('Items:', response.items);
-        
-        const sortedItems = sortInventory(response.items);
+      setIsLoading(true);
+      setError(null);
+      const response = await ServerService.getInstance().getInventory(1, 50);
+      console.log('API Response:', response);
+      if (response.success && response.data) {
+        const sortedItems = sortInventory(response.data.items);
         setInventory(sortedItems);
-        setError(null);
       } else {
-        setError(result.error || 'Failed to load inventory');
+        setError(response.error || 'Failed to load inventory');
       }
-    } catch (error) {
-      console.error('Error loading inventory:', error);
+    } catch (err) {
       setError('An unexpected error occurred');
+      console.error('Error loading inventory:', err);
     } finally {
       setIsLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [sortInventory]);
 
   const onRefresh = (): void => {
     setRefreshing(true);
@@ -504,7 +499,11 @@ const InventoryScreen: React.FC = () => {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background.primary }]} edges={['top']}>
+      <View style={styles.header}>
+        <Text style={[styles.headerTitle, { color: theme.colors.text.primary }]}>Inventory</Text>
+      </View>
+
       <FlatList
         data={inventory}
         renderItem={renderItem}
@@ -544,6 +543,21 @@ const InventoryScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  header: {
+    padding: 16,
+    marginBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    lineHeight: 20,
   },
   listContent: {
     padding: 16,
@@ -595,6 +609,20 @@ const styles = StyleSheet.create({
   footerLabel: {
     fontSize: 12,
   },
+  footerIcon: {
+    marginRight: 8,
+  },
+  imageContainer: {
+    marginVertical: 8,
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: '#f0f0f0',
+  },
+  itemImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 8,
+  },
   errorText: {
     fontSize: 16,
     textAlign: 'center',
@@ -620,17 +648,6 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     textAlign: 'center',
-  },
-  imageContainer: {
-    marginVertical: 8,
-    borderRadius: 8,
-    overflow: 'hidden',
-    backgroundColor: '#f0f0f0',
-  },
-  itemImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: 8,
   },
   sortButton: {
     position: 'absolute',
@@ -691,9 +708,6 @@ const styles = StyleSheet.create({
   modalCloseButtonText: {
     fontSize: 16,
     fontWeight: '600',
-  },
-  footerIcon: {
-    marginRight: 8,
   },
 });
 
