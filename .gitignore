@@ -97,3 +97,31 @@ web-build/
 *.lock
 *.tmp
 *.temp
+
+# React Native
+node_modules/
+.expo/
+dist/
+npm-debug.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+*.hprof
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Build artifacts
+android/app/build/
+android/build/
+ios/build/
+src/assets/

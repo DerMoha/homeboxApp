@@ -313,50 +313,62 @@ const InventoryScreen: React.FC = () => {
             <View style={styles.itemFooter}>
               {getPreference('location') && item.location && (
                 <View key={`location-${item.id}`} style={styles.footerItem}>
+                  <MaterialIcons name="location-on" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
                   <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
-                    📍 {item.location.name}
+                    {item.location.name}
                   </Text>
                 </View>
               )}
               {getPreference('labels') && item.labels.length > 0 && (
                 <View key={`labels-${item.id}`} style={styles.footerItem}>
+                  <MaterialIcons name="label" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
                   <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
-                    🏷️ {item.labels.map(label => label.name).join(', ')}
+                    {item.labels.map(label => label.name).join(', ')}
                   </Text>
                 </View>
               )}
               {getPreference('purchasePrice') && item.purchasePrice > 0 && (
                 <View key={`price-${item.id}`} style={styles.footerItem}>
+                  <MaterialIcons name="attach-money" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
                   <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
-                    💰 ${item.purchasePrice.toFixed(2)}
+                    ${item.purchasePrice.toFixed(2)}
                   </Text>
                 </View>
               )}
               {getPreference('insured') && (
                 <View key={`insured-${item.id}`} style={styles.footerItem}>
+                  <MaterialIcons 
+                    name={item.insured ? "verified" : "error-outline"} 
+                    size={16} 
+                    color={theme.colors.text.secondary} 
+                    style={styles.footerIcon} 
+                  />
                   <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
-                    {item.insured ? '🛡️ Insured' : '❌ Uninsured'}
+                    {item.insured ? 'Insured' : 'Uninsured'}
                   </Text>
                 </View>
               )}
               {getPreference('archived') && item.archived && (
                 <View key={`archived-${item.id}`} style={styles.footerItem}>
+                  <MaterialIcons name="archive" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
                   <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
-                    📦 Archived
+                    Archived
                   </Text>
                 </View>
               )}
               {getPreference('createdAt') && (
                 <View key={`created-${item.id}`} style={styles.footerItem}>
+                  <MaterialIcons name="schedule" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
                   <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
-                    📅 Created: {formatDate(item.createdAt)}
+                    Created: {formatDate(item.createdAt)}
                   </Text>
                 </View>
               )}
               {getPreference('updatedAt') && (
                 <View key={`updated-${item.id}`} style={styles.footerItem}>
+                  <MaterialIcons name="update" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
                   <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
-                    🔄 Updated: {formatDate(item.updatedAt)}
+                    Updated: {formatDate(item.updatedAt)}
                   </Text>
                 </View>
               )}
@@ -493,19 +505,6 @@ const InventoryScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
-      <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: theme.colors.text.primary }]}>Inventory</Text>
-        <TouchableOpacity
-          style={[styles.sortButton, { backgroundColor: theme.colors.button.primary }]}
-          onPress={() => {
-            console.log('Sort button pressed');
-            setSortModalVisible(true);
-          }}
-        >
-          <MaterialIcons name="sort" size={24} color={theme.colors.button.text} />
-        </TouchableOpacity>
-      </View>
-
       <FlatList
         data={inventory}
         renderItem={renderItem}
@@ -528,10 +527,13 @@ const InventoryScreen: React.FC = () => {
       />
 
       <TouchableOpacity
-        style={[styles.addButton, { backgroundColor: theme.colors.button.primary }]}
-        onPress={() => navigation.navigate('AddItem')}
+        style={[styles.sortButton, { backgroundColor: theme.colors.button.primary }]}
+        onPress={() => {
+          console.log('Sort button pressed');
+          setSortModalVisible(true);
+        }}
       >
-        <MaterialIcons name="add" size={24} color={theme.colors.button.text} />
+        <MaterialIcons name="sort" size={24} color={theme.colors.button.text} />
       </TouchableOpacity>
 
       <SortModal />
@@ -630,25 +632,16 @@ const styles = StyleSheet.create({
     height: 200,
     borderRadius: 8,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-  },
   sortButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    position: 'absolute',
+    bottom: 16,
+    right: 16,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 2,
+    elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
@@ -699,12 +692,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  addButton: {
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    alignSelf: 'center',
-    marginTop: 16,
+  footerIcon: {
+    marginRight: 8,
   },
 });
 

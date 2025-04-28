@@ -11,6 +11,7 @@ import InventoryScreen from './src/screens/InventoryScreen';
 import InventorySettingsScreen from './src/screens/InventorySettingsScreen';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import { darkTheme } from './src/theme/theme';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 const Tab = createBottomTabNavigator();
 const SettingsStack = createNativeStackNavigator();
@@ -148,7 +149,7 @@ const AppContent = () => {
           component={HomeScreen}
           options={{
             tabBarIcon: ({ color, size }) => (
-              <Text style={{ color, fontSize: size }}>🏠</Text>
+              <MaterialIcons name="home" size={size} color={color} />
             ),
           }}
         />
@@ -157,7 +158,7 @@ const AppContent = () => {
           component={InventoryScreen}
           options={{
             tabBarIcon: ({ color, size }) => (
-              <Text style={{ color, fontSize: size }}>📦</Text>
+              <MaterialIcons name="inventory" size={size} color={color} />
             ),
           }}
         />
@@ -166,7 +167,7 @@ const AppContent = () => {
           component={SearchScreen}
           options={{
             tabBarIcon: ({ color, size }) => (
-              <Text style={{ color, fontSize: size }}>🔍</Text>
+              <MaterialIcons name="search" size={size} color={color} />
             ),
           }}
         />
@@ -175,7 +176,7 @@ const AppContent = () => {
           component={ProfileScreen}
           options={{
             tabBarIcon: ({ color, size }) => (
-              <Text style={{ color, fontSize: size }}>👤</Text>
+              <MaterialIcons name="person" size={size} color={color} />
             ),
           }}
         />
@@ -185,7 +186,7 @@ const AppContent = () => {
           options={{
             headerShown: false,
             tabBarIcon: ({ color, size }) => (
-              <Text style={{ color, fontSize: size }}>⚙️</Text>
+              <MaterialIcons name="settings" size={size} color={color} />
             ),
           }}
         />

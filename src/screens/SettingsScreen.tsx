@@ -17,6 +17,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import ServerService, { ServerConfig } from '../services/serverService';
 import { useTheme } from '../theme/ThemeContext';
 import { SettingsStackParamList } from '../types/navigation';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 type SettingsScreenNavigationProp = StackNavigationProp<SettingsStackParamList, 'Settings'>;
 
@@ -263,7 +264,7 @@ const SettingsScreen: React.FC = () => {
         onPress={() => navigation.navigate('ServerConfig', { server: undefined })}
       >
         <View style={styles.sectionHeaderContent}>
-          <Text style={[styles.chevron, { color: theme.colors.text.primary }]}>▶</Text>
+          <MaterialIcons name="chevron-right" size={24} color={theme.colors.text.primary} />
           <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Server Configuration</Text>
         </View>
       </TouchableOpacity>
@@ -273,7 +274,7 @@ const SettingsScreen: React.FC = () => {
         onPress={() => navigation.navigate('Appearance')}
       >
         <View style={styles.sectionHeaderContent}>
-          <Text style={[styles.chevron, { color: theme.colors.text.primary }]}>▶</Text>
+          <MaterialIcons name="chevron-right" size={24} color={theme.colors.text.primary} />
           <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Appearance</Text>
         </View>
       </TouchableOpacity>
@@ -283,7 +284,7 @@ const SettingsScreen: React.FC = () => {
         onPress={() => navigation.navigate('InventorySettings')}
       >
         <View style={styles.sectionHeaderContent}>
-          <Text style={[styles.chevron, { color: theme.colors.text.primary }]}>▶</Text>
+          <MaterialIcons name="chevron-right" size={24} color={theme.colors.text.primary} />
           <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Inventory Display</Text>
         </View>
       </TouchableOpacity>
