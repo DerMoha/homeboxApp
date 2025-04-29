@@ -56,10 +56,9 @@ const LocationItemsScreen: React.FC = () => {
     try {
       const service = ServerService.getInstance();
       const result = await service.getLocationItems(locationId);
-      
       if (result.success && result.data) {
-        const response = result.data as InventoryResponse;
-        setItems(response.items);
+        // result.data is InventoryResponse, already filtered by locationId
+        setItems(result.data.items);
         setError(null);
       } else {
         setError(result.error || 'Failed to load items');
@@ -82,7 +81,7 @@ const LocationItemsScreen: React.FC = () => {
     const service = ServerService.getInstance();
     const axiosInstance = service.getAxiosInstance();
     if (!axiosInstance) {
-      throw new Error('No active server connection');
+      return '';
     }
     return `${service.getBaseUrl()}/api/v1/items/${itemId}/attachments/${imageId}`;
   };
@@ -180,7 +179,7 @@ const LocationItemsScreen: React.FC = () => {
   if (error) {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
-        <Text style={[styles.errorText, { color: theme.colors.error }]}>{error}</Text>
+        <Text style={[styles.errorText, { color: theme.colors.error }]}>Error: {error}</Text>
         <TouchableOpacity
           style={[styles.retryButton, { backgroundColor: theme.colors.button.primary }]}
           onPress={loadItems}

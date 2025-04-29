@@ -406,9 +406,51 @@ class ServerService {
       if (!axiosInstance) {
         return { success: false, error: 'No active server connection' };
       }
-
-      const response = await axiosInstance.get(`/api/v1/locations/${locationId}/items`);
-      return { success: true, data: response.data };
+      // Fetch the full location tree
+      const response = await axiosInstance.get('/api/v1/locations/tree');
+      const tree = response.data;
+      console.log('[getLocationItems] /api/v1/locations/tree response:', JSON.stringify(tree, null, 2));
+      // Helper to recursively search for the location
+      function findLocation(node: any, id: string): any | null {
+        if (node.id === id) return node;
+        if (node.children && Array.isArray(node.children)) {
+          for (const child of node.children) {
+            const found = findLocation(child, id);
+            if (found) return found;
+          }
+        }
+        return null;
+      }
+      let locationNode = null;
+      if (Array.isArray(tree)) {
+        // If root is array, search each root node
+        for (const node of tree) {
+          locationNode = findLocation(node, locationId);
+          if (locationNode) break;
+        }
+      } else {
+        // If root is object, search from root
+        locationNode = findLocation(tree, locationId);
+      }
+      console.log('[getLocationItems] Found location node:', JSON.stringify(locationNode, null, 2));
+      // Try to get items from the node
+      let items = locationNode && locationNode.items ? locationNode.items : [];
+      if (!items.length) {
+        // Workaround: fetch all items and filter by locationId
+        console.log('[getLocationItems] No items in tree node, fetching all items and filtering by location');
+        const itemsResponse = await axiosInstance.get('/api/v1/items', { params: { page: 1, pageSize: 1000 } });
+        const allItems = itemsResponse.data.items || [];
+        items = allItems.filter((item: any) => item.location && item.location.id === locationId);
+      }
+      console.log('[getLocationItems] Items for location:', items);
+      // Format as InventoryResponse for compatibility
+      const inventoryResponse: InventoryResponse = {
+        items: items,
+        page: 1,
+        pageSize: items.length,
+        total: items.length
+      };
+      return { success: true, data: inventoryResponse };
     } catch (error) {
       console.error('Error getting location items:', error);
       return { success: false, error: 'Failed to get location items' };

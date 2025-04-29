@@ -241,12 +241,15 @@ const styles = StyleSheet.create({
   },
   locationContent: {
     padding: 16,
+    flex: 1,
+    justifyContent: 'center',
   },
   locationHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
+    minHeight: 40,
   },
   locationName: {
     fontSize: 18,

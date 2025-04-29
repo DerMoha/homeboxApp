@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -14,6 +14,7 @@ import LocationItemsScreen from './src/screens/LocationItemsScreen';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import { darkTheme } from './src/theme/theme';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import ServerService from './src/services/serverService';
 
 const Tab = createBottomTabNavigator();
 const SettingsStack = createNativeStackNavigator();
@@ -130,6 +131,16 @@ const LocationsStackScreen = () => {
 
 const AppContent = () => {
   const { theme, isDarkMode } = useTheme();
+
+  useEffect(() => {
+    const autoConnectServer = async () => {
+      const serverService = ServerService.getInstance();
+      await serverService.autoConnect();
+    };
+
+    autoConnectServer();
+  }, []);
+
   return (
     <NavigationContainer theme={{
       dark: isDarkMode,
