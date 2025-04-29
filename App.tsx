@@ -9,12 +9,15 @@ import ServerConfigScreen from './src/screens/ServerConfigScreen';
 import AppearanceScreen from './src/screens/AppearanceScreen';
 import InventoryScreen from './src/screens/InventoryScreen';
 import InventorySettingsScreen from './src/screens/InventorySettingsScreen';
+import LocationsScreen from './src/screens/LocationsScreen';
+import LocationItemsScreen from './src/screens/LocationItemsScreen';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import { darkTheme } from './src/theme/theme';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 const Tab = createBottomTabNavigator();
 const SettingsStack = createNativeStackNavigator();
+const LocationsStack = createNativeStackNavigator();
 
 // Placeholder screens
 const HomeScreen = () => {
@@ -31,15 +34,6 @@ const SearchScreen = () => {
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background.primary }}>
       <Text style={{ color: theme.colors.text.primary }}>Search Screen</Text>
-    </View>
-  );
-};
-
-const ProfileScreen = () => {
-  const { theme } = useTheme();
-  return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background.primary }}>
-      <Text style={{ color: theme.colors.text.primary }}>Profile Screen</Text>
     </View>
   );
 };
@@ -91,6 +85,45 @@ const SettingsStackScreen = () => {
           }}
         />
       </SettingsStack.Navigator>
+    </SafeAreaView>
+  );
+};
+
+const LocationsStackScreen = () => {
+  const { theme } = useTheme();
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
+      <LocationsStack.Navigator
+        screenOptions={{
+          headerStyle: {
+            backgroundColor: theme.colors.background.primary,
+          },
+          headerTintColor: theme.colors.text.primary,
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+          headerShadowVisible: false,
+          headerBackTitle: '',
+          contentStyle: {
+            backgroundColor: theme.colors.background.primary,
+          },
+        }}
+      >
+        <LocationsStack.Screen 
+          name="LocationsList" 
+          component={LocationsScreen}
+          options={{ 
+            headerShown: false,
+          }}
+        />
+        <LocationsStack.Screen 
+          name="LocationItems" 
+          component={LocationItemsScreen}
+          options={{ 
+            headerShown: true,
+          }}
+        />
+      </LocationsStack.Navigator>
     </SafeAreaView>
   );
 };
@@ -157,6 +190,7 @@ const AppContent = () => {
           name="Inventory" 
           component={InventoryScreen}
           options={{
+            headerShown: false,
             tabBarIcon: ({ color, size }) => (
               <MaterialIcons name="inventory" size={size} color={color} />
             ),
@@ -172,11 +206,12 @@ const AppContent = () => {
           }}
         />
         <Tab.Screen 
-          name="Profile" 
-          component={ProfileScreen}
+          name="Locations" 
+          component={LocationsStackScreen}
           options={{
+            headerShown: false,
             tabBarIcon: ({ color, size }) => (
-              <MaterialIcons name="person" size={size} color={color} />
+              <MaterialIcons name="location-on" size={size} color={color} />
             ),
           }}
         />

@@ -42,6 +42,47 @@ interface ErrorResponse {
   [key: string]: any;
 }
 
+interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
+
+interface Location {
+  id: string;
+  name: string;
+  description: string;
+  itemCount: number;
+  imageId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface LocationResponse {
+  locations: Location[];
+  page: number;
+  pageSize: number;
+  total: number;
+}
+
+interface InventoryResponse {
+  items: Array<{
+    id: string;
+    name: string;
+    description: string;
+    quantity: number;
+    imageId: string | null;
+    insured: boolean;
+    purchasePrice: number;
+    archived: boolean;
+    createdAt: string;
+    updatedAt: string;
+  }>;
+  page: number;
+  pageSize: number;
+  total: number;
+}
+
 class ServerService {
   private static instance: ServerService;
   private axiosInstance: AxiosInstance | null = null;
@@ -77,7 +118,9 @@ class ServerService {
 
       if (loginResponse.data && loginResponse.data.token) {
         this.token = loginResponse.data.token;
-        this.axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
+        // Ensure we don't have duplicate 'Bearer' in the token
+        const cleanToken = this.token && this.token.startsWith('Bearer ') ? this.token.substring(7) : this.token;
+        this.axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${cleanToken}`;
         return {
           success: true,
           data: loginResponse.data,
@@ -183,7 +226,7 @@ class ServerService {
     return this.axiosInstance;
   }
 
-  public async getInventory(): Promise<ServerResponse> {
+  public async getInventory(page: number = 1, pageSize: number = 50): Promise<ServerResponse> {
     try {
       if (!this.axiosInstance || !this.token) {
         return {
@@ -192,13 +235,38 @@ class ServerService {
         };
       }
 
-      const response = await this.axiosInstance.get('/api/v1/items');
+      const response = await this.axiosInstance.get('/api/v1/items', {
+        params: {
+          page,
+          pageSize
+        }
+      });
+
+      if (!response.data || !Array.isArray(response.data.items)) {
+        return {
+          success: false,
+          error: 'Invalid response format from server',
+        };
+      }
+
       return {
         success: true,
         data: response.data,
       };
     } catch (error) {
-      return this.handleError(error as AxiosError);
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          return { success: false, error: 'Authentication required' };
+        }
+        if (error.response?.status === 403) {
+          return { success: false, error: 'Access denied' };
+        }
+        return { 
+          success: false, 
+          error: error.response?.data?.message || 'Failed to get inventory' 
+        };
+      }
+      return { success: false, error: 'An unexpected error occurred' };
     }
   }
 
@@ -259,6 +327,91 @@ class ServerService {
         success: false,
         error: error.message || 'An unexpected error occurred',
       };
+    }
+  }
+
+  /**
+   * Transforms a raw array of locations into the expected response format
+   * @param locations Array of location objects
+   * @returns Formatted location response
+   */
+  private transformLocationsResponse(locations: Location[]): LocationResponse {
+    return {
+      locations,
+      page: 1,
+      pageSize: locations.length,
+      total: locations.length
+    };
+  }
+
+  /**
+   * Fetches locations from the server
+   * @returns Promise containing the locations data or an error
+   */
+  async getLocations(): Promise<ApiResponse<LocationResponse>> {
+    try {
+      const axiosInstance = this.getAxiosInstance();
+      if (!axiosInstance || !this.token) {
+        console.error('No active server connection or authentication token in getLocations');
+        return { success: false, error: 'No active server connection or authentication token' };
+      }
+
+      const response = await axiosInstance.get<Location[]>('/api/v1/locations', {
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!Array.isArray(response.data)) {
+        console.error('Invalid response format:', response.data);
+        return { success: false, error: 'Invalid response format from server' };
+      }
+
+      return { 
+        success: true, 
+        data: this.transformLocationsResponse(response.data)
+      };
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error('Locations API Error:', {
+          status: error.response?.status,
+          message: error.response?.data?.message || error.message,
+          data: error.response?.data
+        });
+
+        if (error.response?.status === 401) {
+          return { success: false, error: 'Authentication required' };
+        }
+        if (error.response?.status === 403) {
+          return { success: false, error: 'Access denied' };
+        }
+        if (error.response?.status === 500) {
+          return { 
+            success: false, 
+            error: 'Server error occurred. Please try again later.' 
+          };
+        }
+        return { 
+          success: false, 
+          error: error.response?.data?.message || 'Failed to get locations' 
+        };
+      }
+      return { success: false, error: 'An unexpected error occurred' };
+    }
+  }
+
+  async getLocationItems(locationId: string): Promise<ApiResponse<InventoryResponse>> {
+    try {
+      const axiosInstance = this.getAxiosInstance();
+      if (!axiosInstance) {
+        return { success: false, error: 'No active server connection' };
+      }
+
+      const response = await axiosInstance.get(`/api/v1/locations/${locationId}/items`);
+      return { success: true, data: response.data };
+    } catch (error) {
+      console.error('Error getting location items:', error);
+      return { success: false, error: 'Failed to get location items' };
     }
   }
 }
