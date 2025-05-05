@@ -5,9 +5,11 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View, Text } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import SettingsScreen from './src/screens/SettingsScreen';
+import AddItemScreen from './src/screens/AddItemScreen';
 import ServerConfigScreen from './src/screens/ServerConfigScreen';
 import AppearanceScreen from './src/screens/AppearanceScreen';
 import InventoryScreen from './src/screens/InventoryScreen';
+import ItemDetailScreen from './src/screens/ItemDetailScreen';
 import InventorySettingsScreen from './src/screens/InventorySettingsScreen';
 import LocationsScreen from './src/screens/LocationsScreen';
 import LocationItemsScreen from './src/screens/LocationItemsScreen';
@@ -19,6 +21,7 @@ import ServerService from './src/services/serverService';
 const Tab = createBottomTabNavigator();
 const SettingsStack = createNativeStackNavigator();
 const LocationsStack = createNativeStackNavigator();
+const InventoryStack = createNativeStackNavigator();
 
 // Placeholder screens
 const HomeScreen = () => {
@@ -26,15 +29,6 @@ const HomeScreen = () => {
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background.primary }}>
       <Text style={{ color: theme.colors.text.primary }}>Home Screen</Text>
-    </View>
-  );
-};
-
-const SearchScreen = () => {
-  const { theme } = useTheme();
-  return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background.primary }}>
-      <Text style={{ color: theme.colors.text.primary }}>Search Screen</Text>
     </View>
   );
 };
@@ -85,6 +79,13 @@ const SettingsStackScreen = () => {
             headerShown: false,
           }}
         />
+        <SettingsStack.Screen 
+          name="AddItemSettings" 
+          component={require('./src/screens/AddItemSettingsScreen').default}
+          options={{ 
+            headerShown: false,
+          }}
+        />
       </SettingsStack.Navigator>
     </SafeAreaView>
   );
@@ -125,6 +126,41 @@ const LocationsStackScreen = () => {
           }}
         />
       </LocationsStack.Navigator>
+    </SafeAreaView>
+  );
+};
+
+const InventoryStackScreen = () => {
+  const { theme } = useTheme();
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
+      <InventoryStack.Navigator
+        screenOptions={{
+          headerStyle: {
+            backgroundColor: theme.colors.background.primary,
+          },
+          headerTintColor: theme.colors.text.primary,
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+          headerShadowVisible: false,
+          headerBackTitle: '',
+          contentStyle: {
+            backgroundColor: theme.colors.background.primary,
+          },
+        }}
+      >
+        <InventoryStack.Screen 
+          name="Inventory" 
+          component={InventoryScreen}
+          options={{ headerShown: false }}
+        />
+        <InventoryStack.Screen 
+          name="ItemDetail" 
+          component={ItemDetailScreen}
+          options={{ title: 'Item Details' }}
+        />
+      </InventoryStack.Navigator>
     </SafeAreaView>
   );
 };
@@ -199,7 +235,7 @@ const AppContent = () => {
         />
         <Tab.Screen 
           name="Inventory" 
-          component={InventoryScreen}
+          component={InventoryStackScreen}
           options={{
             headerShown: false,
             tabBarIcon: ({ color, size }) => (
@@ -208,11 +244,12 @@ const AppContent = () => {
           }}
         />
         <Tab.Screen 
-          name="Search" 
-          component={SearchScreen}
+          name="AddItem" 
+          component={AddItemScreen}
           options={{
+            title: 'Add',
             tabBarIcon: ({ color, size }) => (
-              <MaterialIcons name="search" size={size} color={color} />
+              <MaterialIcons name="add-box" size={size} color={color} />
             ),
           }}
         />

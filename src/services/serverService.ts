@@ -84,6 +84,49 @@ interface InventoryResponse {
 }
 
 class ServerService {
+  // ...existing fields and methods...
+
+  /**
+   * Fetch a single inventory item by its ID
+   * @param id The item ID
+   * @returns ServerResponse with the item details
+   */
+  public async getItemById(id: string): Promise<ServerResponse> {
+    try {
+      if (!this.axiosInstance || !this.token) {
+        return {
+          success: false,
+          error: 'No active server connection or authentication token',
+        };
+      }
+      const response = await this.axiosInstance.get(`/api/v1/items/${id}`);
+      if (!response.data || !response.data.id) {
+        return {
+          success: false,
+          error: 'Invalid response format from server',
+        };
+      }
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          return { success: false, error: 'Authentication required' };
+        }
+        if (error.response?.status === 403) {
+          return { success: false, error: 'Access denied' };
+        }
+        return {
+          success: false,
+          error: error.response?.data?.message || 'Failed to get item',
+        };
+      }
+      return { success: false, error: 'An unexpected error occurred' };
+    }
+  }
+
   private static instance: ServerService;
   private axiosInstance: AxiosInstance | null = null;
   private currentConfig: ServerConfig | null = null;

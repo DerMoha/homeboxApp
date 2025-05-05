@@ -280,12 +280,22 @@ const SettingsScreen: React.FC = () => {
       </TouchableOpacity>
 
       <TouchableOpacity 
-        style={[styles.sectionHeader, { backgroundColor: theme.colors.background.secondary }]}
+        style={styles.sectionHeader}
         onPress={() => navigation.navigate('InventorySettings')}
       >
         <View style={styles.sectionHeaderContent}>
           <MaterialIcons name="chevron-right" size={24} color={theme.colors.text.primary} />
           <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Inventory Display</Text>
+        </View>
+      </TouchableOpacity>
+
+      <TouchableOpacity 
+        style={styles.sectionHeader}
+        onPress={() => navigation.navigate('AddItemSettings')}
+      >
+        <View style={styles.sectionHeaderContent}>
+          <MaterialIcons name="chevron-right" size={24} color={theme.colors.text.primary} />
+          <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Add Fields</Text>
         </View>
       </TouchableOpacity>
     </ScrollView>

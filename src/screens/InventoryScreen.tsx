@@ -9,6 +9,7 @@ import {
   RefreshControl,
   Image,
   Modal,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeContext';
@@ -31,7 +32,10 @@ type RootStackParamList = {
       screen: 'ServerConfig';
     };
   };
+  // Added for navigation to item detail
+  ItemDetail: { itemId: string };
 };
+// Note: If you implement ItemDetailScreen, it should accept route.params.itemId
 
 interface Label {
   id: string;
@@ -79,6 +83,7 @@ interface DisplayPreference {
 }
 
 type SortOption = 'name-asc' | 'name-desc' | 'date-asc' | 'date-desc' | 'quantity-asc' | 'quantity-desc';
+type ViewMode = 'list' | 'grid';
 
 const InventoryScreen: React.FC = () => {
   const { theme } = useTheme();
@@ -90,6 +95,9 @@ const InventoryScreen: React.FC = () => {
   const [displayPreferences, setDisplayPreferences] = useState<DisplayPreference[]>([]);
   const [sortModalVisible, setSortModalVisible] = useState(false);
   const [sortOption, setSortOption] = useState<SortOption>('name-asc');
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [itemsPerRow, setItemsPerRow] = useState(2);
+  const [gridConfigVisible, setGridConfigVisible] = useState(false);
 
   const loadDisplayPreferences = async () => {
     try {
@@ -240,7 +248,7 @@ const InventoryScreen: React.FC = () => {
     return `${service.getBaseUrl()}/api/v1/items/${itemId}/attachments/${imageId}`;
   };
 
-  const renderItem = ({ item, index }: { item: InventoryItem; index: number }): React.ReactElement => {
+  const renderListItem = ({ item, index }: { item: InventoryItem; index: number }): React.ReactElement => {
     const hasDescription = getPreference('description') && item.description;
     const hasFooterContent = 
       (getPreference('location') && item.location) ||
@@ -259,6 +267,7 @@ const InventoryScreen: React.FC = () => {
           styles.itemContainer,
           { backgroundColor: theme.colors.background.secondary }
         ]}
+        onPress={() => navigation.navigate('ItemDetail', { itemId: item.id })}
       >
         <View style={[
           styles.itemContent,
@@ -374,6 +383,71 @@ const InventoryScreen: React.FC = () => {
     );
   };
 
+  const renderGridItem = ({ item }: { item: InventoryItem }): React.ReactElement => {
+    const screenWidth = Dimensions.get('window').width;
+    const itemWidth = Math.floor(screenWidth / itemsPerRow); // Full width division
+    
+    return (
+      <TouchableOpacity
+        key={item.id}
+        style={[
+          styles.gridItemContainer, 
+          { 
+            backgroundColor: theme.colors.background.secondary,
+            width: itemWidth,
+            height: itemWidth, // Square aspect ratio
+            margin: 0, // No margins
+          }
+        ]}
+        onPress={() => navigation.navigate('ItemDetail', { itemId: item.id })}
+      >
+        <View style={[styles.gridItemImageContainer, { height: itemWidth }]}>
+          {item.imageId ? (
+            <Image
+              source={{ 
+                uri: getImageUrl(item.id, item.imageId),
+                headers: {
+                  'Authorization': `Bearer ${ServerService.getInstance().getAxiosInstance()?.defaults.headers.common['Authorization']}`
+                }
+              }}
+              style={styles.gridItemImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+              <MaterialIcons name="image-not-supported" size={48} color={theme.colors.text.secondary} />
+            </View>
+          )}
+        </View>
+
+        <View style={[styles.gridItemInfo, { backgroundColor: 'rgba(0, 0, 0, 0.6)' }]}>
+          <Text style={styles.gridItemName} numberOfLines={1} ellipsizeMode="tail">
+            {item.name}
+          </Text>
+          
+          {item.location && (
+            <Text style={styles.gridItemLocation} numberOfLines={1} ellipsizeMode="tail">
+              {item.location.name}
+            </Text>
+          )}
+          
+          {getPreference('quantity') && (
+            <View style={[
+              styles.gridQuantityBadge,
+              { backgroundColor: item.quantity > 0 ? theme.colors.success : theme.colors.error }
+            ]}>
+              <Text style={styles.gridQuantityText}>{item.quantity}</Text>
+            </View>
+          )}
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderItem = ({ item, index }: { item: InventoryItem; index: number }): React.ReactElement => {
+    return viewMode === 'list' ? renderListItem({ item, index }) : renderGridItem({ item });
+  };
+
   const SortModal = () => (
     <Modal
       animationType="slide"
@@ -473,6 +547,60 @@ const InventoryScreen: React.FC = () => {
       </View>
     </Modal>
   );
+  
+  const GridConfigModal = () => (
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={gridConfigVisible}
+      onRequestClose={() => setGridConfigVisible(false)}
+    >
+      <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0, 0, 0, 0.5)' }]}>
+        <View style={[styles.modalContent, { backgroundColor: theme.colors.background.primary }]}>
+          <Text style={[styles.modalTitle, { color: theme.colors.text.primary }]}>Grid Configuration</Text>
+          
+          <View style={styles.gridConfigControls}>
+            <Text style={[styles.gridConfigLabel, { color: theme.colors.text.primary }]}>Items per row</Text>
+            
+            <View style={styles.gridConfigButtons}>
+              <TouchableOpacity
+                style={[
+                  styles.gridConfigButton,
+                  { backgroundColor: theme.colors.button.secondary }
+                ]}
+                onPress={() => setItemsPerRow(Math.max(1, itemsPerRow - 1))}
+                disabled={itemsPerRow <= 1}
+              >
+                <MaterialIcons name="remove" size={24} color={theme.colors.button.text} />
+              </TouchableOpacity>
+              
+              <Text style={[styles.gridConfigValue, { color: theme.colors.text.primary }]}>
+                {itemsPerRow}
+              </Text>
+              
+              <TouchableOpacity
+                style={[
+                  styles.gridConfigButton,
+                  { backgroundColor: theme.colors.button.secondary }
+                ]}
+                onPress={() => setItemsPerRow(Math.min(5, itemsPerRow + 1))}
+                disabled={itemsPerRow >= 5}
+              >
+                <MaterialIcons name="add" size={24} color={theme.colors.button.text} />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={[styles.modalCloseButton, { backgroundColor: theme.colors.button.primary }]}
+            onPress={() => setGridConfigVisible(false)}
+          >
+            <Text style={[styles.modalCloseButtonText, { color: theme.colors.button.text }]}>Apply</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
 
   if (isLoading) {
     return (
@@ -499,9 +627,39 @@ const InventoryScreen: React.FC = () => {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background.primary }]} edges={['top']}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { color: theme.colors.text.primary }]}>Inventory</Text>
+        
+        <View style={styles.viewToggleContainer}>
+          <TouchableOpacity
+            style={[
+              styles.viewToggleButton,
+              viewMode === 'list' && { backgroundColor: theme.colors.button.secondary }
+            ]}
+            onPress={() => setViewMode('list')}
+          >
+            <MaterialIcons 
+              name="view-list" 
+              size={24} 
+              color={viewMode === 'list' ? theme.colors.button.text : theme.colors.text.secondary} 
+            />
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[
+              styles.viewToggleButton,
+              viewMode === 'grid' && { backgroundColor: theme.colors.button.secondary }
+            ]}
+            onPress={() => setViewMode('grid')}
+          >
+            <MaterialIcons 
+              name="grid-view" 
+              size={24} 
+              color={viewMode === 'grid' ? theme.colors.button.text : theme.colors.text.secondary} 
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <FlatList
@@ -509,6 +667,8 @@ const InventoryScreen: React.FC = () => {
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
+        key={viewMode + itemsPerRow.toString()}
+        numColumns={viewMode === 'grid' ? itemsPerRow : 1}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -525,18 +685,27 @@ const InventoryScreen: React.FC = () => {
         }
       />
 
-      <TouchableOpacity
-        style={[styles.sortButton, { backgroundColor: theme.colors.button.primary }]}
-        onPress={() => {
-          console.log('Sort button pressed');
-          setSortModalVisible(true);
-        }}
-      >
-        <MaterialIcons name="sort" size={24} color={theme.colors.button.text} />
-      </TouchableOpacity>
+      <View style={styles.actionButtonsContainer}>
+        {viewMode === 'grid' && (
+          <TouchableOpacity
+            style={[styles.configButton, { backgroundColor: theme.colors.button.primary }]}
+            onPress={() => setGridConfigVisible(true)}
+          >
+            <MaterialIcons name="tune" size={24} color={theme.colors.button.text} />
+          </TouchableOpacity>
+        )}
+
+        <TouchableOpacity
+          style={[styles.sortButton, { backgroundColor: theme.colors.button.primary }]}
+          onPress={() => setSortModalVisible(true)}
+        >
+          <MaterialIcons name="sort" size={24} color={theme.colors.button.text} />
+        </TouchableOpacity>
+      </View>
 
       <SortModal />
-    </SafeAreaView>
+      <GridConfigModal />
+    </View>
   );
 };
 
@@ -546,26 +715,36 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 16,
-    marginBottom: 16,
+    marginBottom: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: '700',
-    marginBottom: 4,
   },
-  headerSubtitle: {
-    fontSize: 14,
-    lineHeight: 20,
+  viewToggleContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#F0F0F0',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  viewToggleButton: {
+    padding: 8,
+    borderRadius: 8,
   },
   listContent: {
-    padding: 16,
+    padding: 1,
   },
   itemContainer: {
     borderRadius: 12,
-    marginBottom: 12,
+    marginHorizontal: 12,
+    marginVertical: 6,
     overflow: 'hidden',
+    flex: 1,
   },
   itemContent: {
     padding: 16,
@@ -613,15 +792,16 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   imageContainer: {
-    marginVertical: 8,
-    borderRadius: 8,
+    marginVertical: 4,
+    borderRadius: 4,
     overflow: 'hidden',
     backgroundColor: '#f0f0f0',
   },
   itemImage: {
     width: '100%',
-    height: 200,
-    borderRadius: 8,
+    aspectRatio: 1,
+    borderRadius: 4,
+    marginBottom: 4,
   },
   errorText: {
     fontSize: 16,
@@ -650,9 +830,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   sortButton: {
-    position: 'absolute',
-    bottom: 16,
-    right: 16,
     width: 56,
     height: 56,
     borderRadius: 28,
@@ -709,6 +886,103 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  gridItemContainer: {
+    borderRadius: 0, // Changed from 8 to remove rounded corners
+    overflow: 'hidden',
+    margin: 0,
+    position: 'relative',
+  },
+  gridItemImageContainer: {
+    borderRadius: 0, // Changed from 8
+    overflow: 'hidden',
+  },
+  gridItemImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 0, // Changed from 8
+  },
+  noImagePlaceholder: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  gridItemInfo: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 8,
+  },
+  gridItemName: {
+    color: 'white',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  gridItemLocation: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 12,
+  },
+  gridQuantityBadge: {
+    position: 'absolute',
+    top: -24,
+    right: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  gridQuantityText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 12,
+  },
+  actionButtonsContainer: {
+    position: 'absolute',
+    bottom: 16,
+    right: 16,
+    flexDirection: 'row',
+  },
+  configButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    marginRight: 12,
+  },
+  gridConfigControls: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  gridConfigLabel: {
+    fontSize: 16,
+  },
+  gridConfigButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  gridConfigButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  gridConfigValue: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginHorizontal: 16,
+    minWidth: 24,
+    textAlign: 'center',
+  },
 });
 
-export default InventoryScreen; 
+export default InventoryScreen;
