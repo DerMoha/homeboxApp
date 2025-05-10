@@ -356,9 +356,11 @@ const InventoryScreen: React.FC = () => {
         >
           <View style={styles.compactContent}>
             <View style={styles.compactHeader}>
-              <Text style={[styles.itemName, { color: theme.colors.text.primary }]}>
-                {item.name}
-              </Text>
+              <View style={styles.compactTextContent}>
+                <Text style={[styles.itemName, { color: theme.colors.text.primary }]}>
+                  {item.name}
+                </Text>
+              </View>
               {getPreference('quantity') && (
                 <View style={[
                   styles.quantityBadge,
@@ -407,30 +409,35 @@ const InventoryScreen: React.FC = () => {
           onPress={() => navigation.navigate('ItemDetail', { itemId: item.id })}
         >
           <View style={styles.standardContent}>
-            <View style={styles.standardTextContent}>
-              <Text style={[styles.itemName, { color: theme.colors.text.primary }]}>
-                {item.name}
-              </Text>
-              {getPreference('location') && item.location && (
-                <View style={styles.footerItem}>
-                  <MaterialIcons name="location-on" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
-                  <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
-                    {item.location.name}
-                  </Text>
+            <View style={styles.standardRow}>
+              {/* Text Section */}
+              <View style={styles.standardTextSection}>
+                <Text style={[styles.itemName, { color: theme.colors.text.primary }]}> 
+                  {item.name}
+                </Text>
+                <View style={styles.standardDetails}>
+                  {getPreference('location') && item.location && (
+                    <View style={styles.footerItem}>
+                      <MaterialIcons name="location-on" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
+                      <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}> 
+                        {item.location.name}
+                      </Text>
+                    </View>
+                  )}
+                  {getPreference('labels') && item.labels.length > 0 && (
+                    <View style={styles.footerItem}>
+                      <MaterialIcons name="label" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
+                      <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}> 
+                        {item.labels.map(label => label.name).join(', ')}
+                      </Text>
+                    </View>
+                  )}
                 </View>
-              )}
-              {getPreference('labels') && item.labels.length > 0 && (
-                <View style={styles.footerItem}>
-                  <MaterialIcons name="label" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
-                  <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
-                    {item.labels.map(label => label.name).join(', ')}
-                  </Text>
-                </View>
-              )}
-            </View>
-            <View style={styles.standardRightContent}>
+              </View>
+
+              {/* Image Section */}
               {hasImage && (
-                <View style={styles.standardImageContainer}>
+                <View style={styles.standardImageSection}>
                   <Image
                     source={{ 
                       uri: getImageUrl(item.id, item.imageId!),
@@ -443,12 +450,14 @@ const InventoryScreen: React.FC = () => {
                   />
                 </View>
               )}
+
+              {/* Quantity Section */}
               {getPreference('quantity') && (
                 <View style={[
-                  styles.quantityBadge,
+                  styles.standardQuantityBadge,
                   { backgroundColor: item.quantity > 0 ? theme.colors.success : theme.colors.error }
                 ]}>
-                  <Text style={[styles.quantityText, { color: theme.colors.button.text }]}>
+                  <Text style={[styles.quantityText, { color: theme.colors.button.text }]}> 
                     {item.quantity}
                   </Text>
                 </View>
@@ -467,9 +476,11 @@ const InventoryScreen: React.FC = () => {
         >
           <View style={styles.itemContent}>
             <View style={styles.itemHeader}>
-              <Text style={[styles.itemName, { color: theme.colors.text.primary }]}>
-                {item.name}
-              </Text>
+              <View style={styles.detailedTextContent}>
+                <Text style={[styles.itemName, { color: theme.colors.text.primary }]}>
+                  {item.name}
+                </Text>
+              </View>
               {getPreference('quantity') && (
                 <View style={[
                   styles.quantityBadge,
@@ -866,17 +877,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   itemContent: {
-    padding: 16,
+    padding: 12,
   },
   itemHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   itemName: {
     fontSize: 18,
     fontWeight: '600',
+    flex: 1,
+    marginRight: 8,
   },
   quantityBadge: {
     paddingHorizontal: 8,
@@ -894,21 +907,21 @@ const styles = StyleSheet.create({
   },
   itemDescription: {
     fontSize: 14,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   itemFooter: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 8,
+    gap: 4,
+    marginTop: 4,
   },
   footerItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: 2,
   },
   footerIcon: {
-    marginRight: 8,
+    marginRight: 4,
   },
   footerLabel: {
     fontSize: 12,
@@ -1149,33 +1162,50 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   compactImageIcon: {
-    marginLeft: 8,
+    marginLeft: 1,
   },
   standardContent: {
-    padding: 12,
+    padding: 10,
+  },
+  standardRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    gap: 9,
   },
-  standardTextContent: {
+  standardTextSection: {
     flex: 1,
-    marginRight: 12,
+    marginRight: 8,
   },
-  standardRightContent: {
-    width: 110,
-    height: 60,
-    position: 'relative',
-  },
-  standardImageContainer: {
-    width: 60,
-    height: 60,
+  standardImageSection: {
+    width: 80,
+    height: 80,
     borderRadius: 8,
     overflow: 'hidden',
     backgroundColor: '#f0f0f0',
-    marginRight: 40,
   },
   standardImage: {
     width: '100%',
     height: '100%',
+  },
+  standardQuantityBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    minWidth: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  standardDetails: {
+    flex: 1,
+    marginRight: 8,
+  },
+  compactTextContent: {
+    flex: 1,
+    marginRight: 40,
+  },
+  detailedTextContent: {
+    flex: 1,
+    marginRight: 40,
   },
 });
 
