@@ -355,39 +355,49 @@ const InventoryScreen: React.FC = () => {
           onPress={() => navigation.navigate('ItemDetail', { itemId: item.id })}
         >
           <View style={styles.compactContent}>
-            <View style={styles.compactLeftContent}>
-              <Text style={[styles.itemName, { color: theme.colors.text.primary }]}>
-                {item.name}
-              </Text>
-              {getPreference('location') && item.location && (
-                <View style={styles.compactLocation}>
-                  <MaterialIcons name="location-on" size={14} color={theme.colors.text.secondary} style={styles.footerIcon} />
-                  <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
-                    {item.location.name}
-                  </Text>
+            <Text style={[styles.itemName, { color: theme.colors.text.primary }]}>
+              {item.name}
+            </Text>
+            <View style={styles.compactDetails}>
+              <View style={styles.compactDetailsRow}>
+                <View style={styles.compactLeftContent}>
+                  {getPreference('location') && item.location && (
+                    <View style={styles.compactLocation}>
+                      <MaterialIcons name="location-on" size={14} color={theme.colors.text.secondary} style={styles.footerIcon} />
+                      <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
+                        {item.location.name}
+                      </Text>
+                    </View>
+                  )}
+                  {getPreference('labels') && item.labels.length > 0 && (
+                    <View style={styles.compactLabels}>
+                      <MaterialIcons name="label" size={14} color={theme.colors.text.secondary} style={styles.footerIcon} />
+                      <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
+                        {item.labels.map(label => label.name).join(', ')}
+                      </Text>
+                    </View>
+                  )}
+                  {hasImage && (
+                    <MaterialIcons name="image" size={16} color={theme.colors.text.secondary} style={styles.compactImageIcon} />
+                  )}
                 </View>
-              )}
-            </View>
-            <View style={styles.compactRightContent}>
-              {hasImage && (
-                <MaterialIcons name="image" size={16} color={theme.colors.text.secondary} style={styles.compactImageIcon} />
-              )}
-              {getPreference('quantity') && (
-                <View style={[
-                  styles.quantityBadge,
-                  { backgroundColor: item.quantity > 0 ? theme.colors.success : theme.colors.error }
-                ]}>
-                  <Text style={[styles.quantityText, { color: theme.colors.button.text }]}>
-                    {item.quantity}
-                  </Text>
-                </View>
-              )}
+                {getPreference('quantity') && (
+                  <View style={[
+                    styles.quantityBadge,
+                    { backgroundColor: item.quantity > 0 ? theme.colors.success : theme.colors.error }
+                  ]}>
+                    <Text style={[styles.quantityText, { color: theme.colors.button.text }]}>
+                      {item.quantity}
+                    </Text>
+                  </View>
+                )}
+              </View>
             </View>
           </View>
         </TouchableOpacity>
       );
     } else if (listZoom === 1) {
-      // Standard view with right-aligned image
+      // Standard view
       return (
         <TouchableOpacity
           key={item.id}
@@ -395,46 +405,42 @@ const InventoryScreen: React.FC = () => {
           onPress={() => navigation.navigate('ItemDetail', { itemId: item.id })}
         >
           <View style={styles.standardContent}>
-            {hasImage && (
-              <View style={styles.standardImageContainer}>
-                <Image
-                  source={{ 
-                    uri: getImageUrl(item.id, item.imageId!),
-                    headers: {
-                      'Authorization': `Bearer ${ServerService.getInstance().getAxiosInstance()?.defaults.headers.common['Authorization']}`
-                    }
-                  }}
-                  style={styles.standardImage}
-                  resizeMode="cover"
-                />
-              </View>
-            )}
             <View style={styles.standardTextContent}>
-              <View style={styles.itemHeader}>
-                <Text style={[styles.itemName, { color: theme.colors.text.primary }]}>
-                  {item.name}
-                </Text>
-              </View>
-              <View style={styles.standardAttributes}>
-                {getPreference('location') && item.location && (
-                  <View style={styles.footerItem}>
-                    <MaterialIcons name="location-on" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
-                    <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
-                      {item.location.name}
-                    </Text>
-                  </View>
-                )}
-                {getPreference('labels') && item.labels.length > 0 && (
-                  <View style={styles.footerItem}>
-                    <MaterialIcons name="label" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
-                    <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
-                      {item.labels.map(label => label.name).join(', ')}
-                    </Text>
-                  </View>
-                )}
-              </View>
+              <Text style={[styles.itemName, { color: theme.colors.text.primary }]}>
+                {item.name}
+              </Text>
+              {getPreference('location') && item.location && (
+                <View style={styles.footerItem}>
+                  <MaterialIcons name="location-on" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
+                  <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
+                    {item.location.name}
+                  </Text>
+                </View>
+              )}
+              {getPreference('labels') && item.labels.length > 0 && (
+                <View style={styles.footerItem}>
+                  <MaterialIcons name="label" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
+                  <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
+                    {item.labels.map(label => label.name).join(', ')}
+                  </Text>
+                </View>
+              )}
             </View>
             <View style={styles.standardRightContent}>
+              {hasImage && (
+                <View style={styles.standardImageContainer}>
+                  <Image
+                    source={{ 
+                      uri: getImageUrl(item.id, item.imageId!),
+                      headers: {
+                        'Authorization': `Bearer ${ServerService.getInstance().getAxiosInstance()?.defaults.headers.common['Authorization']}`
+                      }
+                    }}
+                    style={styles.standardImage}
+                    resizeMode="cover"
+                  />
+                </View>
+              )}
               {getPreference('quantity') && (
                 <View style={[
                   styles.quantityBadge,
@@ -869,7 +875,6 @@ const styles = StyleSheet.create({
   itemName: {
     fontSize: 18,
     fontWeight: '600',
-    flex: 1,
   },
   quantityBadge: {
     paddingHorizontal: 8,
@@ -877,6 +882,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     minWidth: 40,
     alignItems: 'center',
+    position: 'absolute',
+    top: 0,
+    right: 0,
   },
   quantityText: {
     color: '#FFFFFF',
@@ -895,12 +903,13 @@ const styles = StyleSheet.create({
   footerItem: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  footerLabel: {
-    fontSize: 12,
+    marginTop: 4,
   },
   footerIcon: {
     marginRight: 8,
+  },
+  footerLabel: {
+    fontSize: 12,
   },
   imageContainer: {
     marginVertical: 4,
@@ -1109,43 +1118,44 @@ const styles = StyleSheet.create({
   },
   compactContent: {
     padding: 12,
+  },
+  compactDetails: {
+    marginTop: 4,
+  },
+  compactDetailsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
   },
   compactLeftContent: {
-    flex: 1,
-    marginRight: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   compactLocation: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
   },
-  compactRightContent: {
+  compactLabels: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   compactImageIcon: {
-    marginRight: 8,
+    marginLeft: 8,
   },
   standardContent: {
     padding: 12,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   standardTextContent: {
     flex: 1,
-    marginHorizontal: 12,
+    marginRight: 12,
   },
   standardRightContent: {
-    alignItems: 'flex-end',
-  },
-  standardAttributes: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 4,
+    width: 110,
+    height: 60,
+    position: 'relative',
   },
   standardImageContainer: {
     width: 60,
@@ -1153,6 +1163,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: 'hidden',
     backgroundColor: '#f0f0f0',
+    marginRight: 40,
   },
   standardImage: {
     width: '100%',
