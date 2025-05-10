@@ -355,9 +355,21 @@ const InventoryScreen: React.FC = () => {
           onPress={() => navigation.navigate('ItemDetail', { itemId: item.id })}
         >
           <View style={styles.compactContent}>
-            <Text style={[styles.itemName, { color: theme.colors.text.primary }]}>
-              {item.name}
-            </Text>
+            <View style={styles.compactHeader}>
+              <Text style={[styles.itemName, { color: theme.colors.text.primary }]}>
+                {item.name}
+              </Text>
+              {getPreference('quantity') && (
+                <View style={[
+                  styles.quantityBadge,
+                  { backgroundColor: item.quantity > 0 ? theme.colors.success : theme.colors.error }
+                ]}>
+                  <Text style={[styles.quantityText, { color: theme.colors.button.text }]}>
+                    {item.quantity}
+                  </Text>
+                </View>
+              )}
+            </View>
             <View style={styles.compactDetails}>
               <View style={styles.compactDetailsRow}>
                 <View style={styles.compactLeftContent}>
@@ -381,16 +393,6 @@ const InventoryScreen: React.FC = () => {
                     <MaterialIcons name="image" size={16} color={theme.colors.text.secondary} style={styles.compactImageIcon} />
                   )}
                 </View>
-                {getPreference('quantity') && (
-                  <View style={[
-                    styles.quantityBadge,
-                    { backgroundColor: item.quantity > 0 ? theme.colors.success : theme.colors.error }
-                  ]}>
-                    <Text style={[styles.quantityText, { color: theme.colors.button.text }]}>
-                      {item.quantity}
-                    </Text>
-                  </View>
-                )}
               </View>
             </View>
           </View>
@@ -1118,6 +1120,12 @@ const styles = StyleSheet.create({
   },
   compactContent: {
     padding: 12,
+  },
+  compactHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
   },
   compactDetails: {
     marginTop: 4,
