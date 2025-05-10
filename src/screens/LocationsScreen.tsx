@@ -3,12 +3,12 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
   Image,
   SafeAreaView,
+  ScrollView,
 } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
@@ -19,6 +19,13 @@ import { LocationsStackParamList } from '../types/navigation';
 import axios from 'axios';
 
 type RootStackParamList = LocationsStackParamList;
+
+interface LocationNode {
+  id: string;
+  name: string;
+  type: string;
+  children: LocationNode[];
+}
 
 interface Location {
   id: string;
@@ -37,10 +44,66 @@ interface LocationResponse {
   total: number;
 }
 
+const LocationTreeItem: React.FC<{
+  node: LocationNode;
+  level: number;
+  onPress: (locationId: string, locationName: string) => void;
+  theme: any;
+}> = ({ node, level, onPress, theme }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const hasChildren = node.children && node.children.length > 0;
+
+  return (
+    <View>
+      <TouchableOpacity
+        style={[
+          styles.locationContainer,
+          { backgroundColor: theme.colors.background.secondary },
+          { marginLeft: level * 16 }
+        ]}
+        onPress={() => onPress(node.id, node.name)}
+      >
+        <View style={styles.locationContent}>
+          <View style={styles.locationHeader}>
+            {hasChildren && (
+              <TouchableOpacity
+                onPress={() => setIsExpanded(!isExpanded)}
+                style={styles.expandButton}
+              >
+                <MaterialIcons
+                  name={isExpanded ? "expand-more" : "chevron-right"}
+                  size={24}
+                  color={theme.colors.text.primary}
+                />
+              </TouchableOpacity>
+            )}
+            <Text style={[styles.locationName, { color: theme.colors.text.primary }]}>
+              {node.name}
+            </Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+      {isExpanded && hasChildren && (
+        <View>
+          {node.children.map((child) => (
+            <LocationTreeItem
+              key={child.id}
+              node={child}
+              level={level + 1}
+              onPress={onPress}
+              theme={theme}
+            />
+          ))}
+        </View>
+      )}
+    </View>
+  );
+};
+
 const LocationsScreen: React.FC = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const [locations, setLocations] = useState<Location[]>([]);
+  const [locationTree, setLocationTree] = useState<LocationNode[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,18 +121,9 @@ const LocationsScreen: React.FC = () => {
         return;
       }
 
-      const result = await service.getLocations();
-      
-      console.log('Locations API Response:', result);
-      
-      if (result.success && result.data) {
-        setLocations(result.data.locations);
-        setError(null);
-      } else {
-        const errorMessage = result.error || 'Failed to load locations';
-        console.error('Error loading locations:', errorMessage);
-        setError(errorMessage);
-      }
+      const response = await axiosInstance.get('/api/v1/locations/tree');
+      setLocationTree(response.data);
+      setError(null);
     } catch (error) {
       console.error('Error loading locations:', error);
       if (axios.isAxiosError(error)) {
@@ -92,59 +146,11 @@ const LocationsScreen: React.FC = () => {
     loadLocations();
   };
 
-  const getImageUrl = (locationId: string, imageId: string): string => {
-    const service = ServerService.getInstance();
-    const axiosInstance = service.getAxiosInstance();
-    if (!axiosInstance) {
-      throw new Error('No active server connection');
-    }
-    return `${service.getBaseUrl()}/api/v1/locations/${locationId}/attachments/${imageId}`;
-  };
-
-  const renderItem = ({ item }: { item: Location }): React.ReactElement => {
-    return (
-      <TouchableOpacity
-        style={[styles.locationContainer, { backgroundColor: theme.colors.background.secondary }]}
-        onPress={() => navigation.navigate('LocationItems', { 
-          locationId: item.id,
-          locationName: item.name
-        })}
-      >
-        <View style={styles.locationContent}>
-          <View style={styles.locationHeader}>
-            <Text style={[styles.locationName, { color: theme.colors.text.primary }]}>
-              {item.name}
-            </Text>
-            <View style={[styles.itemCountBadge, { backgroundColor: theme.colors.button.primary }]}>
-              <Text style={[styles.itemCountText, { color: theme.colors.button.text }]}>
-                {item.itemCount}
-              </Text>
-            </View>
-          </View>
-
-          {item.description && (
-            <Text style={[styles.locationDescription, { color: theme.colors.text.secondary }]}>
-              {item.description}
-            </Text>
-          )}
-
-          {item.imageId && (
-            <View style={styles.imageContainer}>
-              <Image
-                source={{ 
-                  uri: getImageUrl(item.id, item.imageId),
-                  headers: {
-                    'Authorization': `Bearer ${ServerService.getInstance().getAxiosInstance()?.defaults.headers.common['Authorization']}`
-                  }
-                }}
-                style={styles.locationImage}
-                resizeMode="cover"
-              />
-            </View>
-          )}
-        </View>
-      </TouchableOpacity>
-    );
+  const handleLocationPress = (locationId: string, locationName: string) => {
+    navigation.navigate('LocationItems', { 
+      locationId,
+      locationName
+    });
   };
 
   useEffect(() => {
@@ -183,10 +189,7 @@ const LocationsScreen: React.FC = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
-      <FlatList
-        data={locations}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+      <ScrollView
         contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl
@@ -195,14 +198,24 @@ const LocationsScreen: React.FC = () => {
             colors={[theme.colors.button.primary]}
           />
         }
-        ListEmptyComponent={
+      >
+        {locationTree.map((node) => (
+          <LocationTreeItem
+            key={node.id}
+            node={node}
+            level={0}
+            onPress={handleLocationPress}
+            theme={theme}
+          />
+        ))}
+        {locationTree.length === 0 && (
           <View style={styles.emptyContainer}>
             <Text style={[styles.emptyText, { color: theme.colors.text.secondary }]}>
               No locations found
             </Text>
           </View>
-        }
-      />
+        )}
+      </ScrollView>
     </View>
   );
 };
@@ -216,51 +229,27 @@ const styles = StyleSheet.create({
   },
   locationContainer: {
     borderRadius: 12,
-    marginBottom: 12,
+    marginBottom: 8,
     overflow: 'hidden',
   },
   locationContent: {
-    padding: 16,
+    padding: 12,
     flex: 1,
     justifyContent: 'center',
   },
   locationHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
     minHeight: 40,
   },
   locationName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
     flex: 1,
   },
-  itemCountBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    minWidth: 40,
-    alignItems: 'center',
-  },
-  itemCountText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  locationDescription: {
-    fontSize: 14,
-    marginBottom: 12,
-  },
-  imageContainer: {
-    marginVertical: 8,
-    borderRadius: 8,
-    overflow: 'hidden',
-    backgroundColor: '#f0f0f0',
-  },
-  locationImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: 8,
+  expandButton: {
+    padding: 4,
+    marginRight: 4,
   },
   errorIcon: {
     alignSelf: 'center',

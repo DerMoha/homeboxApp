@@ -83,6 +83,44 @@ interface InventoryResponse {
   total: number;
 }
 
+interface Label {
+  id: string;
+  name: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface CreateItemRequest {
+  name: string;
+  description?: string;
+  quantity: number;
+  locationId?: string;
+  labels?: string[];
+  purchasePrice?: number;
+  insured?: boolean;
+}
+
+interface CreateItemResponse {
+  success: boolean;
+  data?: {
+    id: string;
+    name: string;
+    description: string;
+    quantity: number;
+    location: Location | null;
+    labels: Label[];
+    archived: boolean;
+    assetId: string;
+    createdAt: string;
+    updatedAt: string;
+    imageId: string | null;
+    insured: boolean;
+    purchasePrice: number;
+  };
+  error?: string;
+}
+
 class ServerService {
   // ...existing fields and methods...
 
@@ -497,6 +535,53 @@ class ServerService {
     } catch (error) {
       console.error('Error getting location items:', error);
       return { success: false, error: 'Failed to get location items' };
+    }
+  }
+
+  async createItem(item: CreateItemRequest): Promise<CreateItemResponse> {
+    try {
+      const axiosInstance = this.getAxiosInstance();
+      if (!axiosInstance) {
+        throw new Error('No active server connection');
+      }
+      const response = await axiosInstance.post('/api/v1/items', item);
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error: any) {
+      console.error('Error creating item:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to create item',
+      };
+    }
+  }
+
+  async uploadItemImage(itemId: string, formData: FormData): Promise<{ success: boolean; error?: string }> {
+    try {
+      const axiosInstance = this.getAxiosInstance();
+      if (!axiosInstance) {
+        throw new Error('No active server connection');
+      }
+      console.log('Uploading image to:', `/api/v1/items/${itemId}/attachments`);
+      const response = await axiosInstance.post(`/api/v1/items/${itemId}/attachments`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      console.log('Server response:', response.data);
+      return { success: true };
+    } catch (error: any) {
+      console.error('Error uploading image:', error);
+      if (error.response) {
+        console.error('Error response data:', error.response.data);
+        console.error('Error response status:', error.response.status);
+      }
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message || 'Failed to upload image',
+      };
     }
   }
 }
