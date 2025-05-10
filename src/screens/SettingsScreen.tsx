@@ -13,13 +13,13 @@ import {
 import { Picker } from '@react-native-picker/picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import ServerService, { ServerConfig } from '../services/serverService';
 import { useTheme } from '../theme/ThemeContext';
 import { SettingsStackParamList } from '../types/navigation';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
-type SettingsScreenNavigationProp = StackNavigationProp<SettingsStackParamList, 'Settings'>;
+type SettingsScreenNavigationProp = NativeStackNavigationProp<SettingsStackParamList, 'Settings'>;
 
 interface ServerWithStatus extends ServerConfig {
   status: 'checking' | 'online' | 'offline';
@@ -39,6 +39,17 @@ const SettingsScreen: React.FC = () => {
   });
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
   const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'auto' | 'oled'>('auto');
+
+  useEffect(() => {
+    navigation.setOptions({
+      title: 'Settings',
+      headerLargeTitle: true,
+      headerStyle: {
+        backgroundColor: theme.colors.background.primary,
+      },
+      headerTintColor: theme.colors.text.primary,
+    });
+  }, [navigation, theme]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -230,11 +241,6 @@ const SettingsScreen: React.FC = () => {
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
-      <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: theme.colors.text.primary }]}>Settings</Text>
-        <Text style={[styles.headerSubtitle, { color: theme.colors.text.primary }]}>Manage your app preferences and configurations</Text>
-      </View>
-
       <View style={[styles.serverSwitcher, { backgroundColor: theme.colors.background.secondary }]}>
         <Text style={[styles.serverSwitcherLabel, { color: theme.colors.text.primary }]}>Current Server:</Text>
         <View style={[styles.pickerContainer, { borderColor: theme.colors.border }]}>
@@ -280,7 +286,7 @@ const SettingsScreen: React.FC = () => {
       </TouchableOpacity>
 
       <TouchableOpacity 
-        style={styles.sectionHeader}
+        style={[styles.sectionHeader, { backgroundColor: theme.colors.background.secondary }]}
         onPress={() => navigation.navigate('InventorySettings')}
       >
         <View style={styles.sectionHeaderContent}>
@@ -290,7 +296,7 @@ const SettingsScreen: React.FC = () => {
       </TouchableOpacity>
 
       <TouchableOpacity 
-        style={styles.sectionHeader}
+        style={[styles.sectionHeader, { backgroundColor: theme.colors.background.secondary }]}
         onPress={() => navigation.navigate('AddItemSettings')}
       >
         <View style={styles.sectionHeaderContent}>
@@ -306,23 +312,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    padding: 20,
-    marginBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
   serverSwitcher: {
     padding: 15,
+    marginTop: 16,
     borderBottomWidth: 1,
   },
   serverSwitcherLabel: {
@@ -350,10 +342,6 @@ const styles = StyleSheet.create({
   sectionHeaderContent: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  chevron: {
-    fontSize: 16,
-    marginRight: 10,
   },
   sectionTitle: {
     fontSize: 18,

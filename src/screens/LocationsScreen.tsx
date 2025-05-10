@@ -182,11 +182,7 @@ const LocationsScreen: React.FC = () => {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
-      <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: theme.colors.text.primary }]}>Locations</Text>
-      </View>
-
+    <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
       <FlatList
         data={locations}
         renderItem={renderItem}
@@ -207,7 +203,7 @@ const LocationsScreen: React.FC = () => {
           </View>
         }
       />
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -215,24 +211,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    padding: 16,
-    marginBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
   listContent: {
     padding: 16,
-    paddingBottom: 8,
   },
   locationContainer: {
     borderRadius: 12,

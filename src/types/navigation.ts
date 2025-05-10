@@ -5,6 +5,7 @@ export type SettingsStackParamList = {
   ServerConfig: { server?: ServerWithStatus };
   Appearance: undefined;
   InventorySettings: undefined;
+  AddItemSettings: undefined;
 };
 
 export type LocationsStackParamList = {

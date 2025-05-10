@@ -22,6 +22,7 @@ import ServerService from '../services/serverService';
 import { useFocusEffect } from '@react-navigation/native';
 
 type RootStackParamList = {
+  InventoryTab: undefined;
   Inventory: undefined;
   InventorySettings: undefined;
   AddItem: undefined;
@@ -98,6 +99,7 @@ const InventoryScreen: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [itemsPerRow, setItemsPerRow] = useState(2);
   const [gridConfigVisible, setGridConfigVisible] = useState(false);
+  const [listZoom, setListZoom] = useState(2); // 0: compact, 1: standard, 2: detailed
 
   const loadDisplayPreferences = async () => {
     try {
@@ -182,6 +184,90 @@ const InventoryScreen: React.FC = () => {
     return unsubscribe;
   }, [navigation]);
 
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <View style={styles.headerControls}>
+          {viewMode === 'grid' ? (
+            <>
+              <TouchableOpacity
+                style={[
+                  styles.headerButton, 
+                  { 
+                    backgroundColor: theme.colors.button.primary,
+                    opacity: itemsPerRow <= 1 ? 0.5 : 1
+                  }
+                ]}
+                onPress={() => setItemsPerRow(Math.max(1, itemsPerRow - 1))}
+                disabled={itemsPerRow <= 1}
+              >
+                <MaterialIcons name="remove" size={20} color={theme.colors.button.text} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.headerButton, 
+                  { 
+                    backgroundColor: theme.colors.button.primary,
+                    opacity: itemsPerRow >= 5 ? 0.5 : 1
+                  }
+                ]}
+                onPress={() => setItemsPerRow(Math.min(5, itemsPerRow + 1))}
+                disabled={itemsPerRow >= 5}
+              >
+                <MaterialIcons name="add" size={20} color={theme.colors.button.text} />
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <TouchableOpacity
+                style={[
+                  styles.headerButton, 
+                  { 
+                    backgroundColor: theme.colors.button.primary,
+                    opacity: listZoom <= 0 ? 0.5 : 1
+                  }
+                ]}
+                onPress={() => setListZoom(Math.max(0, listZoom - 1))}
+                disabled={listZoom <= 0}
+              >
+                <MaterialIcons name="zoom-out" size={20} color={theme.colors.button.text} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.headerButton, 
+                  { 
+                    backgroundColor: theme.colors.button.primary,
+                    opacity: listZoom >= 2 ? 0.5 : 1
+                  }
+                ]}
+                onPress={() => setListZoom(Math.min(2, listZoom + 1))}
+                disabled={listZoom >= 2}
+              >
+                <MaterialIcons name="zoom-in" size={20} color={theme.colors.button.text} />
+              </TouchableOpacity>
+            </>
+          )}
+          <TouchableOpacity
+            style={[styles.headerButton, { backgroundColor: theme.colors.button.primary }]}
+            onPress={toggleViewMode}
+          >
+            <MaterialIcons 
+              name={viewMode === 'list' ? 'grid-view' : 'view-list'} 
+              size={20} 
+              color={theme.colors.button.text} 
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.headerButton, { backgroundColor: theme.colors.button.primary }]}
+            onPress={() => setSortModalVisible(true)}
+          >
+            <MaterialIcons name="sort" size={20} color={theme.colors.button.text} />
+          </TouchableOpacity>
+        </View>
+      ),
+    });
+  }, [navigation, theme, viewMode, itemsPerRow, listZoom]);
+
   const getPreference = (id: string): boolean => {
     const preference = displayPreferences.find(p => p.id === id);
     return preference?.enabled ?? false;
@@ -260,127 +346,224 @@ const InventoryScreen: React.FC = () => {
       (getPreference('updatedAt'));
     const hasImage = getPreference('image') && item.imageId;
 
-    return (
-      <TouchableOpacity
-        key={item.id}
-        style={[
-          styles.itemContainer,
-          { backgroundColor: theme.colors.background.secondary }
-        ]}
-        onPress={() => navigation.navigate('ItemDetail', { itemId: item.id })}
-      >
-        <View style={[
-          styles.itemContent,
-          !hasDescription && !hasFooterContent && !hasImage && { paddingBottom: 8 }
-        ]}>
-          <View style={styles.itemHeader}>
-            <Text style={[styles.itemName, { color: theme.colors.text.primary }]}>
-              {item.name}
-            </Text>
-            {getPreference('quantity') && (
-              <View 
-                key={`quantity-${item.id}`}
-                style={[
-                  styles.quantityBadge,
-                  { backgroundColor: item.quantity > 0 ? theme.colors.success : theme.colors.error }
-                ]}
-              >
-                <Text style={[styles.quantityText, { color: theme.colors.button.text }]}>
-                  {item.quantity}
-                </Text>
-              </View>
-            )}
-          </View>
-
-          {hasImage && (
-            <View style={styles.imageContainer}>
-              <Image
-                source={{ 
-                  uri: getImageUrl(item.id, item.imageId!),
-                  headers: {
-                    'Authorization': `Bearer ${ServerService.getInstance().getAxiosInstance()?.defaults.headers.common['Authorization']}`
-                  }
-                }}
-                style={styles.itemImage}
-                resizeMode="cover"
-              />
-            </View>
-          )}
-          
-          {hasDescription && (
-            <Text style={[styles.itemDescription, { color: theme.colors.text.secondary }]}>
-              {item.description}
-            </Text>
-          )}
-          
-          {hasFooterContent && (
-            <View style={styles.itemFooter}>
+    if (listZoom === 0) {
+      // Compact view
+      return (
+        <TouchableOpacity
+          key={item.id}
+          style={[styles.itemContainer, { backgroundColor: theme.colors.background.secondary }]}
+          onPress={() => navigation.navigate('ItemDetail', { itemId: item.id })}
+        >
+          <View style={styles.compactContent}>
+            <View style={styles.compactLeftContent}>
+              <Text style={[styles.itemName, { color: theme.colors.text.primary }]}>
+                {item.name}
+              </Text>
               {getPreference('location') && item.location && (
-                <View key={`location-${item.id}`} style={styles.footerItem}>
-                  <MaterialIcons name="location-on" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
+                <View style={styles.compactLocation}>
+                  <MaterialIcons name="location-on" size={14} color={theme.colors.text.secondary} style={styles.footerIcon} />
                   <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
                     {item.location.name}
                   </Text>
                 </View>
               )}
-              {getPreference('labels') && item.labels.length > 0 && (
-                <View key={`labels-${item.id}`} style={styles.footerItem}>
-                  <MaterialIcons name="label" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
-                  <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
-                    {item.labels.map(label => label.name).join(', ')}
-                  </Text>
-                </View>
+            </View>
+            <View style={styles.compactRightContent}>
+              {hasImage && (
+                <MaterialIcons name="image" size={16} color={theme.colors.text.secondary} style={styles.compactImageIcon} />
               )}
-              {getPreference('purchasePrice') && item.purchasePrice > 0 && (
-                <View key={`price-${item.id}`} style={styles.footerItem}>
-                  <MaterialIcons name="attach-money" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
-                  <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
-                    ${item.purchasePrice.toFixed(2)}
-                  </Text>
-                </View>
-              )}
-              {getPreference('insured') && (
-                <View key={`insured-${item.id}`} style={styles.footerItem}>
-                  <MaterialIcons 
-                    name={item.insured ? "verified" : "error-outline"} 
-                    size={16} 
-                    color={theme.colors.text.secondary} 
-                    style={styles.footerIcon} 
-                  />
-                  <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
-                    {item.insured ? 'Insured' : 'Uninsured'}
-                  </Text>
-                </View>
-              )}
-              {getPreference('archived') && item.archived && (
-                <View key={`archived-${item.id}`} style={styles.footerItem}>
-                  <MaterialIcons name="archive" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
-                  <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
-                    Archived
-                  </Text>
-                </View>
-              )}
-              {getPreference('createdAt') && (
-                <View key={`created-${item.id}`} style={styles.footerItem}>
-                  <MaterialIcons name="schedule" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
-                  <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
-                    Created: {formatDate(item.createdAt)}
-                  </Text>
-                </View>
-              )}
-              {getPreference('updatedAt') && (
-                <View key={`updated-${item.id}`} style={styles.footerItem}>
-                  <MaterialIcons name="update" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
-                  <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
-                    Updated: {formatDate(item.updatedAt)}
+              {getPreference('quantity') && (
+                <View style={[
+                  styles.quantityBadge,
+                  { backgroundColor: item.quantity > 0 ? theme.colors.success : theme.colors.error }
+                ]}>
+                  <Text style={[styles.quantityText, { color: theme.colors.button.text }]}>
+                    {item.quantity}
                   </Text>
                 </View>
               )}
             </View>
-          )}
-        </View>
-      </TouchableOpacity>
-    );
+          </View>
+        </TouchableOpacity>
+      );
+    } else if (listZoom === 1) {
+      // Standard view with right-aligned image
+      return (
+        <TouchableOpacity
+          key={item.id}
+          style={[styles.itemContainer, { backgroundColor: theme.colors.background.secondary }]}
+          onPress={() => navigation.navigate('ItemDetail', { itemId: item.id })}
+        >
+          <View style={styles.standardContent}>
+            {hasImage && (
+              <View style={styles.standardImageContainer}>
+                <Image
+                  source={{ 
+                    uri: getImageUrl(item.id, item.imageId!),
+                    headers: {
+                      'Authorization': `Bearer ${ServerService.getInstance().getAxiosInstance()?.defaults.headers.common['Authorization']}`
+                    }
+                  }}
+                  style={styles.standardImage}
+                  resizeMode="cover"
+                />
+              </View>
+            )}
+            <View style={styles.standardTextContent}>
+              <View style={styles.itemHeader}>
+                <Text style={[styles.itemName, { color: theme.colors.text.primary }]}>
+                  {item.name}
+                </Text>
+              </View>
+              <View style={styles.standardAttributes}>
+                {getPreference('location') && item.location && (
+                  <View style={styles.footerItem}>
+                    <MaterialIcons name="location-on" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
+                    <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
+                      {item.location.name}
+                    </Text>
+                  </View>
+                )}
+                {getPreference('labels') && item.labels.length > 0 && (
+                  <View style={styles.footerItem}>
+                    <MaterialIcons name="label" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
+                    <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
+                      {item.labels.map(label => label.name).join(', ')}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
+            <View style={styles.standardRightContent}>
+              {getPreference('quantity') && (
+                <View style={[
+                  styles.quantityBadge,
+                  { backgroundColor: item.quantity > 0 ? theme.colors.success : theme.colors.error }
+                ]}>
+                  <Text style={[styles.quantityText, { color: theme.colors.button.text }]}>
+                    {item.quantity}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+        </TouchableOpacity>
+      );
+    } else {
+      // Detailed view (original layout)
+      return (
+        <TouchableOpacity
+          key={item.id}
+          style={[styles.itemContainer, { backgroundColor: theme.colors.background.secondary }]}
+          onPress={() => navigation.navigate('ItemDetail', { itemId: item.id })}
+        >
+          <View style={styles.itemContent}>
+            <View style={styles.itemHeader}>
+              <Text style={[styles.itemName, { color: theme.colors.text.primary }]}>
+                {item.name}
+              </Text>
+              {getPreference('quantity') && (
+                <View style={[
+                  styles.quantityBadge,
+                  { backgroundColor: item.quantity > 0 ? theme.colors.success : theme.colors.error }
+                ]}>
+                  <Text style={[styles.quantityText, { color: theme.colors.button.text }]}>
+                    {item.quantity}
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {hasImage && (
+              <View style={styles.imageContainer}>
+                <Image
+                  source={{ 
+                    uri: getImageUrl(item.id, item.imageId!),
+                    headers: {
+                      'Authorization': `Bearer ${ServerService.getInstance().getAxiosInstance()?.defaults.headers.common['Authorization']}`
+                    }
+                  }}
+                  style={styles.itemImage}
+                  resizeMode="cover"
+                />
+              </View>
+            )}
+            
+            {hasDescription && (
+              <Text style={[styles.itemDescription, { color: theme.colors.text.secondary }]}>
+                {item.description}
+              </Text>
+            )}
+            
+            {hasFooterContent && (
+              <View style={styles.itemFooter}>
+                {getPreference('location') && item.location && (
+                  <View key={`location-${item.id}`} style={styles.footerItem}>
+                    <MaterialIcons name="location-on" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
+                    <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
+                      {item.location.name}
+                    </Text>
+                  </View>
+                )}
+                {getPreference('labels') && item.labels.length > 0 && (
+                  <View key={`labels-${item.id}`} style={styles.footerItem}>
+                    <MaterialIcons name="label" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
+                    <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
+                      {item.labels.map(label => label.name).join(', ')}
+                    </Text>
+                  </View>
+                )}
+                {getPreference('purchasePrice') && item.purchasePrice > 0 && (
+                  <View key={`price-${item.id}`} style={styles.footerItem}>
+                    <MaterialIcons name="attach-money" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
+                    <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
+                      ${item.purchasePrice.toFixed(2)}
+                    </Text>
+                  </View>
+                )}
+                {getPreference('insured') && (
+                  <View key={`insured-${item.id}`} style={styles.footerItem}>
+                    <MaterialIcons 
+                      name={item.insured ? "verified" : "error-outline"} 
+                      size={16} 
+                      color={theme.colors.text.secondary} 
+                      style={styles.footerIcon} 
+                    />
+                    <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
+                      {item.insured ? 'Insured' : 'Uninsured'}
+                    </Text>
+                  </View>
+                )}
+                {getPreference('archived') && item.archived && (
+                  <View key={`archived-${item.id}`} style={styles.footerItem}>
+                    <MaterialIcons name="archive" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
+                    <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
+                      Archived
+                    </Text>
+                  </View>
+                )}
+                {getPreference('createdAt') && (
+                  <View key={`created-${item.id}`} style={styles.footerItem}>
+                    <MaterialIcons name="schedule" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
+                    <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
+                      Created: {formatDate(item.createdAt)}
+                    </Text>
+                  </View>
+                )}
+                {getPreference('updatedAt') && (
+                  <View key={`updated-${item.id}`} style={styles.footerItem}>
+                    <MaterialIcons name="update" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
+                    <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
+                      Updated: {formatDate(item.updatedAt)}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
+        </TouchableOpacity>
+      );
+    }
   };
 
   const renderGridItem = ({ item }: { item: InventoryItem }): React.ReactElement => {
@@ -442,6 +625,10 @@ const InventoryScreen: React.FC = () => {
         </View>
       </TouchableOpacity>
     );
+  };
+
+  const toggleViewMode = () => {
+    setViewMode(prevMode => prevMode === 'list' ? 'grid' : 'list');
   };
 
   const renderItem = ({ item, index }: { item: InventoryItem; index: number }): React.ReactElement => {
@@ -628,46 +815,12 @@ const InventoryScreen: React.FC = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
-      <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: theme.colors.text.primary }]}>Inventory</Text>
-        
-        <View style={styles.viewToggleContainer}>
-          <TouchableOpacity
-            style={[
-              styles.viewToggleButton,
-              viewMode === 'list' && { backgroundColor: theme.colors.button.secondary }
-            ]}
-            onPress={() => setViewMode('list')}
-          >
-            <MaterialIcons 
-              name="view-list" 
-              size={24} 
-              color={viewMode === 'list' ? theme.colors.button.text : theme.colors.text.secondary} 
-            />
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[
-              styles.viewToggleButton,
-              viewMode === 'grid' && { backgroundColor: theme.colors.button.secondary }
-            ]}
-            onPress={() => setViewMode('grid')}
-          >
-            <MaterialIcons 
-              name="grid-view" 
-              size={24} 
-              color={viewMode === 'grid' ? theme.colors.button.text : theme.colors.text.secondary} 
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
-
       <FlatList
+        key={`${viewMode}-${itemsPerRow}`}
         data={inventory}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
-        key={viewMode + itemsPerRow.toString()}
         numColumns={viewMode === 'grid' ? itemsPerRow : 1}
         refreshControl={
           <RefreshControl
@@ -679,30 +832,11 @@ const InventoryScreen: React.FC = () => {
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={[styles.emptyText, { color: theme.colors.text.secondary }]}>
-              No inventory items found
+              No items found
             </Text>
           </View>
         }
       />
-
-      <View style={styles.actionButtonsContainer}>
-        {viewMode === 'grid' && (
-          <TouchableOpacity
-            style={[styles.configButton, { backgroundColor: theme.colors.button.primary }]}
-            onPress={() => setGridConfigVisible(true)}
-          >
-            <MaterialIcons name="tune" size={24} color={theme.colors.button.text} />
-          </TouchableOpacity>
-        )}
-
-        <TouchableOpacity
-          style={[styles.sortButton, { backgroundColor: theme.colors.button.primary }]}
-          onPress={() => setSortModalVisible(true)}
-        >
-          <MaterialIcons name="sort" size={24} color={theme.colors.button.text} />
-        </TouchableOpacity>
-      </View>
-
       <SortModal />
       <GridConfigModal />
     </View>
@@ -713,35 +847,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    padding: 16,
-    marginBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-  },
-  viewToggleContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#F0F0F0',
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  viewToggleButton: {
-    padding: 8,
-    borderRadius: 8,
-  },
   listContent: {
-    padding: 1,
+    padding: 5,
   },
   itemContainer: {
     borderRadius: 12,
-    marginHorizontal: 12,
+    marginHorizontal: 5,
     marginVertical: 6,
     overflow: 'hidden',
     flex: 1,
@@ -887,19 +998,19 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   gridItemContainer: {
-    borderRadius: 0, // Changed from 8 to remove rounded corners
+    borderRadius: 3,
     overflow: 'hidden',
     margin: 0,
     position: 'relative',
   },
   gridItemImageContainer: {
-    borderRadius: 0, // Changed from 8
+    borderRadius: 3,
     overflow: 'hidden',
   },
   gridItemImage: {
     width: '100%',
     height: '100%',
-    borderRadius: 0, // Changed from 8
+    borderRadius: 3,
   },
   noImagePlaceholder: {
     flex: 1,
@@ -982,6 +1093,70 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     minWidth: 24,
     textAlign: 'center',
+  },
+  headerControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  headerButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  compactContent: {
+    padding: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  compactLeftContent: {
+    flex: 1,
+    marginRight: 8,
+  },
+  compactLocation: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  compactRightContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  compactImageIcon: {
+    marginRight: 8,
+  },
+  standardContent: {
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  standardTextContent: {
+    flex: 1,
+    marginHorizontal: 12,
+  },
+  standardRightContent: {
+    alignItems: 'flex-end',
+  },
+  standardAttributes: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 4,
+  },
+  standardImageContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: '#f0f0f0',
+  },
+  standardImage: {
+    width: '100%',
+    height: '100%',
   },
 });
 

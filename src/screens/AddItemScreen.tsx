@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, Alert, ScrollView, SafeAreaView, Switch, TouchableOpacity } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import ServerService from '../services/serverService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -73,50 +73,67 @@ const AddItemScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background.primary }]}> 
-      <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
-        <Text style={[styles.header, { color: theme.colors.text.primary }]}>Add New Item</Text>
-        {fields.filter(field => field.enabled).map(field => (
-          <View style={styles.fieldContainer} key={field.id}>
-            <Text style={[styles.label, { color: theme.colors.text.primary }]}>{field.label}{field.required ? ' *' : ''}</Text>
-            {field.type === 'boolean' ? (
-              <Button
-                title={values[field.id] ? 'Yes' : 'No'}
-                onPress={() => handleChange(field.id, !values[field.id])}
-                color={theme.colors.button.primary}
-              />
-            ) : (
+    <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
+      <ScrollView contentContainerStyle={styles.contentContainer}>
+        {fields.map((field) => (
+          <View key={field.id} style={styles.fieldContainer}>
+            <Text style={[styles.label, { color: theme.colors.text.primary }]}>
+              {field.label}
+            </Text>
+            {field.type === 'text' && (
               <TextInput
-                style={[styles.input, { color: theme.colors.text.primary, borderColor: theme.colors.border }]}
-                value={values[field.id] !== undefined ? String(values[field.id]) : ''}
-                onChangeText={text => handleChange(field.id, text)}
-                keyboardType={field.type === 'number' ? 'numeric' : 'default'}
+                style={[styles.input, { 
+                  color: theme.colors.text.primary,
+                  borderColor: theme.colors.border,
+                }]}
+                value={values[field.id] || ''}
+                onChangeText={(text) => handleChange(field.id, text)}
                 placeholder={field.label}
                 placeholderTextColor={theme.colors.text.secondary}
               />
             )}
+            {field.type === 'number' && (
+              <TextInput
+                style={[styles.input, { 
+                  color: theme.colors.text.primary,
+                  borderColor: theme.colors.border,
+                }]}
+                value={values[field.id] || ''}
+                onChangeText={(text) => handleChange(field.id, text)}
+                keyboardType="numeric"
+                placeholder={field.label}
+                placeholderTextColor={theme.colors.text.secondary}
+              />
+            )}
+            {field.type === 'boolean' && (
+              <Switch
+                value={values[field.id] || false}
+                onValueChange={(value) => handleChange(field.id, value)}
+                trackColor={{ false: theme.colors.border, true: theme.colors.button.primary }}
+                thumbColor={theme.colors.button.text}
+              />
+            )}
           </View>
         ))}
-        <Button
-          title={loading ? 'Adding...' : 'Add Item'}
+        <TouchableOpacity
+          style={[styles.submitButton, { backgroundColor: theme.colors.button.primary }]}
           onPress={handleSubmit}
-          color={theme.colors.button.primary}
-          disabled={loading}
-        />
+        >
+          <Text style={[styles.submitButtonText, { color: theme.colors.button.text }]}>
+            Add Item
+          </Text>
+        </TouchableOpacity>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
   },
-  header: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 20,
+  contentContainer: {
+    padding: 16,
   },
   fieldContainer: {
     marginBottom: 16,
@@ -131,6 +148,16 @@ const styles = StyleSheet.create({
     padding: 10,
     fontSize: 16,
     backgroundColor: 'transparent',
+  },
+  submitButton: {
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 24,
+  },
+  submitButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

@@ -22,6 +22,7 @@ const Tab = createBottomTabNavigator();
 const SettingsStack = createNativeStackNavigator();
 const LocationsStack = createNativeStackNavigator();
 const InventoryStack = createNativeStackNavigator();
+const AddItemStack = createNativeStackNavigator();
 
 // Placeholder screens
 const HomeScreen = () => {
@@ -36,132 +37,180 @@ const HomeScreen = () => {
 const SettingsStackScreen = () => {
   const { theme } = useTheme();
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
-      <SettingsStack.Navigator
-        screenOptions={{
-          headerStyle: {
-            backgroundColor: theme.colors.background.primary,
-          },
-          headerTintColor: theme.colors.text.primary,
-          headerTitleStyle: {
-            fontWeight: 'bold',
-          },
-          headerShadowVisible: false,
-          headerBackTitle: '',
-          contentStyle: {
-            backgroundColor: theme.colors.background.primary,
-          },
+    <SettingsStack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: theme.colors.background.primary,
+        },
+        headerTintColor: theme.colors.text.primary,
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+        headerShadowVisible: false,
+        headerBackTitle: '',
+        contentStyle: {
+          backgroundColor: theme.colors.background.primary,
+        },
+      }}
+    >
+      <SettingsStack.Screen 
+        name="Settings" 
+        component={SettingsScreen}
+        options={{ 
+          headerShown: true,
+          headerLargeTitle: true,
         }}
-      >
-        <SettingsStack.Screen 
-          name="Settings" 
-          component={SettingsScreen}
-          options={{ headerShown: false }}
-        />
-        <SettingsStack.Screen 
-          name="ServerConfig" 
-          component={ServerConfigScreen}
-          options={{ 
-            headerShown: false,
-          }}
-        />
-        <SettingsStack.Screen 
-          name="Appearance" 
-          component={AppearanceScreen}
-          options={{ 
-            headerShown: false,
-          }}
-        />
-        <SettingsStack.Screen 
-          name="InventorySettings" 
-          component={InventorySettingsScreen}
-          options={{ 
-            headerShown: false,
-          }}
-        />
-        <SettingsStack.Screen 
-          name="AddItemSettings" 
-          component={require('./src/screens/AddItemSettingsScreen').default}
-          options={{ 
-            headerShown: false,
-          }}
-        />
-      </SettingsStack.Navigator>
-    </SafeAreaView>
+      />
+      <SettingsStack.Screen 
+        name="ServerConfig" 
+        component={ServerConfigScreen}
+        options={{ 
+          headerShown: true,
+          headerLargeTitle: true,
+          title: 'Server Configuration'
+        }}
+      />
+      <SettingsStack.Screen 
+        name="Appearance" 
+        component={AppearanceScreen}
+        options={{ 
+          headerShown: true,
+          headerLargeTitle: true,
+          title: 'Appearance'
+        }}
+      />
+      <SettingsStack.Screen 
+        name="InventorySettings" 
+        component={InventorySettingsScreen}
+        options={{ 
+          headerShown: true,
+          headerLargeTitle: true,
+          title: 'Inventory Display'
+        }}
+      />
+      <SettingsStack.Screen 
+        name="AddItemSettings" 
+        component={require('./src/screens/AddItemSettingsScreen').default}
+        options={{ 
+          headerShown: true,
+          headerLargeTitle: true,
+          title: 'Add Fields'
+        }}
+      />
+    </SettingsStack.Navigator>
   );
 };
 
 const LocationsStackScreen = () => {
   const { theme } = useTheme();
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
-      <LocationsStack.Navigator
-        screenOptions={{
-          headerStyle: {
-            backgroundColor: theme.colors.background.primary,
-          },
-          headerTintColor: theme.colors.text.primary,
-          headerTitleStyle: {
-            fontWeight: 'bold',
-          },
-          headerShadowVisible: false,
-          headerBackTitle: '',
-          contentStyle: {
-            backgroundColor: theme.colors.background.primary,
-          },
+    <LocationsStack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: theme.colors.background.primary,
+        },
+        headerTintColor: theme.colors.text.primary,
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+        headerShadowVisible: false,
+        headerBackTitle: '',
+        contentStyle: {
+          backgroundColor: theme.colors.background.primary,
+        },
+      }}
+    >
+      <LocationsStack.Screen 
+        name="LocationsList" 
+        component={LocationsScreen}
+        options={{ 
+          headerShown: true,
+          headerLargeTitle: true,
+          title: 'Locations'
         }}
-      >
-        <LocationsStack.Screen 
-          name="LocationsList" 
-          component={LocationsScreen}
-          options={{ 
-            headerShown: false,
-          }}
-        />
-        <LocationsStack.Screen 
-          name="LocationItems" 
-          component={LocationItemsScreen}
-          options={{ 
-            headerShown: true,
-          }}
-        />
-      </LocationsStack.Navigator>
-    </SafeAreaView>
+      />
+      <LocationsStack.Screen 
+        name="LocationItems" 
+        component={LocationItemsScreen}
+        options={{ 
+          headerShown: true,
+          headerLargeTitle: true,
+        }}
+      />
+    </LocationsStack.Navigator>
   );
 };
 
 const InventoryStackScreen = () => {
   const { theme } = useTheme();
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background.primary }}>
-      <InventoryStack.Navigator
-        screenOptions={{
-          headerStyle: {
-            backgroundColor: theme.colors.background.primary,
-          },
-          headerTintColor: theme.colors.text.primary,
-          headerTitleStyle: {
-            fontWeight: 'bold',
-          },
-          headerShadowVisible: false,
-          headerBackTitle: '',
-          contentStyle: {
-            backgroundColor: theme.colors.background.primary,
-          },
+    <InventoryStack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: theme.colors.background.primary,
+        },
+        headerTintColor: theme.colors.text.primary,
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+        headerShadowVisible: false,
+        headerBackTitle: '',
+        contentStyle: {
+          backgroundColor: theme.colors.background.primary,
+        },
+      }}
+    >
+      <InventoryStack.Screen 
+        name="Inventory" 
+        component={InventoryScreen}
+        options={{ 
+          headerShown: true,
+          headerLargeTitle: true,
+          title: 'Inventory'
         }}
-      >
-        <InventoryStack.Screen 
-          name="Inventory" 
-          component={InventoryScreen}
-          options={{ headerShown: false }}
-        />
-        <InventoryStack.Screen 
-          name="ItemDetail" 
-          component={ItemDetailScreen}
-          options={{ title: 'Item Details' }}
-        />
-      </InventoryStack.Navigator>
-    </SafeAreaView>
+      />
+      <InventoryStack.Screen 
+        name="ItemDetail" 
+        component={ItemDetailScreen}
+        options={{ 
+          headerShown: true,
+          headerLargeTitle: true,
+          title: 'Item Details'
+        }}
+      />
+    </InventoryStack.Navigator>
+  );
+};
+
+const AddItemStackScreen = () => {
+  const { theme } = useTheme();
+  return (
+    <AddItemStack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: theme.colors.background.primary,
+        },
+        headerTintColor: theme.colors.text.primary,
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+        headerShadowVisible: false,
+        headerBackTitle: '',
+        contentStyle: {
+          backgroundColor: theme.colors.background.primary,
+        },
+      }}
+    >
+      <AddItemStack.Screen 
+        name="AddItem" 
+        component={AddItemScreen}
+        options={{ 
+          headerShown: true,
+          headerLargeTitle: true,
+          title: 'Add Item'
+        }}
+      />
+    </AddItemStack.Navigator>
   );
 };
 
@@ -234,20 +283,21 @@ const AppContent = () => {
           }}
         />
         <Tab.Screen 
-          name="Inventory" 
+          name="InventoryTab" 
           component={InventoryStackScreen}
           options={{
             headerShown: false,
             tabBarIcon: ({ color, size }) => (
               <MaterialIcons name="inventory" size={size} color={color} />
             ),
+            tabBarLabel: 'Inventory'
           }}
         />
         <Tab.Screen 
           name="AddItem" 
-          component={AddItemScreen}
+          component={AddItemStackScreen}
           options={{
-            title: 'Add',
+            headerShown: false,
             tabBarIcon: ({ color, size }) => (
               <MaterialIcons name="add-box" size={size} color={color} />
             ),
