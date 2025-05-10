@@ -165,7 +165,7 @@ const AddItemScreen: React.FC = () => {
         console.log('File object:', file);
         
         formData.append('file', file as any);
-        formData.append('type', 'image');
+        formData.append('type', 'photo');
         formData.append('primary', 'true');
         formData.append('name', 'Item Image');
 
@@ -177,8 +177,11 @@ const AddItemScreen: React.FC = () => {
         if (!imageResponse.success) {
           console.warn('Failed to upload image:', imageResponse.error);
           Alert.alert('Warning', 'Item was created but image upload failed');
+        } else if (imageResponse.data) {
+          console.log('Image uploaded successfully, updated item:', imageResponse.data);
+          // The item data in imageResponse.data should now include the imageId
         } else {
-          console.log('Image uploaded successfully');
+          console.log('Image uploaded successfully but no updated item data received');
         }
       }
 

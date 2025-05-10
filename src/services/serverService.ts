@@ -558,7 +558,7 @@ class ServerService {
     }
   }
 
-  async uploadItemImage(itemId: string, formData: FormData): Promise<{ success: boolean; error?: string }> {
+  async uploadItemImage(itemId: string, formData: FormData): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
       const axiosInstance = this.getAxiosInstance();
       if (!axiosInstance) {
@@ -571,7 +571,7 @@ class ServerService {
         },
       });
       console.log('Server response:', response.data);
-      return { success: true };
+      return { success: true, data: response.data };
     } catch (error: any) {
       console.error('Error uploading image:', error);
       if (error.response) {
