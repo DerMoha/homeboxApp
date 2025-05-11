@@ -224,19 +224,6 @@ const InventoryScreen: React.FC = () => {
                   styles.headerButton, 
                   { 
                     backgroundColor: theme.colors.button.primary,
-                    opacity: listZoom <= 0 ? 0.5 : 1
-                  }
-                ]}
-                onPress={() => setListZoom(Math.max(0, listZoom - 1))}
-                disabled={listZoom <= 0}
-              >
-                <MaterialIcons name="zoom-out" size={20} color={theme.colors.button.text} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.headerButton, 
-                  { 
-                    backgroundColor: theme.colors.button.primary,
                     opacity: listZoom >= 2 ? 0.5 : 1
                   }
                 ]}
@@ -244,6 +231,19 @@ const InventoryScreen: React.FC = () => {
                 disabled={listZoom >= 2}
               >
                 <MaterialIcons name="zoom-in" size={20} color={theme.colors.button.text} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.headerButton, 
+                  { 
+                    backgroundColor: theme.colors.button.primary,
+                    opacity: listZoom <= 0 ? 0.5 : 1
+                  }
+                ]}
+                onPress={() => setListZoom(Math.max(0, listZoom - 1))}
+                disabled={listZoom <= 0}
+              >
+                <MaterialIcons name="zoom-out" size={20} color={theme.colors.button.text} />
               </TouchableOpacity>
             </>
           )}
@@ -377,7 +377,7 @@ const InventoryScreen: React.FC = () => {
                 <View style={styles.compactLeftContent}>
                   {getPreference('location') && item.location && (
                     <View style={styles.compactLocation}>
-                      <MaterialIcons name="location-on" size={14} color={theme.colors.text.secondary} style={styles.footerIcon} />
+                      <MaterialIcons name="location-on" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
                       <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
                         {item.location.name}
                       </Text>
@@ -385,7 +385,7 @@ const InventoryScreen: React.FC = () => {
                   )}
                   {getPreference('labels') && item.labels.length > 0 && (
                     <View style={styles.compactLabels}>
-                      <MaterialIcons name="label" size={14} color={theme.colors.text.secondary} style={styles.footerIcon} />
+                      <MaterialIcons name="label" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
                       <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
                         {item.labels.map(label => label.name).join(', ')}
                       </Text>
@@ -1132,16 +1132,16 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   compactContent: {
-    padding: 12,
+    padding: 8,
   },
   compactHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   compactDetails: {
-    marginTop: 4,
+    marginTop: 2,
   },
   compactDetailsRow: {
     flexDirection: 'row',
@@ -1151,7 +1151,7 @@ const styles = StyleSheet.create({
   compactLeftContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
   compactLocation: {
     flexDirection: 'row',
@@ -1201,7 +1201,7 @@ const styles = StyleSheet.create({
   },
   compactTextContent: {
     flex: 1,
-    marginRight: 40,
+    marginRight: 32,
   },
   detailedTextContent: {
     flex: 1,
