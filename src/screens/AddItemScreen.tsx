@@ -693,26 +693,6 @@ const AddItemScreen: React.FC = () => {
                     <MaterialIcons name="delete" size={24} color="#fff" />
                   </TouchableOpacity>
                 </View>
-                <View style={styles.imageInfoContainer}>
-                  {imageSize && (
-                    <Text style={[styles.imageInfoText, { color: theme.colors.text.secondary }]}>
-                      Dimensions: {imageSize.width} x {imageSize.height} px
-                    </Text>
-                  )}
-                  {originalSize !== null && (
-                    <Text style={[styles.imageInfoText, { color: theme.colors.text.secondary }]}>
-                      Original size: {formatFileSize(originalSize)}
-                    </Text>
-                  )}
-                  {compressedSize !== null && (
-                    <Text style={[styles.imageInfoText, { color: theme.colors.text.secondary }]}>
-                      Compressed size: {formatFileSize(compressedSize)}
-                      {originalSize !== null && (
-                        <Text> ({Math.round((1 - compressedSize / originalSize) * 100)}% smaller)</Text>
-                      )}
-                    </Text>
-                  )}
-                </View>
               </View>
             )}
           </View>
@@ -744,6 +724,26 @@ const AddItemScreen: React.FC = () => {
                     resizeMode="contain"
                   />
                 )}
+                <View style={styles.imageInfoContainer}>
+                  {imageSize && (
+                    <Text style={[styles.imageInfoText, { color: theme.colors.text.secondary }]}>
+                      Dimensions: {imageSize.width} x {imageSize.height} px
+                    </Text>
+                  )}
+                  {originalSize !== null && (
+                    <Text style={[styles.imageInfoText, { color: theme.colors.text.secondary }]}>
+                      Original size: {formatFileSize(originalSize)}
+                    </Text>
+                  )}
+                  {compressedSize !== null && (
+                    <Text style={[styles.imageInfoText, { color: theme.colors.text.secondary }]}>
+                      Compressed size: {formatFileSize(compressedSize)}
+                      {originalSize !== null && (
+                        <Text> ({Math.round((1 - compressedSize / originalSize) * 100)}% smaller)</Text>
+                      )}
+                    </Text>
+                  )}
+                </View>
                 <View style={styles.imageControls}>
                   <TouchableOpacity
                     style={[styles.imageControlButton, { backgroundColor: theme.colors.button.primary }]}
@@ -941,12 +941,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   imageInfoContainer: {
-    marginTop: 8,
-    paddingHorizontal: 4,
+    width: '100%',
+    paddingHorizontal: 16,
+    marginBottom: 16,
   },
   imageInfoText: {
     fontSize: 14,
     marginBottom: 4,
+    textAlign: 'center',
   },
   modalOverlay: {
     flex: 1,
@@ -965,7 +967,7 @@ const styles = StyleSheet.create({
   modalImage: {
     width: 300,
     height: 300,
-    marginBottom: 16,
+    marginBottom: 8,
     borderRadius: 8,
     backgroundColor: '#eee',
   },
