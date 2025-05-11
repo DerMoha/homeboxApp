@@ -572,21 +572,50 @@ const AddItemScreen: React.FC = () => {
             </View>
             {selectedImage && (
               <View style={styles.selectedImageContainer}>
-                <TouchableOpacity onPress={() => setIsPreviewVisible(true)} activeOpacity={0.8}>
-                  <Image
-                    source={{ uri: selectedImage }}
-                    style={[
-                      styles.selectedImage,
-                      {
-                        transform: [
-                          { rotate: `${imageRotation}deg` },
-                          { scaleX: imageFlip ? -1 : 1 }
+                <View style={styles.imagePreviewContainer}>
+                  <TouchableOpacity onPress={() => setIsPreviewVisible(true)} activeOpacity={0.8}>
+                    <Image
+                      source={{ uri: selectedImage }}
+                      style={[
+                        styles.selectedImage,
+                        {
+                          transform: [
+                            { rotate: `${imageRotation}deg` },
+                            { scaleX: imageFlip ? -1 : 1 }
+                          ]
+                        }
+                      ]}
+                      resizeMode="cover"
+                    />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.deleteImageButton, { backgroundColor: theme.colors.error }]}
+                    onPress={() => {
+                      Alert.alert(
+                        'Remove Image',
+                        'Are you sure you want to remove this image?',
+                        [
+                          {
+                            text: 'Cancel',
+                            style: 'cancel'
+                          },
+                          {
+                            text: 'Remove',
+                            style: 'destructive',
+                            onPress: () => {
+                              setSelectedImage(null);
+                              setImageRotation(0);
+                              setImageFlip(false);
+                              setImageSize(null);
+                            }
+                          }
                         ]
-                      }
-                    ]}
-                    resizeMode="cover"
-                  />
-                </TouchableOpacity>
+                      );
+                    }}
+                  >
+                    <MaterialIcons name="delete" size={24} color="#fff" />
+                  </TouchableOpacity>
+                </View>
                 {imageSize && (
                   <Text style={[styles.imageSizeText, { color: theme.colors.text.secondary }]}>
                     Size: {imageSize.width} x {imageSize.height} px
@@ -635,6 +664,34 @@ const AddItemScreen: React.FC = () => {
                     onPress={handleFlipImage}
                   >
                     <MaterialIcons name="flip" size={28} color={theme.colors.button.text} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.imageControlButton, { backgroundColor: theme.colors.error }]}
+                    onPress={() => {
+                      Alert.alert(
+                        'Remove Image',
+                        'Are you sure you want to remove this image?',
+                        [
+                          {
+                            text: 'Cancel',
+                            style: 'cancel'
+                          },
+                          {
+                            text: 'Remove',
+                            style: 'destructive',
+                            onPress: () => {
+                              setSelectedImage(null);
+                              setImageRotation(0);
+                              setImageFlip(false);
+                              setImageSize(null);
+                              setIsPreviewVisible(false);
+                            }
+                          }
+                        ]
+                      );
+                    }}
+                  >
+                    <MaterialIcons name="delete" size={28} color="#fff" />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -821,6 +878,24 @@ const styles = StyleSheet.create({
     right: 8,
     zIndex: 2,
     padding: 4,
+  },
+  imagePreviewContainer: {
+    position: 'relative',
+  },
+  deleteImageButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
 });
 
