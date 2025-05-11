@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Switch, StyleSheet, Alert } from 'react-native';
+import Slider from '@react-native-community/slider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../theme/ThemeContext';
 
 const STORAGE_KEY = '@add_item_fields';
+const IMAGE_QUALITY_KEY = '@image_quality';
+const DEFAULT_IMAGE_QUALITY = 0.8; // 80% quality by default
+
 const DEFAULT_FIELDS = [
   { id: 'description', label: 'Description', enabled: true },
   { id: 'purchasePrice', label: 'Purchase Price', enabled: false },
@@ -14,6 +18,7 @@ const DEFAULT_FIELDS = [
 const AddItemSettingsScreen: React.FC = () => {
   const { theme } = useTheme();
   const [fields, setFields] = useState(DEFAULT_FIELDS);
+  const [imageQuality, setImageQuality] = useState(DEFAULT_IMAGE_QUALITY);
 
   useEffect(() => {
     loadSettings();
@@ -22,6 +27,8 @@ const AddItemSettingsScreen: React.FC = () => {
   const loadSettings = async () => {
     try {
       const savedFields = await AsyncStorage.getItem(STORAGE_KEY);
+      const savedQuality = await AsyncStorage.getItem(IMAGE_QUALITY_KEY);
+      
       if (savedFields) {
         const parsedFields = JSON.parse(savedFields);
         // Ensure all default fields are present
@@ -31,10 +38,15 @@ const AddItemSettingsScreen: React.FC = () => {
         });
         setFields(updatedFields);
       }
+
+      if (savedQuality) {
+        setImageQuality(parseFloat(savedQuality));
+      }
     } catch (error) {
       console.error('Error loading settings:', error);
-      // If there's an error, use default fields
+      // If there's an error, use default values
       setFields(DEFAULT_FIELDS);
+      setImageQuality(DEFAULT_IMAGE_QUALITY);
     }
   };
 
@@ -42,10 +54,15 @@ const AddItemSettingsScreen: React.FC = () => {
     setFields(f => f.map(field => field.id === id ? { ...field, enabled: !field.enabled } : field));
   };
 
+  const handleQualityChange = (value: number) => {
+    setImageQuality(value);
+  };
+
   const saveSettings = async () => {
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(fields));
-      Alert.alert('Saved', 'Add Item fields updated');
+      await AsyncStorage.setItem(IMAGE_QUALITY_KEY, imageQuality.toString());
+      Alert.alert('Saved', 'Settings updated successfully');
     } catch (error) {
       console.error('Error saving settings:', error);
       Alert.alert('Error', 'Failed to save settings');
@@ -69,6 +86,31 @@ const AddItemSettingsScreen: React.FC = () => {
           </View>
         </View>
       ))}
+
+      {/* Image Quality Section */}
+      <View style={styles.qualitySection}>
+        <Text style={[styles.qualityHeader, { color: theme.colors.text.primary }]}>Image Quality</Text>
+        <Text style={[styles.qualityDescription, { color: theme.colors.text.secondary }]}>
+          Adjust the quality of uploaded images to save storage space
+        </Text>
+        <View style={styles.sliderContainer}>
+          <Slider
+            style={styles.slider}
+            minimumValue={0.1}
+            maximumValue={1}
+            step={0.1}
+            value={imageQuality}
+            onValueChange={handleQualityChange}
+            minimumTrackTintColor={theme.colors.button.primary}
+            maximumTrackTintColor={theme.colors.border}
+            thumbTintColor={theme.colors.button.primary}
+          />
+          <Text style={[styles.qualityValue, { color: theme.colors.text.primary }]}>
+            {Math.round(imageQuality * 100)}%
+          </Text>
+        </View>
+      </View>
+
       <View style={styles.buttonContainer}>
         <Text 
           style={[styles.saveButton, { color: theme.colors.button.primary }]}
@@ -110,6 +152,36 @@ const styles = StyleSheet.create({
   },
   switchLabel: {
     fontSize: 14,
+  },
+  qualitySection: {
+    marginTop: 24,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.1)',
+  },
+  qualityHeader: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  qualityDescription: {
+    fontSize: 14,
+    marginBottom: 16,
+  },
+  sliderContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  slider: {
+    flex: 1,
+    height: 40,
+  },
+  qualityValue: {
+    fontSize: 16,
+    fontWeight: '500',
+    minWidth: 48,
+    textAlign: 'right',
   },
   buttonContainer: {
     marginTop: 24,

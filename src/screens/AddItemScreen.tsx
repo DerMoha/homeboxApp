@@ -20,6 +20,8 @@ import * as ImagePicker from 'react-native-image-picker';
 import ServerService from '../services/serverService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS } from '../constants/storage';
+import * as FileSystem from 'react-native-fs';
+import ImageResizer from '@bam.tech/react-native-image-resizer';
 
 interface Location {
   id: string;
@@ -60,12 +62,16 @@ const AddItemScreen: React.FC = () => {
   const [imageFlip, setImageFlip] = useState(false);
   const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null);
   const [isQuantityFocused, setIsQuantityFocused] = useState(false);
+  const [imageQuality, setImageQuality] = useState(0.8); // Default quality
   const [isPreviewVisible, setIsPreviewVisible] = useState(false);
+  const [originalSize, setOriginalSize] = useState<number | null>(null);
+  const [compressedSize, setCompressedSize] = useState<number | null>(null);
 
-  // Load enabled fields whenever the screen comes into focus
+  // Load enabled fields and image quality whenever the screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
       loadEnabledFields();
+      loadImageQuality();
     }, [])
   );
 
@@ -86,6 +92,17 @@ const AddItemScreen: React.FC = () => {
       }
     } catch (error) {
       console.error('Error loading enabled fields:', error);
+    }
+  };
+
+  const loadImageQuality = async () => {
+    try {
+      const savedQuality = await AsyncStorage.getItem('@image_quality');
+      if (savedQuality) {
+        setImageQuality(parseFloat(savedQuality));
+      }
+    } catch (error) {
+      console.error('Error loading image quality setting:', error);
     }
   };
 
@@ -138,13 +155,32 @@ const AddItemScreen: React.FC = () => {
     }
   };
 
+  // Helper function to format file size
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const getFileSize = async (uri: string): Promise<number> => {
+    try {
+      const fileInfo = await FileSystem.stat(uri);
+      return fileInfo.size;
+    } catch (error) {
+      console.error('Error getting file size:', error);
+      return 0;
+    }
+  };
+
   const handleImagePicker = async (type: 'camera' | 'library') => {
     const options: ImagePicker.ImageLibraryOptions = {
       mediaType: 'photo',
       includeBase64: false,
       maxHeight: 1200,
       maxWidth: 1200,
-      quality: 0.8,
+      quality: 1, // Set to maximum quality since we'll handle compression ourselves
     };
 
     try {
@@ -153,16 +189,53 @@ const AddItemScreen: React.FC = () => {
         : await ImagePicker.launchImageLibrary(options);
 
       if (result.assets && result.assets[0]?.uri) {
-        setSelectedImage(result.assets[0].uri);
+        // Get original file size before compression
+        const originalFileSize = await getFileSize(result.assets[0].uri);
+        setOriginalSize(originalFileSize);
+
+        // Create a temporary file for the compressed image
+        const timestamp = new Date().getTime();
+        // const tempFilePath = `${FileSystem.CachesDirectoryPath}/compressed_${timestamp}.jpg`;
+        
+        // Compress the image using @bam.tech/react-native-image-resizer
+        const compressedImage = await ImageResizer.createResizedImage(
+          result.assets[0].uri,
+          1200,
+          1200,
+          'JPEG',
+          Math.round(imageQuality * 100),
+          0,
+          FileSystem.CachesDirectoryPath, // pass directory only, not full path
+          false,
+          { mode: 'contain', onlyScaleDown: true }
+        );
+        
+
+        // Get the compressed file size
+        const compressedFileSize = await getFileSize(compressedImage.uri);
+        setCompressedSize(compressedFileSize);
+
+        // Use the compressed image
+        setSelectedImage(compressedImage.uri);
         setImageRotation(0);
         setImageFlip(false);
+
         // Get image dimensions
-        Image.getSize(result.assets[0].uri, (width, height) => {
+        Image.getSize(compressedImage.uri, (width, height) => {
           setImageSize({ width, height });
         }, (error) => {
           console.error('Error getting image size:', error);
           setImageSize(null);
         });
+
+        // Clean up the original file if it's in the cache
+        if (result.assets[0].uri.startsWith(FileSystem.CachesDirectoryPath)) {
+          try {
+            await FileSystem.unlink(result.assets[0].uri);
+          } catch (error) {
+            console.error('Error cleaning up original file:', error);
+          }
+        }
       }
     } catch (error) {
       console.error('Error picking image:', error);
@@ -273,6 +346,8 @@ const AddItemScreen: React.FC = () => {
     setImageRotation(0);
     setImageFlip(false);
     setImageSize(null);
+    setOriginalSize(null);
+    setCompressedSize(null);
   };
 
   const filteredLocations = locations.filter(location =>
@@ -607,6 +682,8 @@ const AddItemScreen: React.FC = () => {
                               setImageRotation(0);
                               setImageFlip(false);
                               setImageSize(null);
+                              setOriginalSize(null);
+                              setCompressedSize(null);
                             }
                           }
                         ]
@@ -616,11 +693,26 @@ const AddItemScreen: React.FC = () => {
                     <MaterialIcons name="delete" size={24} color="#fff" />
                   </TouchableOpacity>
                 </View>
-                {imageSize && (
-                  <Text style={[styles.imageSizeText, { color: theme.colors.text.secondary }]}>
-                    Size: {imageSize.width} x {imageSize.height} px
-                  </Text>
-                )}
+                <View style={styles.imageInfoContainer}>
+                  {imageSize && (
+                    <Text style={[styles.imageInfoText, { color: theme.colors.text.secondary }]}>
+                      Dimensions: {imageSize.width} x {imageSize.height} px
+                    </Text>
+                  )}
+                  {originalSize !== null && (
+                    <Text style={[styles.imageInfoText, { color: theme.colors.text.secondary }]}>
+                      Original size: {formatFileSize(originalSize)}
+                    </Text>
+                  )}
+                  {compressedSize !== null && (
+                    <Text style={[styles.imageInfoText, { color: theme.colors.text.secondary }]}>
+                      Compressed size: {formatFileSize(compressedSize)}
+                      {originalSize !== null && (
+                        <Text> ({Math.round((1 - compressedSize / originalSize) * 100)}% smaller)</Text>
+                      )}
+                    </Text>
+                  )}
+                </View>
               </View>
             )}
           </View>
@@ -684,6 +776,8 @@ const AddItemScreen: React.FC = () => {
                               setImageRotation(0);
                               setImageFlip(false);
                               setImageSize(null);
+                              setOriginalSize(null);
+                              setCompressedSize(null);
                               setIsPreviewVisible(false);
                             }
                           }
@@ -846,10 +940,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  imageSizeText: {
-    textAlign: 'center',
+  imageInfoContainer: {
     marginTop: 8,
+    paddingHorizontal: 4,
+  },
+  imageInfoText: {
     fontSize: 14,
+    marginBottom: 4,
   },
   modalOverlay: {
     flex: 1,
