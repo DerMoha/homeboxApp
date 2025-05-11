@@ -9,10 +9,11 @@ import {
   Image,
   ActivityIndicator,
   Alert,
+  Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeContext';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import * as ImagePicker from 'react-native-image-picker';
 import ServerService from '../services/serverService';
@@ -39,20 +40,43 @@ const AddItemScreen: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isConnecting, setIsConnecting] = useState(true);
-  const [formData, setFormData] = useState<Record<string, any>>({});
-  const [displayPreferences, setDisplayPreferences] = useState<DisplayPreference[]>([]);
+  const [formData, setFormData] = useState<Record<string, any>>({
+    quantity: '1' // Set default quantity to 1
+  });
+  const [enabledFields, setEnabledFields] = useState<Record<string, boolean>>({
+    description: true,
+    purchasePrice: false,
+    insured: false
+  });
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isQuantityFocused, setIsQuantityFocused] = useState(false);
 
-  const resetForm = () => {
-    setFormData({});
-    setSelectedLocation(null);
-    setSearchQuery('');
-    setSelectedImage(null);
-  };
+  // Load enabled fields whenever the screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      loadEnabledFields();
+    }, [])
+  );
 
   useEffect(() => {
     autoConnect();
   }, []);
+
+  const loadEnabledFields = async () => {
+    try {
+      const savedFields = await AsyncStorage.getItem('@add_item_fields');
+      if (savedFields) {
+        const fields = JSON.parse(savedFields);
+        const enabledMap = fields.reduce((acc: Record<string, boolean>, field: any) => {
+          acc[field.id] = field.enabled;
+          return acc;
+        }, {});
+        setEnabledFields(enabledMap);
+      }
+    } catch (error) {
+      console.error('Error loading enabled fields:', error);
+    }
+  };
 
   const autoConnect = async () => {
     try {
@@ -67,7 +91,6 @@ const AddItemScreen: React.FC = () => {
       }
 
       await loadLocations();
-      await loadDisplayPreferences();
     } catch (error) {
       console.error('Error auto-connecting:', error);
       Alert.alert('Error', 'Failed to connect to server');
@@ -87,17 +110,6 @@ const AddItemScreen: React.FC = () => {
     } catch (error) {
       console.error('Error loading locations:', error);
       Alert.alert('Error', 'Failed to load locations');
-    }
-  };
-
-  const loadDisplayPreferences = async () => {
-    try {
-      const savedPreferences = await AsyncStorage.getItem(STORAGE_KEYS.INVENTORY_DISPLAY_PREFERENCES);
-      if (savedPreferences) {
-        setDisplayPreferences(JSON.parse(savedPreferences));
-      }
-    } catch (error) {
-      console.error('Error loading display preferences:', error);
     }
   };
 
@@ -129,16 +141,19 @@ const AddItemScreen: React.FC = () => {
       setIsLoading(true);
       const service = ServerService.getInstance();
 
-      // First create the item
-      const itemResponse = await service.createItem({
+      // Create the item data object with only enabled fields
+      const itemData = {
         name: formData.name,
-        description: formData.description || '',
-        quantity: parseInt(formData.quantity) || 0,
+        quantity: parseInt(formData.quantity || '1'), // Use 1 as fallback if empty
         locationId: selectedLocation?.id,
-        labels: formData.labels || [],
-        purchasePrice: parseFloat(formData.purchasePrice) || 0,
-        insured: formData.insured || false,
-      });
+        description: enabledFields.description ? formData.description || '' : '',
+        purchasePrice: enabledFields.purchasePrice ? parseFloat(formData.purchasePrice) || 0 : 0,
+        insured: enabledFields.insured ? formData.insured || false : false,
+        labels: []
+      };
+
+      // First create the item
+      const itemResponse = await service.createItem(itemData);
 
       console.log('Item creation response:', itemResponse);
 
@@ -196,6 +211,13 @@ const AddItemScreen: React.FC = () => {
     }
   };
 
+  const resetForm = () => {
+    setFormData({});
+    setSelectedLocation(null);
+    setSearchQuery('');
+    setSelectedImage(null);
+  };
+
   const filteredLocations = locations.filter(location =>
     location.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -214,7 +236,7 @@ const AddItemScreen: React.FC = () => {
         </View>
       ) : (
         <ScrollView style={styles.scrollView}>
-          {/* Item Name Field */}
+          {/* Item Name Field - Always visible */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
               Item Name
@@ -232,7 +254,42 @@ const AddItemScreen: React.FC = () => {
             />
           </View>
 
-          {/* Location Dropdown */}
+          {/* Quantity Field - Always visible */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
+              Quantity
+            </Text>
+            <TextInput
+              style={[styles.input, { 
+                backgroundColor: theme.colors.background.secondary,
+                color: theme.colors.text.primary,
+                borderColor: theme.colors.border,
+              }]}
+              placeholder="Enter quantity"
+              placeholderTextColor={theme.colors.text.secondary}
+              keyboardType="number-pad"
+              value={isQuantityFocused ? formData.quantity : (formData.quantity || '1')}
+              onChangeText={(text) => {
+                // Only allow numbers
+                const numericValue = text.replace(/[^0-9]/g, '');
+                setFormData(prev => ({ ...prev, quantity: numericValue }));
+              }}
+              onFocus={() => {
+                setIsQuantityFocused(true);
+                if (formData.quantity === '1') {
+                  setFormData(prev => ({ ...prev, quantity: '' }));
+                }
+              }}
+              onBlur={() => {
+                setIsQuantityFocused(false);
+                if (!formData.quantity) {
+                  setFormData(prev => ({ ...prev, quantity: '1' }));
+                }
+              }}
+            />
+          </View>
+
+          {/* Location Dropdown - Always visible */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
               Location
@@ -280,37 +337,101 @@ const AddItemScreen: React.FC = () => {
             </ScrollView>
           </View>
 
-          {/* Form Fields */}
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
-              Item Details
-            </Text>
-            {displayPreferences.map(preference => {
-              if (!preference.enabled || preference.id === 'name') return null;
+          {/* Optional Fields */}
+          {enabledFields.description && (
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
+                Description
+              </Text>
+              <TextInput
+                style={[styles.input, styles.textArea, { 
+                  backgroundColor: theme.colors.background.secondary,
+                  color: theme.colors.text.primary,
+                  borderColor: theme.colors.border,
+                }]}
+                placeholder="Enter description"
+                placeholderTextColor={theme.colors.text.secondary}
+                multiline
+                numberOfLines={4}
+                value={formData.description || ''}
+                onChangeText={(text) => setFormData(prev => ({ ...prev, description: text }))}
+              />
+            </View>
+          )}
 
-              switch (preference.id) {
-                case 'description':
-                  return (
-                    <TextInput
-                      key={preference.id}
-                      style={[styles.input, styles.textArea, { 
-                        backgroundColor: theme.colors.background.secondary,
-                        color: theme.colors.text.primary,
-                        borderColor: theme.colors.border,
-                      }]}
-                      placeholder="Description"
-                      placeholderTextColor={theme.colors.text.secondary}
-                      multiline
-                      numberOfLines={4}
-                      value={formData[preference.id] || ''}
-                      onChangeText={(text) => setFormData(prev => ({ ...prev, [preference.id]: text }))}
-                    />
-                  );
-                default:
-                  return null;
-              }
-            })}
-          </View>
+          {enabledFields.purchasePrice && (
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
+                Purchase Price
+              </Text>
+              <TextInput
+                style={[styles.input, { 
+                  backgroundColor: theme.colors.background.secondary,
+                  color: theme.colors.text.primary,
+                  borderColor: theme.colors.border,
+                }]}
+                placeholder="Enter purchase price"
+                placeholderTextColor={theme.colors.text.secondary}
+                keyboardType="numeric"
+                value={formData.purchasePrice || ''}
+                onChangeText={(text) => setFormData(prev => ({ ...prev, purchasePrice: text }))}
+              />
+            </View>
+          )}
+
+          {enabledFields.insured && (
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
+                Insured?
+              </Text>
+              <View style={styles.yesNoContainer}>
+                <TouchableOpacity
+                  style={[
+                    styles.yesNoButton,
+                    { 
+                      backgroundColor: formData.insured === true 
+                        ? theme.colors.button.primary 
+                        : theme.colors.background.secondary,
+                      borderColor: theme.colors.border
+                    }
+                  ]}
+                  onPress={() => setFormData(prev => ({ ...prev, insured: true }))}
+                >
+                  <Text style={[
+                    styles.yesNoButtonText,
+                    { color: formData.insured === true 
+                      ? theme.colors.button.text 
+                      : theme.colors.text.primary 
+                    }
+                  ]}>
+                    Yes
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.yesNoButton,
+                    { 
+                      backgroundColor: formData.insured === false 
+                        ? theme.colors.button.primary 
+                        : theme.colors.background.secondary,
+                      borderColor: theme.colors.border
+                    }
+                  ]}
+                  onPress={() => setFormData(prev => ({ ...prev, insured: false }))}
+                >
+                  <Text style={[
+                    styles.yesNoButtonText,
+                    { color: formData.insured === false 
+                      ? theme.colors.button.text 
+                      : theme.colors.text.primary 
+                    }
+                  ]}>
+                    No
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
 
           {/* Image Upload Section */}
           <View style={[styles.section, styles.lastSection]}>
@@ -465,6 +586,23 @@ const styles = StyleSheet.create({
   },
   lastSection: {
     paddingBottom: 16,
+  },
+  yesNoContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+  },
+  yesNoButton: {
+    flex: 1,
+    height: 40,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  yesNoButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
 
