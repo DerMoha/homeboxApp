@@ -431,53 +431,39 @@ class ServerService {
    */
   async getLocations(): Promise<ApiResponse<LocationResponse>> {
     try {
-      const axiosInstance = this.getAxiosInstance();
-      if (!axiosInstance || !this.token) {
-        console.error('No active server connection or authentication token in getLocations');
-        return { success: false, error: 'No active server connection or authentication token' };
-      }
-
-      const response = await axiosInstance.get<Location[]>('/api/v1/locations', {
-        headers: {
-          'Accept': 'application/json'
-        }
-      });
-
-      if (!Array.isArray(response.data)) {
-        console.error('Invalid response format:', response.data);
-        return { success: false, error: 'Invalid response format from server' };
-      }
-
-      return { 
-        success: true, 
-        data: this.transformLocationsResponse(response.data)
-      };
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error('Locations API Error:', {
-          status: error.response?.status,
-          message: error.response?.data?.message || error.message,
-          data: error.response?.data
-        });
-
-        if (error.response?.status === 401) {
-          return { success: false, error: 'Authentication required' };
-        }
-        if (error.response?.status === 403) {
-          return { success: false, error: 'Access denied' };
-        }
-        if (error.response?.status === 500) {
-          return { 
-            success: false, 
-            error: 'Server error occurred. Please try again later.' 
-          };
-        }
-        return { 
-          success: false, 
-          error: error.response?.data?.message || 'Failed to get locations' 
+      if (!this.axiosInstance || !this.token) {
+        return {
+          success: false,
+          error: 'No active server connection or authentication token',
         };
       }
-      return { success: false, error: 'An unexpected error occurred' };
+
+      const response = await this.axiosInstance.get('/api/v1/locations');
+      return {
+        success: true,
+        data: this.transformLocationsResponse(response.data),
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
+  }
+
+  async getLabels(): Promise<ApiResponse<Label[]>> {
+    try {
+      if (!this.axiosInstance || !this.token) {
+        return {
+          success: false,
+          error: 'No active server connection or authentication token',
+        };
+      }
+
+      const response = await this.axiosInstance.get('/api/v1/labels');
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
     }
   }
 

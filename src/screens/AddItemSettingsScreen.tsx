@@ -8,6 +8,7 @@ const DEFAULT_FIELDS = [
   { id: 'description', label: 'Description', enabled: true },
   { id: 'purchasePrice', label: 'Purchase Price', enabled: false },
   { id: 'insured', label: 'Insured', enabled: false },
+  { id: 'labels', label: 'Labels', enabled: true },
 ];
 
 const AddItemSettingsScreen: React.FC = () => {
@@ -15,31 +16,40 @@ const AddItemSettingsScreen: React.FC = () => {
   const [fields, setFields] = useState(DEFAULT_FIELDS);
 
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY).then(saved => {
-      if (saved) {
-        let loaded = JSON.parse(saved);
-        // Filter out any fields that aren't in DEFAULT_FIELDS
-        loaded = loaded.filter((f: any) => DEFAULT_FIELDS.some(df => df.id === f.id));
-        // Map the remaining fields to ensure they have the correct enabled state
-        loaded = loaded.map((f: any) => {
-          const defaultField = DEFAULT_FIELDS.find(df => df.id === f.id);
-          return {
-            ...f,
-            enabled: typeof f.enabled === 'boolean' ? f.enabled : defaultField?.enabled ?? true
-          };
-        });
-        setFields(loaded);
-      }
-    });
+    loadSettings();
   }, []);
+
+  const loadSettings = async () => {
+    try {
+      const savedFields = await AsyncStorage.getItem(STORAGE_KEY);
+      if (savedFields) {
+        const parsedFields = JSON.parse(savedFields);
+        // Ensure all default fields are present
+        const updatedFields = DEFAULT_FIELDS.map(defaultField => {
+          const savedField = parsedFields.find((f: any) => f.id === defaultField.id);
+          return savedField || defaultField;
+        });
+        setFields(updatedFields);
+      }
+    } catch (error) {
+      console.error('Error loading settings:', error);
+      // If there's an error, use default fields
+      setFields(DEFAULT_FIELDS);
+    }
+  };
 
   const handleToggle = (id: string) => {
     setFields(f => f.map(field => field.id === id ? { ...field, enabled: !field.enabled } : field));
   };
 
   const saveSettings = async () => {
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(fields));
-    Alert.alert('Saved', 'Add Item fields updated');
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(fields));
+      Alert.alert('Saved', 'Add Item fields updated');
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      Alert.alert('Error', 'Failed to save settings');
+    }
   };
 
   return (

@@ -26,18 +26,23 @@ interface Location {
   description: string;
 }
 
-interface DisplayPreference {
+interface Label {
   id: string;
-  label: string;
-  enabled: boolean;
+  name: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 const AddItemScreen: React.FC = () => {
   const { theme } = useTheme();
   const navigation = useNavigation();
   const [locations, setLocations] = useState<Location[]>([]);
+  const [labels, setLabels] = useState<Label[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
+  const [selectedLabels, setSelectedLabels] = useState<Label[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [labelSearchQuery, setLabelSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isConnecting, setIsConnecting] = useState(true);
   const [formData, setFormData] = useState<Record<string, any>>({
@@ -46,7 +51,8 @@ const AddItemScreen: React.FC = () => {
   const [enabledFields, setEnabledFields] = useState<Record<string, boolean>>({
     description: true,
     purchasePrice: false,
-    insured: false
+    insured: false,
+    labels: true  // Default to true, but will be overridden by settings
   });
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isQuantityFocused, setIsQuantityFocused] = useState(false);
@@ -78,6 +84,19 @@ const AddItemScreen: React.FC = () => {
     }
   };
 
+  const loadLabels = async () => {
+    try {
+      const service = ServerService.getInstance();
+      const response = await service.getLabels();
+      if (response.success && response.data) {
+        setLabels(response.data);
+      }
+    } catch (error) {
+      console.error('Error loading labels:', error);
+      Alert.alert('Error', 'Failed to load labels');
+    }
+  };
+
   const autoConnect = async () => {
     try {
       setIsConnecting(true);
@@ -91,6 +110,7 @@ const AddItemScreen: React.FC = () => {
       }
 
       await loadLocations();
+      await loadLabels();
     } catch (error) {
       console.error('Error auto-connecting:', error);
       Alert.alert('Error', 'Failed to connect to server');
@@ -136,6 +156,17 @@ const AddItemScreen: React.FC = () => {
     }
   };
 
+  const handleLabelToggle = (label: Label) => {
+    setSelectedLabels(prev => {
+      const isSelected = prev.some(l => l.id === label.id);
+      if (isSelected) {
+        return prev.filter(l => l.id !== label.id);
+      } else {
+        return [...prev, label];
+      }
+    });
+  };
+
   const handleSubmit = async () => {
     try {
       setIsLoading(true);
@@ -149,7 +180,7 @@ const AddItemScreen: React.FC = () => {
         description: enabledFields.description ? formData.description || '' : '',
         purchasePrice: enabledFields.purchasePrice ? parseFloat(formData.purchasePrice) || 0 : 0,
         insured: enabledFields.insured ? formData.insured || false : false,
-        labels: []
+        labels: selectedLabels.map(label => label.id)
       };
 
       // First create the item
@@ -215,11 +246,16 @@ const AddItemScreen: React.FC = () => {
     setFormData({});
     setSelectedLocation(null);
     setSearchQuery('');
+    setLabelSearchQuery('');
     setSelectedImage(null);
   };
 
   const filteredLocations = locations.filter(location =>
     location.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredLabels = labels.filter(label =>
+    label.name.toLowerCase().includes(labelSearchQuery.toLowerCase())
   );
 
   return (
@@ -336,6 +372,57 @@ const AddItemScreen: React.FC = () => {
               ))}
             </ScrollView>
           </View>
+
+          {/* Labels Section - Conditional based on settings */}
+          {enabledFields.labels && (
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
+                Labels
+              </Text>
+              <TextInput
+                style={[styles.searchInput, { 
+                  backgroundColor: theme.colors.background.secondary,
+                  color: theme.colors.text.primary,
+                  borderColor: theme.colors.border,
+                }]}
+                placeholder="Search labels..."
+                placeholderTextColor={theme.colors.text.secondary}
+                value={labelSearchQuery}
+                onChangeText={setLabelSearchQuery}
+              />
+              <ScrollView 
+                style={[styles.locationList, { 
+                  backgroundColor: theme.colors.background.secondary,
+                  borderColor: theme.colors.border,
+                  maxHeight: 160, // Show 4 labels at a time
+                }]}
+                nestedScrollEnabled={true}
+              >
+                {filteredLabels.map(label => (
+                  <TouchableOpacity
+                    key={label.id}
+                    style={[
+                      styles.locationItem,
+                      selectedLabels.some(l => l.id === label.id) && { 
+                        backgroundColor: theme.colors.button.primary 
+                      }
+                    ]}
+                    onPress={() => handleLabelToggle(label)}
+                  >
+                    <Text style={[
+                      styles.locationName,
+                      { color: selectedLabels.some(l => l.id === label.id)
+                        ? theme.colors.button.text 
+                        : theme.colors.text.primary 
+                      }
+                    ]}>
+                      {label.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          )}
 
           {/* Optional Fields */}
           {enabledFields.description && (
