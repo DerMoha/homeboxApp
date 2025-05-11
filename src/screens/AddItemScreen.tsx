@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Alert,
   Switch,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeContext';
@@ -55,7 +56,11 @@ const AddItemScreen: React.FC = () => {
     labels: true  // Default to true, but will be overridden by settings
   });
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [imageRotation, setImageRotation] = useState(0);
+  const [imageFlip, setImageFlip] = useState(false);
+  const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null);
   const [isQuantityFocused, setIsQuantityFocused] = useState(false);
+  const [isPreviewVisible, setIsPreviewVisible] = useState(false);
 
   // Load enabled fields whenever the screen comes into focus
   useFocusEffect(
@@ -149,11 +154,28 @@ const AddItemScreen: React.FC = () => {
 
       if (result.assets && result.assets[0]?.uri) {
         setSelectedImage(result.assets[0].uri);
+        setImageRotation(0);
+        setImageFlip(false);
+        // Get image dimensions
+        Image.getSize(result.assets[0].uri, (width, height) => {
+          setImageSize({ width, height });
+        }, (error) => {
+          console.error('Error getting image size:', error);
+          setImageSize(null);
+        });
       }
     } catch (error) {
       console.error('Error picking image:', error);
       Alert.alert('Error', 'Failed to pick image');
     }
+  };
+
+  const handleRotateImage = () => {
+    setImageRotation((prev) => (prev + 90) % 360);
+  };
+
+  const handleFlipImage = () => {
+    setImageFlip((prev) => !prev);
   };
 
   const handleLabelToggle = (label: Label) => {
@@ -248,6 +270,9 @@ const AddItemScreen: React.FC = () => {
     setSearchQuery('');
     setLabelSearchQuery('');
     setSelectedImage(null);
+    setImageRotation(0);
+    setImageFlip(false);
+    setImageSize(null);
   };
 
   const filteredLocations = locations.filter(location =>
@@ -547,14 +572,74 @@ const AddItemScreen: React.FC = () => {
             </View>
             {selectedImage && (
               <View style={styles.selectedImageContainer}>
-                <Image
-                  source={{ uri: selectedImage }}
-                  style={styles.selectedImage}
-                  resizeMode="cover"
-                />
+                <TouchableOpacity onPress={() => setIsPreviewVisible(true)} activeOpacity={0.8}>
+                  <Image
+                    source={{ uri: selectedImage }}
+                    style={[
+                      styles.selectedImage,
+                      {
+                        transform: [
+                          { rotate: `${imageRotation}deg` },
+                          { scaleX: imageFlip ? -1 : 1 }
+                        ]
+                      }
+                    ]}
+                    resizeMode="cover"
+                  />
+                </TouchableOpacity>
+                {imageSize && (
+                  <Text style={[styles.imageSizeText, { color: theme.colors.text.secondary }]}>
+                    Size: {imageSize.width} x {imageSize.height} px
+                  </Text>
+                )}
               </View>
             )}
           </View>
+
+          {/* Image Preview Modal */}
+          <Modal
+            visible={isPreviewVisible}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={() => setIsPreviewVisible(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <TouchableOpacity style={styles.modalCloseButton} onPress={() => setIsPreviewVisible(false)}>
+                  <MaterialIcons name="close" size={32} color={theme.colors.text.primary} />
+                </TouchableOpacity>
+                {selectedImage && (
+                  <Image
+                    source={{ uri: selectedImage }}
+                    style={[
+                      styles.modalImage,
+                      {
+                        transform: [
+                          { rotate: `${imageRotation}deg` },
+                          { scaleX: imageFlip ? -1 : 1 }
+                        ]
+                      }
+                    ]}
+                    resizeMode="contain"
+                  />
+                )}
+                <View style={styles.imageControls}>
+                  <TouchableOpacity
+                    style={[styles.imageControlButton, { backgroundColor: theme.colors.button.primary }]}
+                    onPress={handleRotateImage}
+                  >
+                    <MaterialIcons name="rotate-right" size={28} color={theme.colors.button.text} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.imageControlButton, { backgroundColor: theme.colors.button.primary }]}
+                    onPress={handleFlipImage}
+                  >
+                    <MaterialIcons name="flip" size={28} color={theme.colors.button.text} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </Modal>
 
           {/* Submit Button */}
           <TouchableOpacity
@@ -690,6 +775,52 @@ const styles = StyleSheet.create({
   yesNoButtonText: {
     fontSize: 16,
     fontWeight: '500',
+  },
+  imageControls: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12,
+    marginTop: 8,
+  },
+  imageControlButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  imageSizeText: {
+    textAlign: 'center',
+    marginTop: 8,
+    fontSize: 14,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    maxWidth: '90%',
+    maxHeight: '80%',
+  },
+  modalImage: {
+    width: 300,
+    height: 300,
+    marginBottom: 16,
+    borderRadius: 8,
+    backgroundColor: '#eee',
+  },
+  modalCloseButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    zIndex: 2,
+    padding: 4,
   },
 });
 

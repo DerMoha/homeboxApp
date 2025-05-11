@@ -294,13 +294,14 @@ const AppContent = () => {
           }}
         />
         <Tab.Screen 
-          name="AddItem" 
+          name="AddItemTab" 
           component={AddItemStackScreen}
           options={{
             headerShown: false,
             tabBarIcon: ({ color, size }) => (
               <MaterialIcons name="add-box" size={size} color={color} />
             ),
+            tabBarLabel: 'Add Item'
           }}
         />
         <Tab.Screen 
