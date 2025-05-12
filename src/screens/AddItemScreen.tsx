@@ -884,8 +884,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   selectedImage: {
-    width: '100%',
-    height: 200,
+    width: 150,
+    height: 150,
+    alignSelf: 'center',
+    borderRadius: 8,
   },
   submitButton: {
     margin: 16,
@@ -965,8 +967,8 @@ const styles = StyleSheet.create({
     maxHeight: '80%',
   },
   modalImage: {
-    width: 300,
-    height: 300,
+    width: 250,
+    height: 250,
     marginBottom: 8,
     borderRadius: 8,
     backgroundColor: '#eee',
