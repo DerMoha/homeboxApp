@@ -13,6 +13,7 @@ import ItemDetailScreen from './src/screens/ItemDetailScreen';
 import InventorySettingsScreen from './src/screens/InventorySettingsScreen';
 import LocationsScreen from './src/screens/LocationsScreen';
 import LocationItemsScreen from './src/screens/LocationItemsScreen';
+import AddItemSettingsScreen from './src/screens/AddItemSettingsScreen';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import { darkTheme } from './src/theme/theme';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
@@ -90,7 +91,7 @@ const SettingsStackScreen = () => {
       />
       <SettingsStack.Screen 
         name="AddItemSettings" 
-        component={require('./src/screens/AddItemSettingsScreen').default}
+        component={AddItemSettingsScreen}
         options={{ 
           headerShown: true,
           headerLargeTitle: true,
