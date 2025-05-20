@@ -15,6 +15,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import ServerService, { ServerConfig } from '../services/serverService';
 import { useTheme } from '../theme/ThemeContext';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 type RootStackParamList = {
   Settings: undefined;
@@ -266,9 +267,8 @@ const ServerConfigScreen: React.FC = () => {
       overScrollMode="never"
       showsVerticalScrollIndicator={false}
     >
-      <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: theme.colors.text.primary }]}>Server Configuration</Text>
-        <Text style={[styles.headerSubtitle, { color: theme.colors.text.primary }]}>Configure and manage your server connections</Text>
+      <View style={[styles.header, { marginTop: 0 }]}>
+        <Text style={[styles.headerSubtitle, { color: theme.colors.text.secondary }]}>Configure and manage your server connections</Text>
       </View>
 
       <View style={[styles.card, { backgroundColor: theme.colors.background.secondary }]}>
@@ -286,7 +286,8 @@ const ServerConfigScreen: React.FC = () => {
             setIsAddServerVisible(true);
           }}
         >
-          <Text style={[styles.addServerButtonText, { color: theme.colors.button.text }]}>+ Add Server</Text>
+          <MaterialIcons name="add" size={24} color={theme.colors.button.text} style={styles.addServerIcon} />
+          <Text style={[styles.addServerButtonText, { color: theme.colors.button.text }]}>Add New Server</Text>
         </TouchableOpacity>
       </View>
 
@@ -307,7 +308,7 @@ const ServerConfigScreen: React.FC = () => {
                 });
               }}
             >
-              <Text style={[styles.cancelEditButtonText, { color: theme.colors.text.primary }]}>Cancel</Text>
+              <Text style={[styles.cancelEditButtonText, { color: theme.colors.button.primary }]}>Cancel</Text>
             </TouchableOpacity>
           </View>
           
@@ -379,14 +380,14 @@ const ServerConfigScreen: React.FC = () => {
           
           <View style={styles.buttonContainer}>
             <TouchableOpacity 
-              style={[styles.button, { backgroundColor: theme.colors.button.primary }]} 
+              style={[styles.button, { backgroundColor: theme.colors.background.primary, borderColor: theme.colors.button.primary, borderWidth: 1 }]} 
               onPress={testConnection}
               disabled={isLoading}
             >
               {isLoading ? (
-                <ActivityIndicator color={theme.colors.button.text} size="small" />
+                <ActivityIndicator color={theme.colors.button.primary} size="small" />
               ) : (
-                <Text style={[styles.buttonText, { color: theme.colors.button.text }]}>Test Connection</Text>
+                <Text style={[styles.buttonText, { color: theme.colors.button.primary }]}>Test Connection</Text>
               )}
             </TouchableOpacity>
             
@@ -427,8 +428,17 @@ const ServerConfigScreen: React.FC = () => {
                     <Text style={[styles.serverName, { color: theme.colors.text.primary }]}>
                       {server.name || "Unnamed Server"}
                     </Text>
-                    <Text style={[styles.serverDetails, { color: theme.colors.text.primary }]}>
+                    <Text style={[styles.serverDetails, { color: theme.colors.text.secondary }]}>
                       {server.host} • {server.username}
+                    </Text>
+                  </View>
+                  <View style={styles.serverStatus}>
+                    <View style={[
+                      styles.statusDot,
+                      { backgroundColor: server.status === 'online' ? theme.colors.success : theme.colors.error }
+                    ]} />
+                    <Text style={[styles.statusText, { color: theme.colors.text.secondary }]}>
+                      {server.status === 'online' ? 'Online' : 'Offline'}
                     </Text>
                   </View>
                 </View>
@@ -438,13 +448,13 @@ const ServerConfigScreen: React.FC = () => {
                   style={[styles.editButton, { backgroundColor: theme.colors.button.primary }]}
                   onPress={() => handleEditServer(server)}
                 >
-                  <Text style={[styles.editButtonText, { color: theme.colors.button.text }]}>✎</Text>
+                  <MaterialIcons name="edit" size={20} color={theme.colors.button.text} />
                 </TouchableOpacity>
                 <TouchableOpacity 
-                  style={styles.deleteButton}
+                  style={[styles.deleteButton, { backgroundColor: theme.colors.error }]}
                   onPress={() => deleteServer(server.id)}
                 >
-                  <Text style={styles.deleteButtonText}>×</Text>
+                  <MaterialIcons name="delete" size={20} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
             </View>
@@ -469,7 +479,7 @@ const ServerConfigScreen: React.FC = () => {
                 });
               }}
             >
-              <Text style={[styles.cancelEditButtonText, { color: theme.colors.text.primary }]}>Cancel</Text>
+              <Text style={[styles.cancelEditButtonText, { color: theme.colors.button.primary }]}>Cancel</Text>
             </TouchableOpacity>
           </View>
           
@@ -541,14 +551,14 @@ const ServerConfigScreen: React.FC = () => {
           
           <View style={styles.buttonContainer}>
             <TouchableOpacity 
-              style={[styles.button, { backgroundColor: theme.colors.button.primary }]} 
+              style={[styles.button, { backgroundColor: theme.colors.background.primary, borderColor: theme.colors.button.primary, borderWidth: 1 }]} 
               onPress={testConnection}
               disabled={isLoading}
             >
               {isLoading ? (
-                <ActivityIndicator color={theme.colors.button.text} size="small" />
+                <ActivityIndicator color={theme.colors.button.primary} size="small" />
               ) : (
-                <Text style={[styles.buttonText, { color: theme.colors.button.text }]}>Test Connection</Text>
+                <Text style={[styles.buttonText, { color: theme.colors.button.primary }]}>Test Connection</Text>
               )}
             </TouchableOpacity>
             
@@ -575,26 +585,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    padding: 20,
-    marginBottom: 20,
+    padding: 16,
+    marginBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
   },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#333',
-    marginBottom: 8,
-  },
   headerSubtitle: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 15,
     lineHeight: 20,
   },
   card: {
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 16,
+    marginHorizontal: 16,
     marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -606,7 +610,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 16,
-    color: '#333',
   },
   inputContainer: {
     marginBottom: 16,
@@ -614,7 +617,6 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#555',
     marginBottom: 6,
   },
   requiredStar: {
@@ -622,29 +624,25 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: '#E1E1E1',
     padding: 14,
     borderRadius: 8,
-    backgroundColor: '#FAFAFA',
     fontSize: 16,
-    color: '#333',
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 8,
+    gap: 12,
   },
   button: {
     flex: 1,
     padding: 15,
     borderRadius: 10,
     alignItems: 'center',
-    marginHorizontal: 5,
     flexDirection: 'row',
     justifyContent: 'center',
   },
   buttonText: {
-    color: '#fff',
     fontWeight: '600',
     fontSize: 16,
   },
@@ -659,11 +657,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E1E1E1',
     borderRadius: 10,
-    backgroundColor: '#FAFAFA',
   },
   serverContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     flex: 1,
   },
   serverInfo: {
@@ -672,49 +670,47 @@ const styles = StyleSheet.create({
   serverName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
-    marginBottom: 2,
+    marginBottom: 4,
   },
   serverDetails: {
     fontSize: 14,
-    color: '#666',
   },
-  deleteButton: {
-    padding: 12,
-    backgroundColor: '#FF3B30',
-    borderRadius: 8,
-    justifyContent: 'center',
+  serverStatus: {
+    flexDirection: 'row',
     alignItems: 'center',
-    height: 44,
-    width: 44,
+    marginLeft: 12,
   },
-  deleteButtonText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    lineHeight: 20,
-    color: '#FFFFFF',
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
   serverActions: {
     flexDirection: 'row',
     alignItems: 'center',
     marginLeft: 10,
+    gap: 8,
   },
   editButton: {
     padding: 12,
-    marginRight: 10,
-    backgroundColor: '#FFF0F0',
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     height: 44,
     width: 44,
   },
-  editButtonText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    lineHeight: 20,
+  deleteButton: {
+    padding: 12,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 44,
+    width: 44,
   },
   editHeader: {
     flexDirection: 'row',
@@ -727,16 +723,20 @@ const styles = StyleSheet.create({
   },
   cancelEditButtonText: {
     fontSize: 16,
-    color: '#007AFF',
+    fontWeight: '500',
   },
   addServerButton: {
-    padding: 15,
+    padding: 16,
     borderRadius: 10,
     alignItems: 'center',
-    marginVertical: 8,
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  addServerIcon: {
+    marginRight: 8,
   },
   addServerButtonText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
   },
 });

@@ -68,7 +68,13 @@ const SettingsStackScreen = () => {
         options={{ 
           headerShown: true,
           headerLargeTitle: true,
-          title: 'Server Configuration'
+          title: 'Server Configuration',
+          headerLargeTitleStyle: {
+            marginBottom: 0,
+          },
+          headerStyle: {
+            height: 100,
+          }
         }}
       />
       <SettingsStack.Screen 
