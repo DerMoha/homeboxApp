@@ -267,7 +267,7 @@ const ServerConfigScreen: React.FC = () => {
       overScrollMode="never"
       showsVerticalScrollIndicator={false}
     >
-      <View style={[styles.header, { marginTop: 0 }]}>
+      <View style={[styles.header, { marginBottom: 16 }]}>
         <Text style={[styles.headerSubtitle, { color: theme.colors.text.secondary }]}>Configure and manage your server connections</Text>
       </View>
 
@@ -585,7 +585,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    padding: 16,
+    padding: 10,
     marginBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
@@ -599,7 +599,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginHorizontal: 16,
-    marginBottom: 16,
+    marginBottom: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
@@ -609,10 +609,10 @@ const styles = StyleSheet.create({
   formTitle: {
     fontSize: 18,
     fontWeight: '600',
-    marginBottom: 16,
+    marginBottom: 4,
   },
   inputContainer: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   inputLabel: {
     fontSize: 14,

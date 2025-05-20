@@ -130,7 +130,6 @@ const InventorySettingsScreen: React.FC = () => {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
       <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: theme.colors.text.primary }]}>Inventory Display</Text>
         <Text style={[styles.headerSubtitle, { color: theme.colors.text.secondary }]}>
           Customize which item attributes to display and their order
         </Text>
@@ -139,8 +138,11 @@ const InventorySettingsScreen: React.FC = () => {
       <ScrollView 
         style={[styles.scrollView, { backgroundColor: theme.colors.background.primary }]}
         contentContainerStyle={styles.contentContainer}
+        bounces={false}
+        overScrollMode="never"
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.section}>
+        <View style={[styles.section, { backgroundColor: theme.colors.background.secondary }]}>
           <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Core Attributes</Text>
           <Text style={[styles.sectionSubtitle, { color: theme.colors.text.secondary }]}>
             Essential information that cannot be reordered and should stay toggled on
@@ -152,7 +154,7 @@ const InventorySettingsScreen: React.FC = () => {
                 style={[
                   styles.preferenceItem,
                   { 
-                    backgroundColor: theme.colors.background.secondary,
+                    backgroundColor: theme.colors.background.primary,
                     borderColor: theme.colors.border,
                   }
                 ]}
@@ -171,7 +173,7 @@ const InventorySettingsScreen: React.FC = () => {
           </View>
         </View>
 
-        <View style={[styles.section, { marginTop: 24 }]}>
+        <View style={[styles.section, { backgroundColor: theme.colors.background.secondary }]}>
           <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Additional Attributes</Text>
           <Text style={[styles.sectionSubtitle, { color: theme.colors.text.secondary }]}>
             Optional information that can be reordered
@@ -183,7 +185,7 @@ const InventorySettingsScreen: React.FC = () => {
                 style={[
                   styles.preferenceItem,
                   { 
-                    backgroundColor: theme.colors.background.secondary,
+                    backgroundColor: theme.colors.background.primary,
                     borderColor: theme.colors.border,
                     opacity: draggedItem === index ? 0.5 : 1,
                     transform: [
@@ -234,26 +236,28 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  header: {
+  contentContainer: {
     padding: 16,
+  },
+  header: {
+    padding: 10,
     marginBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
   },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
   headerSubtitle: {
-    fontSize: 14,
+    fontSize: 15,
     lineHeight: 20,
   },
-  contentContainer: {
-    padding: 16,
-  },
   section: {
-    marginBottom: 16,
+    padding: 16,
+    marginBottom: 8,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 2,
   },
   sectionTitle: {
     fontSize: 18,
@@ -265,21 +269,23 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   preferencesContainer: {
-    gap: 12,
+    gap: 8,
   },
   preferenceItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
+    padding: 12,
+    borderRadius: 8,
     borderWidth: 1,
   },
+  preferenceLabel: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '500',
+  },
   dragHandle: {
-    marginRight: 12,
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
+    padding: 8,
+    marginRight: 8,
   },
   dragHandleDots: {
     width: 4,
@@ -287,15 +293,11 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     marginVertical: 2,
   },
-  preferenceLabel: {
-    fontSize: 16,
-    flex: 1,
-  },
   resetButton: {
-    marginTop: 24,
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 10,
     alignItems: 'center',
+    marginTop: 0,
   },
   resetButtonText: {
     fontSize: 16,

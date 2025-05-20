@@ -15,11 +15,16 @@ const AppearanceScreen: React.FC = () => {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
       <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: theme.colors.text.primary }]}>Appearance</Text>
         <Text style={[styles.headerSubtitle, { color: theme.colors.text.secondary }]}>Customize the app's look and feel</Text>
       </View>
 
-      <ScrollView style={[styles.scrollView, { backgroundColor: theme.colors.background.primary }]}>
+      <ScrollView 
+        style={[styles.scrollView, { backgroundColor: theme.colors.background.primary }]}
+        contentContainerStyle={{ flexGrow: 1 }}
+        bounces={false}
+        overScrollMode="never"
+        showsVerticalScrollIndicator={false}
+      >
         <View style={[styles.section, { backgroundColor: theme.colors.background.secondary }]}>
           <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Theme Mode</Text>
           <View style={styles.themeModeContainer}>
@@ -83,33 +88,36 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    padding: 16,
+    padding: 10,
     marginBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
   },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
   headerSubtitle: {
-    fontSize: 14,
+    fontSize: 15,
     lineHeight: 20,
   },
   section: {
-    padding: 15,
-    marginBottom: 1,
+    padding: 16,
+    marginHorizontal: 16,
+    marginBottom: 8,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 2,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    marginBottom: 15,
+    marginBottom: 4,
   },
   themeModeContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
+    marginTop: 8,
   },
   themeModeButton: {
     padding: 12,
