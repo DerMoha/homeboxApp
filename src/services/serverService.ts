@@ -219,32 +219,91 @@ class ServerService {
 
   public async testConnection(config: ServerConfig): Promise<ServerResponse> {
     try {
-      const protocol = config.host.startsWith('http') ? '' : 'http://';
-      const testInstance = axios.create({
-        baseURL: `${protocol}${config.host}`,
+      // If host already has protocol, use it as is
+      if (config.host.startsWith('http')) {
+        const testInstance = axios.create({
+          baseURL: config.host,
+          timeout: 5000,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        try {
+          const loginResponse = await testInstance.post('/api/v1/users/login', {
+            username: config.username,
+            password: config.password,
+          });
+
+          if (loginResponse.data && loginResponse.data.token) {
+            return {
+              success: true,
+              data: loginResponse.data,
+            };
+          }
+        } catch (error) {
+          // If it fails with explicit protocol, return error
+          return this.handleError(error as AxiosError);
+        }
+      }
+
+      // Try HTTPS first
+      const httpsInstance = axios.create({
+        baseURL: `https://${config.host}`,
         timeout: 5000,
         headers: {
           'Content-Type': 'application/json',
         },
       });
 
-      // Test authentication
-      const loginResponse = await testInstance.post('/api/v1/users/login', {
-        username: config.username,
-        password: config.password,
-      });
+      try {
+        const loginResponse = await httpsInstance.post('/api/v1/users/login', {
+          username: config.username,
+          password: config.password,
+        });
 
-      if (loginResponse.data && loginResponse.data.token) {
-        return {
-          success: true,
-          data: loginResponse.data,
-        };
-      } else {
-        return {
-          success: false,
-          error: 'Failed to authenticate',
-        };
+        if (loginResponse.data && loginResponse.data.token) {
+          // Update the host to include https://
+          config.host = `https://${config.host}`;
+          return {
+            success: true,
+            data: loginResponse.data,
+          };
+        }
+      } catch (httpsError) {
+        // If HTTPS fails, try HTTP
+        const httpInstance = axios.create({
+          baseURL: `http://${config.host}`,
+          timeout: 5000,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        try {
+          const loginResponse = await httpInstance.post('/api/v1/users/login', {
+            username: config.username,
+            password: config.password,
+          });
+
+          if (loginResponse.data && loginResponse.data.token) {
+            // Update the host to include http://
+            config.host = `http://${config.host}`;
+            return {
+              success: true,
+              data: loginResponse.data,
+            };
+          }
+        } catch (httpError) {
+          // If both protocols fail, return the HTTPS error
+          return this.handleError(httpsError as AxiosError);
+        }
       }
+
+      return {
+        success: false,
+        error: 'Failed to authenticate',
+      };
     } catch (error) {
       return this.handleError(error as AxiosError);
     }
