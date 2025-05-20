@@ -21,7 +21,6 @@ import * as ImagePicker from 'react-native-image-picker';
 import ServerService from '../services/serverService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS } from '../constants/storage';
-import * as FileSystem from 'react-native-fs';
 import ImageResizer from '@bam.tech/react-native-image-resizer';
 
 interface Location {
@@ -170,23 +169,13 @@ const AddItemScreen: React.FC = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const getFileSize = async (uri: string): Promise<number> => {
-    try {
-      const fileInfo = await FileSystem.stat(uri);
-      return fileInfo.size;
-    } catch (error) {
-      console.error('Error getting file size:', error);
-      return 0;
-    }
-  };
-
   const handleImagePicker = async (type: 'camera' | 'library') => {
     const options: ImagePicker.ImageLibraryOptions = {
       mediaType: 'photo',
       includeBase64: false,
       maxHeight: 1200,
       maxWidth: 1200,
-      quality: 1, // Set to maximum quality since we'll handle compression ourselves
+      quality: 1, // Use maximum quality since we'll handle compression with ImageResizer
     };
 
     try {
@@ -195,14 +184,10 @@ const AddItemScreen: React.FC = () => {
         : await ImagePicker.launchImageLibrary(options);
 
       if (result.assets && result.assets[0]?.uri) {
-        // Get original file size before compression
-        const originalFileSize = await getFileSize(result.assets[0].uri);
+        // Get original file size from the asset
+        const originalFileSize = result.assets[0].fileSize || 0;
         setOriginalSize(originalFileSize);
 
-        // Create a temporary file for the compressed image
-        const timestamp = new Date().getTime();
-        // const tempFilePath = `${FileSystem.CachesDirectoryPath}/compressed_${timestamp}.jpg`;
-        
         // Compress the image using @bam.tech/react-native-image-resizer
         const compressedImage = await ImageResizer.createResizedImage(
           result.assets[0].uri,
@@ -211,14 +196,13 @@ const AddItemScreen: React.FC = () => {
           'JPEG',
           Math.round(imageQuality * 100),
           0,
-          FileSystem.CachesDirectoryPath, // pass directory only, not full path
+          undefined, // Let the library handle the temporary directory
           false,
           { mode: 'contain', onlyScaleDown: true }
         );
-        
 
-        // Get the compressed file size
-        const compressedFileSize = await getFileSize(compressedImage.uri);
+        // Get the compressed file size from the result
+        const compressedFileSize = compressedImage.size || 0;
         setCompressedSize(compressedFileSize);
 
         // Use the compressed image
@@ -233,15 +217,6 @@ const AddItemScreen: React.FC = () => {
           console.error('Error getting image size:', error);
           setImageSize(null);
         });
-
-        // Clean up the original file if it's in the cache
-        if (result.assets[0].uri.startsWith(FileSystem.CachesDirectoryPath)) {
-          try {
-            await FileSystem.unlink(result.assets[0].uri);
-          } catch (error) {
-            console.error('Error cleaning up original file:', error);
-          }
-        }
       }
     } catch (error) {
       console.error('Error picking image:', error);
