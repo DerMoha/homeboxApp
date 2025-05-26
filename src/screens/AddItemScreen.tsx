@@ -57,7 +57,8 @@ const AddItemScreen: React.FC = () => {
     description: true,
     purchasePrice: false,
     insured: false,
-    labels: true  // Default to true, but will be overridden by settings
+    labels: true,  // Default to true, but will be overridden by settings
+    image: false  // Added image field
   });
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [imageRotation, setImageRotation] = useState(0);
@@ -71,6 +72,23 @@ const AddItemScreen: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const windowWidth = Dimensions.get('window').width;
+
+  // Get the active steps based on enabled fields
+  const getActiveSteps = () => {
+    const steps = ['Basic Info'];
+    const hasEnabledDetails = Object.entries(enabledFields).some(([key, enabled]) => 
+      key !== 'labels' && key !== 'image' && enabled
+    );
+    if (hasEnabledDetails || enabledFields.labels) {
+      steps.push('Details');
+    }
+    if (enabledFields.image) {
+      steps.push('Image');
+    }
+    return steps;
+  };
+
+  const activeSteps = getActiveSteps();
 
   // Load enabled fields and image quality whenever the screen comes into focus
   useFocusEffect(
@@ -268,8 +286,8 @@ const AddItemScreen: React.FC = () => {
         throw new Error('Failed to create item');
       }
 
-      // If there's an image, upload it
-      if (selectedImage) {
+      // If there's an image and image upload is enabled, upload it
+      if (selectedImage && enabledFields.image) {
         console.log('Starting image upload for item:', itemResponse.data.id);
         const formData = new FormData();
         
@@ -301,7 +319,6 @@ const AddItemScreen: React.FC = () => {
           Alert.alert('Warning', 'Item was created but image upload failed');
         } else if (imageResponse.data) {
           console.log('Image uploaded successfully, updated item:', imageResponse.data);
-          // The item data in imageResponse.data should now include the imageId
         } else {
           console.log('Image uploaded successfully but no updated item data received');
         }
@@ -321,6 +338,7 @@ const AddItemScreen: React.FC = () => {
   const resetForm = () => {
     setFormData({});
     setSelectedLocation(null);
+    setSelectedLabels([]);
     setSearchQuery('');
     setLabelSearchQuery('');
     setSelectedImage(null);
@@ -329,6 +347,7 @@ const AddItemScreen: React.FC = () => {
     setImageSize(null);
     setOriginalSize(null);
     setCompressedSize(null);
+    setCurrentStep(0);
   };
 
   const filteredLocations = locations.filter(location =>
@@ -367,7 +386,7 @@ const AddItemScreen: React.FC = () => {
 
   const handleNext = () => {
     if (validateStep(currentStep)) {
-      if (currentStep < STEPS.length - 1) {
+      if (currentStep < activeSteps.length - 1) {
         setCurrentStep(currentStep + 1);
       } else {
         handleSubmit();
@@ -385,7 +404,7 @@ const AddItemScreen: React.FC = () => {
 
   const renderStepIndicator = () => (
     <View style={styles.stepIndicator}>
-      {STEPS.map((step, index) => (
+      {activeSteps.map((step, index) => (
         <React.Fragment key={step}>
           <TouchableOpacity
             style={[
@@ -406,7 +425,7 @@ const AddItemScreen: React.FC = () => {
               {index + 1}
             </Text>
           </TouchableOpacity>
-          {index < STEPS.length - 1 && (
+          {index < activeSteps.length - 1 && (
             <View style={[
               styles.stepLine,
               { backgroundColor: index < currentStep ? theme.colors.button.primary : theme.colors.border }
@@ -816,7 +835,7 @@ const AddItemScreen: React.FC = () => {
       case 0:
         return renderBasicInfo();
       case 1:
-        return renderDetails();
+        return activeSteps[1] === 'Details' ? renderDetails() : renderImageUpload();
       case 2:
         return renderImageUpload();
       default:
@@ -850,12 +869,12 @@ const AddItemScreen: React.FC = () => {
               />
             </TouchableOpacity>
             <Text style={[styles.headerTitle, { color: theme.colors.text.primary }]}>
-              {STEPS[currentStep]}
+              {activeSteps[currentStep]}
             </Text>
             <View style={styles.backButton} />
           </View>
 
-          {renderStepIndicator()}
+          {activeSteps.length > 1 && renderStepIndicator()}
 
           <ScrollView style={styles.scrollView}>
             {renderStepContent()}
@@ -871,7 +890,7 @@ const AddItemScreen: React.FC = () => {
                 <ActivityIndicator color={theme.colors.button.text} />
               ) : (
                 <Text style={[styles.footerButtonText, { color: theme.colors.button.text }]}>
-                  {currentStep === STEPS.length - 1 ? 'Add Item' : 'Next'}
+                  {currentStep === activeSteps.length - 1 ? 'Add Item' : 'Next'}
                 </Text>
               )}
             </TouchableOpacity>
@@ -1223,3 +1242,4 @@ const styles = StyleSheet.create({
 });
 
 export default AddItemScreen;
+                                                                                              

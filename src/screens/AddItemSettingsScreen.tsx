@@ -22,6 +22,7 @@ const DEFAULT_FIELDS = [
   { id: 'purchasePrice', label: 'Purchase Price', enabled: false },
   { id: 'insured', label: 'Insured', enabled: false },
   { id: 'labels', label: 'Labels', enabled: true },
+  { id: 'image', label: 'Image Upload', enabled: true },
 ];
 
 const AddItemSettingsScreen: React.FC = () => {
