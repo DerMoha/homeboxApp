@@ -670,6 +670,7 @@ const InventoryScreen: React.FC = () => {
             onPress={() => {
               setSortOption('name-asc');
               setSortModalVisible(false);
+              loadInventory();
             }}
           >
             <Text style={[styles.sortOptionText, { color: theme.colors.text.primary }]}>Name (A-Z)</Text>
@@ -683,6 +684,7 @@ const InventoryScreen: React.FC = () => {
             onPress={() => {
               setSortOption('name-desc');
               setSortModalVisible(false);
+              loadInventory();
             }}
           >
             <Text style={[styles.sortOptionText, { color: theme.colors.text.primary }]}>Name (Z-A)</Text>
@@ -696,6 +698,7 @@ const InventoryScreen: React.FC = () => {
             onPress={() => {
               setSortOption('date-asc');
               setSortModalVisible(false);
+              loadInventory();
             }}
           >
             <Text style={[styles.sortOptionText, { color: theme.colors.text.primary }]}>Date (Oldest First)</Text>
@@ -709,6 +712,7 @@ const InventoryScreen: React.FC = () => {
             onPress={() => {
               setSortOption('date-desc');
               setSortModalVisible(false);
+              loadInventory();
             }}
           >
             <Text style={[styles.sortOptionText, { color: theme.colors.text.primary }]}>Date (Newest First)</Text>
@@ -722,6 +726,7 @@ const InventoryScreen: React.FC = () => {
             onPress={() => {
               setSortOption('quantity-asc');
               setSortModalVisible(false);
+              loadInventory();
             }}
           >
             <Text style={[styles.sortOptionText, { color: theme.colors.text.primary }]}>Quantity (Low to High)</Text>
@@ -735,6 +740,7 @@ const InventoryScreen: React.FC = () => {
             onPress={() => {
               setSortOption('quantity-desc');
               setSortModalVisible(false);
+              loadInventory();
             }}
           >
             <Text style={[styles.sortOptionText, { color: theme.colors.text.primary }]}>Quantity (High to Low)</Text>
