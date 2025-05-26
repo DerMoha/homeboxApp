@@ -21,7 +21,14 @@ type RootStackParamList = {
 
 type LocationItemsRouteProp = RouteProp<RootStackParamList, 'LocationItems'>;
 
-interface InventoryItem {
+interface LocationNode {
+  id: string;
+  name: string;
+  type: string;
+  children: LocationNode[];
+}
+
+interface ApiInventoryItem {
   id: string;
   name: string;
   description: string;
@@ -32,13 +39,22 @@ interface InventoryItem {
   archived: boolean;
   createdAt: string;
   updatedAt: string;
+  labels?: Array<{ id: string; name: string }>;
 }
 
-interface InventoryResponse {
-  items: InventoryItem[];
-  page: number;
-  pageSize: number;
-  total: number;
+interface InventoryItem {
+  id: string;
+  name: string;
+  description: string;
+  quantity: number;
+  locationId: string;
+  imageId: string | null;
+  purchasePrice: number;
+  insured: boolean;
+  archived: boolean;
+  labels: Array<{ id: string; name: string }>;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 const LocationItemsScreen: React.FC = () => {
@@ -48,23 +64,50 @@ const LocationItemsScreen: React.FC = () => {
   const { locationId, locationName } = route.params;
   
   const [items, setItems] = useState<InventoryItem[]>([]);
+  const [childLocations, setChildLocations] = useState<LocationNode[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadItems = async (): Promise<void> => {
+  const loadData = async (): Promise<void> => {
     try {
+      setIsLoading(true);
       const service = ServerService.getInstance();
+      
+      // Load child locations
+      const treeResponse = await service.getLocationTree();
+      if (treeResponse.success && treeResponse.data) {
+        const findChildLocations = (nodes: LocationNode[]): LocationNode[] => {
+          for (const node of nodes) {
+            if (node.id === locationId) {
+              return node.children || [];
+            }
+            const children = findChildLocations(node.children || []);
+            if (children.length > 0) {
+              return children;
+            }
+          }
+          return [];
+        };
+        setChildLocations(findChildLocations(treeResponse.data));
+      }
+
+      // Load items
       const result = await service.getLocationItems(locationId);
       if (result.success && result.data) {
-        // result.data is InventoryResponse, already filtered by locationId
-        setItems(result.data.items);
+        // Ensure each item has the required properties
+        const itemsWithRequiredProps = (result.data.items as ApiInventoryItem[]).map(item => ({
+          ...item,
+          locationId: locationId,
+          labels: item.labels || []
+        }));
+        setItems(itemsWithRequiredProps);
         setError(null);
       } else {
         setError(result.error || 'Failed to load items');
       }
     } catch (error) {
-      console.error('Error loading items:', error);
+      console.error('Error loading data:', error);
       setError('An unexpected error occurred');
     } finally {
       setIsLoading(false);
@@ -74,7 +117,7 @@ const LocationItemsScreen: React.FC = () => {
 
   const onRefresh = (): void => {
     setRefreshing(true);
-    loadItems();
+    loadData();
   };
 
   const getImageUrl = (itemId: string, imageId: string): string => {
@@ -84,6 +127,36 @@ const LocationItemsScreen: React.FC = () => {
       return '';
     }
     return `${service.getBaseUrl()}/api/v1/items/${itemId}/attachments/${imageId}`;
+  };
+
+  const handleLocationPress = (locationId: string, locationName: string) => {
+    navigation.push('LocationItems', { 
+      locationId,
+      locationName
+    });
+  };
+
+  const renderLocation = ({ item }: { item: LocationNode }): React.ReactElement => {
+    return (
+      <TouchableOpacity
+        style={[styles.locationContainer, { backgroundColor: theme.colors.background.secondary }]}
+        onPress={() => handleLocationPress(item.id, item.name)}
+      >
+        <View style={styles.locationContent}>
+          <View style={styles.locationHeader}>
+            <MaterialIcons
+              name="chevron-right"
+              size={24}
+              color={theme.colors.text.primary}
+              style={styles.locationIcon}
+            />
+            <Text style={[styles.locationName, { color: theme.colors.text.primary }]}>
+              {item.name}
+            </Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
   };
 
   const renderItem = ({ item }: { item: InventoryItem }): React.ReactElement => {
@@ -159,7 +232,7 @@ const LocationItemsScreen: React.FC = () => {
   };
 
   useEffect(() => {
-    loadItems();
+    loadData();
   }, [locationId]);
 
   useEffect(() => {
@@ -182,7 +255,7 @@ const LocationItemsScreen: React.FC = () => {
         <Text style={[styles.errorText, { color: theme.colors.error }]}>Error: {error}</Text>
         <TouchableOpacity
           style={[styles.retryButton, { backgroundColor: theme.colors.button.primary }]}
-          onPress={loadItems}
+          onPress={loadData}
         >
           <Text style={[styles.retryButtonText, { color: theme.colors.button.text }]}>
             Retry
@@ -194,9 +267,14 @@ const LocationItemsScreen: React.FC = () => {
 
   return (
     <FlatList
-      data={items}
-      renderItem={renderItem}
-      keyExtractor={(item) => item.id}
+      data={[...childLocations, ...items]}
+      renderItem={({ item }) => {
+        if ('type' in item) {
+          return renderLocation({ item: item as LocationNode });
+        }
+        return renderItem({ item: item as InventoryItem });
+      }}
+      keyExtractor={(item) => 'type' in item ? item.id : item.id}
       contentContainerStyle={styles.listContent}
       refreshControl={
         <RefreshControl
@@ -208,7 +286,7 @@ const LocationItemsScreen: React.FC = () => {
       ListEmptyComponent={
         <View style={styles.emptyContainer}>
           <Text style={[styles.emptyText, { color: theme.colors.text.secondary }]}>
-            No items found in this location
+            No items or sub-locations found
           </Text>
         </View>
       }
@@ -222,6 +300,25 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 16,
+  },
+  locationContainer: {
+    borderRadius: 12,
+    marginBottom: 8,
+    overflow: 'hidden',
+  },
+  locationContent: {
+    padding: 12,
+  },
+  locationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  locationIcon: {
+    marginRight: 8,
+  },
+  locationName: {
+    fontSize: 16,
+    fontWeight: '600',
   },
   itemContainer: {
     borderRadius: 12,

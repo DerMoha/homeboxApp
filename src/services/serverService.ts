@@ -121,6 +121,19 @@ interface CreateItemResponse {
   error?: string;
 }
 
+interface LocationNode {
+  id: string;
+  name: string;
+  type: string;
+  children: LocationNode[];
+}
+
+interface LocationTreeResponse {
+  success: boolean;
+  data?: LocationNode[];
+  error?: string;
+}
+
 class ServerService {
   // ...existing fields and methods...
 
@@ -626,6 +639,28 @@ class ServerService {
       return {
         success: false,
         error: error.response?.data?.message || error.message || 'Failed to upload image',
+      };
+    }
+  }
+
+  async getLocationTree(): Promise<LocationTreeResponse> {
+    try {
+      if (!this.axiosInstance) {
+        return {
+          success: false,
+          error: 'Server connection not initialized'
+        };
+      }
+      const response = await this.axiosInstance.get('/api/v1/locations/tree');
+      return {
+        success: true,
+        data: response.data
+      };
+    } catch (error) {
+      console.error('Error fetching location tree:', error);
+      return {
+        success: false,
+        error: 'Failed to fetch location tree'
       };
     }
   }
