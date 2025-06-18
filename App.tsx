@@ -14,6 +14,7 @@ import InventorySettingsScreen from './src/screens/InventorySettingsScreen';
 import LocationsScreen from './src/screens/LocationsScreen';
 import LocationItemsScreen from './src/screens/LocationItemsScreen';
 import AddItemSettingsScreen from './src/screens/AddItemSettingsScreen';
+import HomeScreen from './src/screens/HomeScreen';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import { darkTheme } from './src/theme/theme';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
@@ -24,16 +25,6 @@ const SettingsStack = createNativeStackNavigator();
 const LocationsStack = createNativeStackNavigator();
 const InventoryStack = createNativeStackNavigator();
 const AddItemStack = createNativeStackNavigator();
-
-// Placeholder screens
-const HomeScreen = () => {
-  const { theme } = useTheme();
-  return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background.primary }}>
-      <Text style={{ color: theme.colors.text.primary }}>Home Screen</Text>
-    </View>
-  );
-};
 
 const SettingsStackScreen = () => {
   const { theme } = useTheme();

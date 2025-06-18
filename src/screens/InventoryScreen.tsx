@@ -13,8 +13,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeContext';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RouteProp } from '@react-navigation/native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS } from '../constants/storage';
@@ -23,7 +24,11 @@ import { useFocusEffect } from '@react-navigation/native';
 
 type RootStackParamList = {
   InventoryTab: undefined;
-  Inventory: undefined;
+  Inventory: {
+    searchQuery?: string;
+    selectedTags?: string[];
+    selectedLocation?: string | null;
+  };
   InventorySettings: undefined;
   AddItem: undefined;
   ServerConfig: undefined;
@@ -33,10 +38,10 @@ type RootStackParamList = {
       screen: 'ServerConfig';
     };
   };
-  // Added for navigation to item detail
   ItemDetail: { itemId: string };
 };
-// Note: If you implement ItemDetailScreen, it should accept route.params.itemId
+
+type InventoryScreenRouteProp = RouteProp<RootStackParamList, 'Inventory'>;
 
 interface Label {
   id: string;
@@ -89,6 +94,7 @@ type ViewMode = 'list' | 'grid';
 const InventoryScreen: React.FC = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const route = useRoute<InventoryScreenRouteProp>();
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -301,7 +307,31 @@ const InventoryScreen: React.FC = () => {
       const response = await ServerService.getInstance().getInventory(1, 50);
       console.log('API Response:', response);
       if (response.success && response.data) {
-        const sortedItems = sortInventory(response.data.items);
+        let items = response.data.items;
+
+        // Apply search filters if they exist
+        if (route.params) {
+          const { searchQuery, selectedTags, selectedLocation } = route.params;
+          
+          items = items.filter((item: InventoryItem) => {
+            // Filter by search query
+            const matchesSearch = !searchQuery || 
+              item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              item.description?.toLowerCase().includes(searchQuery.toLowerCase());
+
+            // Filter by selected tags
+            const matchesTags = !selectedTags?.length || 
+              selectedTags.every(tag => item.labels?.some((label: { name: string }) => label.name === tag));
+
+            // Filter by selected location
+            const matchesLocation = !selectedLocation || 
+              item.location?.id === selectedLocation;
+
+            return matchesSearch && matchesTags && matchesLocation;
+          });
+        }
+
+        const sortedItems = sortInventory(items);
         setInventory(sortedItems);
       } else {
         setError(response.error || 'Failed to load inventory');
@@ -313,7 +343,7 @@ const InventoryScreen: React.FC = () => {
       setIsLoading(false);
       setRefreshing(false);
     }
-  }, [sortInventory]);
+  }, [sortInventory, route.params]);
 
   const onRefresh = (): void => {
     setRefreshing(true);

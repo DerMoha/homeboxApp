@@ -379,6 +379,25 @@ class ServerService {
     return this.axiosInstance;
   }
 
+  public async get<T>(endpoint: string): Promise<ApiResponse<T>> {
+    try {
+      if (!this.axiosInstance || !this.token) {
+        return {
+          success: false,
+          error: 'No active server connection or authentication token',
+        };
+      }
+
+      const response = await this.axiosInstance.get(endpoint);
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
+  }
+
   public async getInventory(page: number = 1, pageSize: number = 50): Promise<ServerResponse> {
     try {
       if (!this.axiosInstance || !this.token) {
@@ -447,14 +466,26 @@ class ServerService {
   public async autoConnect(): Promise<ServerResponse> {
     try {
       const lastUsedServer = await this.getLastUsedServer();
-      if (!lastUsedServer) {
-        return {
-          success: false,
-          error: 'No last used server found',
-        };
+      if (lastUsedServer) {
+        return await this.initialize(lastUsedServer);
       }
 
-      return await this.initialize(lastUsedServer);
+      // If no last used server, try to connect to any available server
+      const servers = await this.getServers();
+      if (servers.length > 0) {
+        // Try to connect to the first server
+        const result = await this.initialize(servers[0]);
+        if (result.success) {
+          // Save this as the last used server
+          await this.setLastUsedServer(servers[0].id);
+        }
+        return result;
+      }
+
+      return {
+        success: false,
+        error: 'No servers configured',
+      };
     } catch (error) {
       return this.handleError(error as AxiosError);
     }

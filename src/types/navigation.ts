@@ -1,11 +1,29 @@
-import { ServerConfig } from '../services/serverService';
-
-export type SettingsStackParamList = {
-  Settings: undefined;
-  ServerConfig: { server?: ServerWithStatus };
+export type RootStackParamList = {
+  Home: undefined;
+  InventoryTab: {
+    screen: 'Inventory';
+    params?: {
+      searchQuery?: string;
+      selectedTags?: string[];
+      selectedLocation?: string | null;
+    };
+  };
+  AddItemTab: { scanBarcode?: boolean };
+  Locations: undefined;
+  SettingsTab: undefined;
+  ItemDetail: { itemId: string };
+  LocationItems: { locationId: string };
+  ServerConfig: { server?: { id: string; host: string; username: string; password: string; name?: string } };
   Appearance: undefined;
   InventorySettings: undefined;
   AddItemSettings: undefined;
+  Inventory: {
+    searchQuery?: string;
+    selectedTags?: string[];
+    selectedLocation?: string | null;
+  };
+  AddItem: { scanBarcode?: boolean };
+  Settings: undefined;
 };
 
 export type LocationsStackParamList = {
@@ -13,6 +31,11 @@ export type LocationsStackParamList = {
   LocationItems: { locationId: string; locationName: string };
 };
 
-export interface ServerWithStatus extends ServerConfig {
+export interface ServerWithStatus {
+  id: string;
+  host: string;
+  username: string;
+  password: string;
+  name?: string;
   status: 'checking' | 'online' | 'offline';
 } 
