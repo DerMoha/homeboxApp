@@ -16,10 +16,10 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import ServerService, { ServerConfig } from '../services/serverService';
 import { useTheme } from '../theme/ThemeContext';
-import { SettingsStackParamList } from '../types/navigation';
+import { RootStackParamList } from '../types/navigation';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
-type SettingsScreenNavigationProp = NativeStackNavigationProp<SettingsStackParamList, 'Settings'>;
+type SettingsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Settings'>;
 
 interface ServerWithStatus extends ServerConfig {
   status: 'checking' | 'online' | 'offline';

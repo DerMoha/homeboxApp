@@ -570,28 +570,32 @@ const styles = StyleSheet.create({
   quickActionsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    padding: 16,
-    gap: 16,
-    justifyContent: 'center', // zentriert die Boxen horizontal
-    alignItems: 'center',     // zentriert die Boxen vertikal
+    paddingHorizontal: 10,
+    paddingTop: 10,
+    paddingBottom: 2,
+    gap: 8,
+    justifyContent: 'space-between',
+    alignItems: 'stretch',
   },
   quickActionWrapper: {
-    width: '48%', // etwas breiter für gleichmäßigere Abstände
-    marginBottom: 12, // optional für vertikalen Abstand
-    alignItems: 'center',
+    width: '49%',
+    marginBottom: 3,
   },
   quickActionButton: {
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',
     gap: 8,
+    width: '100%',
   },
   quickActionText: {
     fontSize: 14,
     fontWeight: '500',
   },
   recentItemsContainer: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 16,
   },
   sectionTitle: {
     fontSize: 20,
