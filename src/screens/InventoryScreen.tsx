@@ -961,6 +961,7 @@ const styles = StyleSheet.create({
   },
   footerLabel: {
     fontSize: 12,
+    flexShrink: 1,
   },
   imageContainer: {
     marginVertical: 4,
@@ -1188,6 +1189,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    flex: 1,
+    minWidth: 0,
   },
   compactLocation: {
     flexDirection: 'row',
@@ -1196,6 +1199,9 @@ const styles = StyleSheet.create({
   compactLabels: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexShrink: 1,
+    flex: 1,
+    minWidth: 0,
   },
   compactImageIcon: {
     marginLeft: 1,
