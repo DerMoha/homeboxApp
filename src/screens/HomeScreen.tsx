@@ -39,12 +39,15 @@ type InventoryItem = {
 type TabParamList = {
   Home: undefined;
   InventoryTab: {
-    screen: 'Inventory';
-    params?: {
-      searchQuery?: string;
-      selectedTags?: string[];
-      selectedLocation?: string | null;
-    };
+    screen: 'Inventory' | 'ItemDetail';
+    params?: (
+      | {
+          searchQuery?: string;
+          selectedTags?: string[];
+          selectedLocation?: string | null;
+        }
+      | { itemId: string }
+    );
   };
   AddItemTab: { scanBarcode?: boolean };
   Locations: undefined;
@@ -443,7 +446,12 @@ const HomeScreen: React.FC = () => {
   const renderRecentItem = ({ item }: { item: InventoryItem }) => (
     <TouchableOpacity
       style={[styles.recentItem, { backgroundColor: theme.colors.background.secondary }]}
-      onPress={() => navigation.navigate('ItemDetail', { itemId: item.id })}
+      onPress={() =>
+        navigation.navigate('InventoryTab', {
+          screen: 'ItemDetail',
+          params: { itemId: item.id },
+        })
+      }
     >
       <View style={styles.recentItemContent}>
         <Text style={[styles.recentItemName, { color: theme.colors.text.primary }]}>
@@ -473,11 +481,19 @@ const HomeScreen: React.FC = () => {
       {renderSearchBar()}
 
       <View style={styles.quickActionsContainer}>
-        {quickActions.map((action, index) => (
-          <View key={index} style={styles.quickActionWrapper}>
-            {renderQuickAction({ item: action })}
-          </View>
-        ))}
+        <FlatList
+          data={quickActions}
+          numColumns={2}
+          keyExtractor={(item) => item.title}
+          renderItem={({ item }) => (
+            <View style={styles.quickActionWrapper}> 
+              {renderQuickAction({ item })}
+            </View>
+          )}
+          scrollEnabled={false}
+          contentContainerStyle={styles.quickActionsList}
+          columnWrapperStyle={styles.quickActionsRow}
+        />
       </View>
 
       <View style={styles.recentItemsContainer}>
@@ -568,18 +584,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   quickActionsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: 10,
+    paddingHorizontal: 0,
     paddingTop: 10,
     paddingBottom: 2,
-    gap: 8,
-    justifyContent: 'space-between',
-    alignItems: 'stretch',
   },
   quickActionWrapper: {
-    width: '49%',
-    marginBottom: 3,
+    flex: 1,
+    marginBottom: 8,
   },
   quickActionButton: {
     padding: 16,
@@ -591,6 +602,13 @@ const styles = StyleSheet.create({
   quickActionText: {
     fontSize: 14,
     fontWeight: '500',
+  },
+  quickActionsList: {
+    paddingHorizontal: 10,
+  },
+  quickActionsRow: {
+    justifyContent: 'space-between',
+    gap: 8,
   },
   recentItemsContainer: {
     paddingHorizontal: 16,
