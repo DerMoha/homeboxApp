@@ -1,12 +1,15 @@
 export type RootStackParamList = {
   Home: undefined;
   InventoryTab: {
-    screen: 'Inventory';
-    params?: {
-      searchQuery?: string;
-      selectedTags?: string[];
-      selectedLocation?: string | null;
-    };
+    screen: 'Inventory' | 'ItemDetail';
+    params?: (
+      | {
+          searchQuery?: string;
+          selectedTags?: string[];
+          selectedLocation?: string | null;
+        }
+      | { itemId: string }
+    );
   };
   AddItemTab: { scanBarcode?: boolean };
   Locations: undefined;

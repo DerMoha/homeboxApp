@@ -99,6 +99,7 @@ interface CreateItemRequest {
   labels?: string[];
   purchasePrice?: number;
   insured?: boolean;
+  parentId?: string;
 }
 
 interface CreateItemResponse {
