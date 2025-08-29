@@ -37,7 +37,7 @@ interface Label {
   updatedAt: string;
 }
 
-const STEPS = ['Basic Info', 'Details', 'Image'];
+const STEPS = ['Basic Info', 'Image'];
 
 const AddItemScreen: React.FC = () => {
   const { theme } = useTheme();
@@ -67,6 +67,12 @@ const AddItemScreen: React.FC = () => {
   const [isQuantityFocused, setIsQuantityFocused] = useState(false);
   const [imageQuality, setImageQuality] = useState(0.8); // Default quality
   const [isPreviewVisible, setIsPreviewVisible] = useState(false);
+  const [isLocationPickerVisible, setIsLocationPickerVisible] = useState(false);
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
+  const [allItems, setAllItems] = useState<any[]>([]);
+  const [isParentPickerVisible, setIsParentPickerVisible] = useState(false);
+  const [parentSearchQuery, setParentSearchQuery] = useState('');
+  const [selectedParent, setSelectedParent] = useState<any | null>(null);
   const [originalSize, setOriginalSize] = useState<number | null>(null);
   const [compressedSize, setCompressedSize] = useState<number | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
@@ -76,15 +82,6 @@ const AddItemScreen: React.FC = () => {
   // Get the active steps based on enabled fields
   const getActiveSteps = () => {
     const steps = ['Basic Info'];
-    const hasEnabledDetails = Object.entries(enabledFields).some(([key, enabled]) => 
-      key !== 'labels' && key !== 'image' && enabled
-    );
-    if (hasEnabledDetails || enabledFields.labels) {
-      steps.push('Details');
-    }
-    if (enabledFields.image) {
-      steps.push('Image');
-    }
     return steps;
   };
 
@@ -156,6 +153,15 @@ const AddItemScreen: React.FC = () => {
 
       await loadLocations();
       await loadLabels();
+      // Preload items for parent selection
+      try {
+        const invResp = await service.getInventory(1, 1000);
+        if ((invResp as any).success && (invResp as any).data) {
+          setAllItems((invResp as any).data.items || []);
+        }
+      } catch (e) {
+        console.warn('Failed to preload items');
+      }
     } catch (error) {
       console.error('Error auto-connecting:', error);
       Alert.alert('Error', 'Failed to connect to server');
@@ -274,7 +280,8 @@ const AddItemScreen: React.FC = () => {
         description: enabledFields.description ? formData.description || '' : '',
         purchasePrice: enabledFields.purchasePrice ? parseFloat(formData.purchasePrice) || 0 : 0,
         insured: enabledFields.insured ? formData.insured || false : false,
-        labels: selectedLabels.map(label => label.id)
+        labels: selectedLabels.map(label => label.id),
+        parentId: selectedParent?.id
       };
 
       // First create the item
@@ -439,405 +446,324 @@ const AddItemScreen: React.FC = () => {
   const renderBasicInfo = () => (
     <View style={styles.stepContent}>
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
-          Item Name
-        </Text>
-        <TextInput
-          style={[
-            styles.input,
-            errors.name && styles.inputError,
-            { 
-              backgroundColor: theme.colors.background.secondary,
-              color: theme.colors.text.primary,
-              borderColor: errors.name ? theme.colors.error : theme.colors.border,
-            }
-          ]}
-          placeholder="Enter item name"
-          placeholderTextColor={theme.colors.text.secondary}
-          value={formData.name || ''}
-          onChangeText={(text) => {
-            setFormData(prev => ({ ...prev, name: text }));
-            if (errors.name) {
-              setErrors(prev => ({ ...prev, name: '' }));
-            }
-          }}
-        />
+        <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Item</Text>
+        <View style={styles.nameQuantityRow}>
+          <TextInput
+            style={[
+              styles.input,
+              { flex: 1 },
+              errors.name && styles.inputError,
+              { 
+                backgroundColor: theme.colors.background.secondary,
+                color: theme.colors.text.primary,
+                borderColor: errors.name ? theme.colors.error : theme.colors.border,
+              }
+            ]}
+            placeholder="Enter item name"
+            placeholderTextColor={theme.colors.text.secondary}
+            value={formData.name || ''}
+            onChangeText={(text) => {
+              setFormData(prev => ({ ...prev, name: text }));
+              if (errors.name) {
+                setErrors(prev => ({ ...prev, name: '' }));
+              }
+            }}
+          />
+          <View style={styles.inlineQuantityContainer}>
+            <TouchableOpacity
+              style={[styles.inlineQtyButton, { backgroundColor: theme.colors.button.primary }]}
+              onPress={() => {
+                const currentQty = parseInt(formData.quantity || '1');
+                if (currentQty > 1) {
+                  setFormData(prev => ({ ...prev, quantity: (currentQty - 1).toString() }));
+                }
+              }}
+            >
+              <MaterialIcons name="remove" size={20} color={theme.colors.button.text} />
+            </TouchableOpacity>
+            <TextInput
+              style={[
+                styles.inlineQtyInput,
+                { 
+                  backgroundColor: theme.colors.background.secondary,
+                  color: theme.colors.text.primary,
+                  borderColor: theme.colors.border,
+                }
+              ]}
+              value={formData.quantity || '1'}
+              onChangeText={(text) => {
+                const numericValue = text.replace(/[^0-9]/g, '');
+                setFormData(prev => ({ ...prev, quantity: numericValue || '1' }));
+              }}
+              keyboardType="number-pad"
+            />
+            <TouchableOpacity
+              style={[styles.inlineQtyButton, { backgroundColor: theme.colors.button.primary }]}
+              onPress={() => {
+                const currentQty = parseInt(formData.quantity || '1');
+                setFormData(prev => ({ ...prev, quantity: (currentQty + 1).toString() }));
+              }}
+            >
+              <MaterialIcons name="add" size={20} color={theme.colors.button.text} />
+            </TouchableOpacity>
+          </View>
+        </View>
         {errors.name && (
           <Text style={[styles.errorText, { color: theme.colors.error }]}>{errors.name}</Text>
         )}
       </View>
 
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
-          Quantity
-        </Text>
-        <View style={styles.quantityContainer}>
-          <TouchableOpacity
-            style={[styles.quantityButton, { backgroundColor: theme.colors.button.primary }]}
-            onPress={() => {
-              const currentQty = parseInt(formData.quantity || '1');
-              if (currentQty > 1) {
-                setFormData(prev => ({ ...prev, quantity: (currentQty - 1).toString() }));
-              }
-            }}
-          >
-            <MaterialIcons name="remove" size={24} color={theme.colors.button.text} />
-          </TouchableOpacity>
-          <TextInput
-            style={[
-              styles.quantityInput,
-              { 
-                backgroundColor: theme.colors.background.secondary,
-                color: theme.colors.text.primary,
-                borderColor: theme.colors.border,
-              }
-            ]}
-            value={formData.quantity || '1'}
-            onChangeText={(text) => {
-              const numericValue = text.replace(/[^0-9]/g, '');
-              setFormData(prev => ({ ...prev, quantity: numericValue || '1' }));
-            }}
-            keyboardType="number-pad"
-          />
-          <TouchableOpacity
-            style={[styles.quantityButton, { backgroundColor: theme.colors.button.primary }]}
-            onPress={() => {
-              const currentQty = parseInt(formData.quantity || '1');
-              setFormData(prev => ({ ...prev, quantity: (currentQty + 1).toString() }));
-            }}
-          >
-            <MaterialIcons name="add" size={24} color={theme.colors.button.text} />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
-          Location
-        </Text>
-        <TextInput
-          style={[
-            styles.searchInput,
-            errors.location && styles.inputError,
-            { 
-              backgroundColor: theme.colors.background.secondary,
-              color: theme.colors.text.primary,
-              borderColor: errors.location ? theme.colors.error : theme.colors.border,
-            }
-          ]}
-          placeholder="Search locations..."
-          placeholderTextColor={theme.colors.text.secondary}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
-        <ScrollView 
-          style={[styles.locationList, { 
-            backgroundColor: theme.colors.background.secondary,
-            borderColor: theme.colors.border,
-          }]}
-          nestedScrollEnabled={true}
+        <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Location</Text>
+        <TouchableOpacity
+          style={[styles.selectorButton, { backgroundColor: theme.colors.background.secondary, borderColor: errors.location ? theme.colors.error : theme.colors.border }]}
+          onPress={() => setIsLocationPickerVisible(true)}
         >
-          {filteredLocations.map(location => (
-            <TouchableOpacity
-              key={location.id}
-              style={[
-                styles.locationItem,
-                selectedLocation?.id === location.id && { 
-                  backgroundColor: theme.colors.button.primary 
-                }
-              ]}
-              onPress={() => {
-                setSelectedLocation(location);
-                if (errors.location) {
-                  setErrors(prev => ({ ...prev, location: '' }));
-                }
-              }}
-            >
-              <Text style={[
-                styles.locationName,
-                { color: selectedLocation?.id === location.id 
-                  ? theme.colors.button.text 
-                  : theme.colors.text.primary 
-                }
-              ]}>
-                {location.name}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+          <Text style={{ color: selectedLocation ? theme.colors.text.primary : theme.colors.text.secondary }}>
+            {selectedLocation ? selectedLocation.name : 'Select location'}
+          </Text>
+          <MaterialIcons name="expand-more" size={20} color={theme.colors.text.secondary} />
+        </TouchableOpacity>
         {errors.location && (
           <Text style={[styles.errorText, { color: theme.colors.error }]}>{errors.location}</Text>
         )}
       </View>
-    </View>
-  );
 
-  const renderDetails = () => (
-    <View style={styles.stepContent}>
-      {enabledFields.labels && (
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
-            Labels
-          </Text>
-          <TextInput
-            style={[styles.searchInput, { 
-              backgroundColor: theme.colors.background.secondary,
-              color: theme.colors.text.primary,
-              borderColor: theme.colors.border,
-            }]}
-            placeholder="Search labels..."
-            placeholderTextColor={theme.colors.text.secondary}
-            value={labelSearchQuery}
-            onChangeText={setLabelSearchQuery}
-          />
-          <ScrollView 
-            style={[styles.labelList, { 
-              backgroundColor: theme.colors.background.secondary,
-              borderColor: theme.colors.border,
-            }]}
-            nestedScrollEnabled={true}
-          >
-            {filteredLabels.map(label => (
-              <TouchableOpacity
-                key={label.id}
-                style={[
-                  styles.labelItem,
-                  selectedLabels.some(l => l.id === label.id) && { 
-                    backgroundColor: theme.colors.button.primary 
-                  }
-                ]}
-                onPress={() => handleLabelToggle(label)}
-              >
-                <Text style={[
-                  styles.labelName,
-                  { color: selectedLabels.some(l => l.id === label.id)
-                    ? theme.colors.button.text 
-                    : theme.colors.text.primary 
-                  }
-                ]}>
-                  {label.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-      )}
-
-      {enabledFields.description && (
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
-            Description
-          </Text>
-          <TextInput
-            style={[styles.input, styles.textArea, { 
-              backgroundColor: theme.colors.background.secondary,
-              color: theme.colors.text.primary,
-              borderColor: theme.colors.border,
-            }]}
-            placeholder="Enter description"
-            placeholderTextColor={theme.colors.text.secondary}
-            multiline
-            numberOfLines={4}
-            value={formData.description || ''}
-            onChangeText={(text) => setFormData(prev => ({ ...prev, description: text }))}
-          />
-        </View>
-      )}
-
-      {enabledFields.purchasePrice && (
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
-            Purchase Price
-          </Text>
-          <TextInput
-            style={[
-              styles.input,
-              errors.purchasePrice && styles.inputError,
-              { 
-                backgroundColor: theme.colors.background.secondary,
-                color: theme.colors.text.primary,
-                borderColor: errors.purchasePrice ? theme.colors.error : theme.colors.border,
-              }
-            ]}
-            placeholder="Enter purchase price"
-            placeholderTextColor={theme.colors.text.secondary}
-            keyboardType="numeric"
-            value={formData.purchasePrice || ''}
-            onChangeText={(text) => {
-              setFormData(prev => ({ ...prev, purchasePrice: text }));
-              if (errors.purchasePrice) {
-                setErrors(prev => ({ ...prev, purchasePrice: '' }));
-              }
-            }}
-          />
-          {errors.purchasePrice && (
-            <Text style={[styles.errorText, { color: theme.colors.error }]}>{errors.purchasePrice}</Text>
-          )}
-        </View>
-      )}
-
-      {enabledFields.insured && (
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
-            Insured?
-          </Text>
-          <View style={styles.yesNoContainer}>
-            <TouchableOpacity
-              style={[
-                styles.yesNoButton,
-                { 
-                  backgroundColor: formData.insured === true 
-                    ? theme.colors.button.primary 
-                    : theme.colors.background.secondary,
-                  borderColor: theme.colors.border
-                }
-              ]}
-              onPress={() => setFormData(prev => ({ ...prev, insured: true }))}
-            >
-              <Text style={[
-                styles.yesNoButtonText,
-                { color: formData.insured === true 
-                  ? theme.colors.button.text 
-                  : theme.colors.text.primary 
-                }
-              ]}>
-                Yes
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.yesNoButton,
-                { 
-                  backgroundColor: formData.insured === false 
-                    ? theme.colors.button.primary 
-                    : theme.colors.background.secondary,
-                  borderColor: theme.colors.border
-                }
-              ]}
-              onPress={() => setFormData(prev => ({ ...prev, insured: false }))}
-            >
-              <Text style={[
-                styles.yesNoButtonText,
-                { color: formData.insured === false 
-                  ? theme.colors.button.text 
-                  : theme.colors.text.primary 
-                }
-              ]}>
-                No
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
-    </View>
-  );
-
-  const renderImageUpload = () => (
-    <View style={styles.stepContent}>
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
-          Item Image
-        </Text>
-        {!selectedImage ? (
-          <View style={styles.imageUploadContainer}>
-            <TouchableOpacity
-              style={[styles.imageUploadButton, { backgroundColor: theme.colors.button.primary }]}
-              onPress={() => handleImagePicker('camera')}
-            >
-              <MaterialIcons name="camera-alt" size={32} color={theme.colors.button.text} />
-              <Text style={[styles.imageUploadText, { color: theme.colors.button.text }]}>
-                Take Photo
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.imageUploadButton, { backgroundColor: theme.colors.button.primary }]}
-              onPress={() => handleImagePicker('library')}
-            >
-              <MaterialIcons name="photo-library" size={32} color={theme.colors.button.text} />
-              <Text style={[styles.imageUploadText, { color: theme.colors.button.text }]}>
-                Choose from Library
-              </Text>
-            </TouchableOpacity>
+        <TouchableOpacity style={styles.advancedHeader} onPress={() => setIsAdvancedOpen(!isAdvancedOpen)}>
+          <View>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Advanced</Text>
+            <Text style={[styles.advancedSummary, { color: theme.colors.text.secondary }]}> 
+              {`${selectedLabels.length} label${selectedLabels.length === 1 ? '' : 's'}`}
+              {enabledFields.purchasePrice && formData.purchasePrice ? ` • $${formData.purchasePrice}` : ''}
+              {enabledFields.insured && (formData.insured === true || formData.insured === false) ? ` • Insured: ${formData.insured ? 'Yes' : 'No'}` : ''}
+              {selectedParent ? ` • Parent: ${selectedParent.name}` : ''}
+            </Text>
           </View>
-        ) : (
-          <View style={styles.selectedImageContainer}>
-            <TouchableOpacity 
-              style={styles.imagePreviewContainer}
-              onPress={() => setIsPreviewVisible(true)}
-            >
-              <Image
-                source={{ uri: selectedImage }}
-                style={[
-                  styles.selectedImage,
-                  {
-                    transform: [
-                      { rotate: `${imageRotation}deg` },
-                      { scaleX: imageFlip ? -1 : 1 }
-                    ]
-                  }
-                ]}
-                resizeMode="cover"
-              />
-              <View style={styles.imageOverlay}>
-                <Text style={[styles.imageOverlayText, { color: '#fff' }]}>
-                  Tap to preview
-                </Text>
+          <MaterialIcons name={isAdvancedOpen ? 'expand-less' : 'expand-more'} size={22} color={theme.colors.text.primary} />
+        </TouchableOpacity>
+        {isAdvancedOpen && (
+          <View style={styles.advancedContainer}>
+            <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
+            {enabledFields.labels && (
+              <View style={[styles.card, { backgroundColor: theme.colors.background.secondary, borderColor: theme.colors.border }]}>
+                <Text style={[styles.cardTitle, { color: theme.colors.text.primary }]}>Labels</Text>
+                <View style={styles.chipsRow}>
+                  {selectedLabels.length === 0 && (
+                    <Text style={[styles.helperText, { color: theme.colors.text.secondary }]}>No labels selected</Text>
+                  )}
+                  {selectedLabels.map(l => (
+                    <TouchableOpacity key={l.id} style={[styles.chip, { borderColor: theme.colors.border, backgroundColor: theme.colors.background.primary }]}
+                      onPress={() => handleLabelToggle(l)}
+                    >
+                      <Text style={[styles.chipText, { color: theme.colors.text.primary }]}>{l.name}</Text>
+                      <MaterialIcons name="close" size={14} color={theme.colors.text.secondary} />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <TextInput
+                  style={[styles.searchInput, { backgroundColor: theme.colors.background.primary, color: theme.colors.text.primary, borderColor: theme.colors.border }]}
+                  placeholder="Search labels..."
+                  placeholderTextColor={theme.colors.text.secondary}
+                  value={labelSearchQuery}
+                  onChangeText={setLabelSearchQuery}
+                />
+                <ScrollView style={[styles.labelList, { backgroundColor: theme.colors.background.primary, borderColor: theme.colors.border }]} nestedScrollEnabled={true}>
+                  {filteredLabels.map(label => (
+                    <TouchableOpacity
+                      key={label.id}
+                      style={[styles.labelItem, selectedLabels.some(l => l.id === label.id) && { backgroundColor: theme.colors.button.primary }]}
+                      onPress={() => handleLabelToggle(label)}
+                    >
+                      <Text style={[styles.labelName, { color: selectedLabels.some(l => l.id === label.id) ? theme.colors.button.text : theme.colors.text.primary }]}>
+                        {label.name}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
               </View>
-            </TouchableOpacity>
-            <View style={styles.imageControls}>
+            )}
+
+            {enabledFields.description && (
+              <View style={[styles.card, { backgroundColor: theme.colors.background.secondary, borderColor: theme.colors.border }]}>
+                <Text style={[styles.cardTitle, { color: theme.colors.text.primary }]}>Description</Text>
+                <TextInput
+                  style={[styles.input, styles.textArea, { backgroundColor: theme.colors.background.primary, color: theme.colors.text.primary, borderColor: theme.colors.border }]}
+                  placeholder="What is it? Add details to help identify later"
+                  placeholderTextColor={theme.colors.text.secondary}
+                  multiline
+                  numberOfLines={4}
+                  value={formData.description || ''}
+                  onChangeText={(text) => setFormData(prev => ({ ...prev, description: text }))}
+                />
+              </View>
+            )}
+
+            {enabledFields.purchasePrice && (
+              <View style={[styles.card, { backgroundColor: theme.colors.background.secondary, borderColor: theme.colors.border }]}>
+                <Text style={[styles.cardTitle, { color: theme.colors.text.primary }]}>Purchase Price</Text>
+                <TextInput
+                  style={[styles.input, errors.purchasePrice && styles.inputError, { backgroundColor: theme.colors.background.primary, color: theme.colors.text.primary, borderColor: errors.purchasePrice ? theme.colors.error : theme.colors.border }]}
+                  placeholder="e.g., 49.99"
+                  placeholderTextColor={theme.colors.text.secondary}
+                  keyboardType="numeric"
+                  value={formData.purchasePrice || ''}
+                  onChangeText={(text) => {
+                    setFormData(prev => ({ ...prev, purchasePrice: text }));
+                    if (errors.purchasePrice) {
+                      setErrors(prev => ({ ...prev, purchasePrice: '' }));
+                    }
+                  }}
+                />
+                <Text style={[styles.helperText, { color: theme.colors.text.secondary }]}>Optional. Used for insurance or valuation.</Text>
+                {errors.purchasePrice && (
+                  <Text style={[styles.errorText, { color: theme.colors.error }]}>{errors.purchasePrice}</Text>
+                )}
+              </View>
+            )}
+
+            {enabledFields.insured && (
+              <View style={[styles.card, { backgroundColor: theme.colors.background.secondary, borderColor: theme.colors.border }]}>
+                <Text style={[styles.cardTitle, { color: theme.colors.text.primary }]}>Insured?</Text>
+                <View style={styles.yesNoContainer}>
+                  <TouchableOpacity
+                    style={[styles.yesNoButton, { backgroundColor: formData.insured === true ? theme.colors.button.primary : theme.colors.background.primary, borderColor: theme.colors.border }]}
+                    onPress={() => setFormData(prev => ({ ...prev, insured: true }))}
+                  >
+                    <Text style={[styles.yesNoButtonText, { color: formData.insured === true ? theme.colors.button.text : theme.colors.text.primary }]}>Yes</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.yesNoButton, { backgroundColor: formData.insured === false ? theme.colors.button.primary : theme.colors.background.primary, borderColor: theme.colors.border }]}
+                    onPress={() => setFormData(prev => ({ ...prev, insured: false }))}
+                  >
+                    <Text style={[styles.yesNoButtonText, { color: formData.insured === false ? theme.colors.button.text : theme.colors.text.primary }]}>No</Text>
+                  </TouchableOpacity>
+                </View>
+                <Text style={[styles.helperText, { color: theme.colors.text.secondary }]}>Mark if the item is covered by insurance.</Text>
+              </View>
+            )}
+
+            <View style={[styles.card, { backgroundColor: theme.colors.background.secondary, borderColor: theme.colors.border }]}>
+              <Text style={[styles.cardTitle, { color: theme.colors.text.primary }]}>Parent Item</Text>
               <TouchableOpacity
-                style={[styles.imageControlButton, { backgroundColor: theme.colors.button.primary }]}
-                onPress={handleRotateImage}
+                style={[styles.selectorButton, { backgroundColor: theme.colors.background.primary, borderColor: theme.colors.border }]}
+                onPress={() => setIsParentPickerVisible(true)}
               >
-                <MaterialIcons name="rotate-right" size={24} color={theme.colors.button.text} />
+                <Text style={{ color: selectedParent ? theme.colors.text.primary : theme.colors.text.secondary }}>
+                  {selectedParent ? selectedParent.name : 'Select parent (optional)'}
+                </Text>
+                <MaterialIcons name="chevron-right" size={20} color={theme.colors.text.secondary} />
               </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.imageControlButton, { backgroundColor: theme.colors.button.primary }]}
-                onPress={handleFlipImage}
-              >
-                <MaterialIcons name="flip" size={24} color={theme.colors.button.text} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.imageControlButton, { backgroundColor: theme.colors.error }]}
-                onPress={() => {
-                  Alert.alert(
-                    'Remove Image',
-                    'Are you sure you want to remove this image?',
-                    [
-                      { text: 'Cancel', style: 'cancel' },
-                      {
-                        text: 'Remove',
-                        style: 'destructive',
-                        onPress: () => {
-                          setSelectedImage(null);
-                          setImageRotation(0);
-                          setImageFlip(false);
-                          setImageSize(null);
-                          setOriginalSize(null);
-                          setCompressedSize(null);
-                        }
-                      }
-                    ]
-                  );
-                }}
-              >
-                <MaterialIcons name="delete" size={24} color="#fff" />
-              </TouchableOpacity>
+              <Text style={[styles.helperText, { color: theme.colors.text.secondary }]}>Use parent to group items as subitems.</Text>
             </View>
           </View>
         )}
       </View>
+
+      {enabledFields.image && (
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Item Image</Text>
+          {!selectedImage ? (
+            <View style={styles.imageUploadContainer}>
+              <TouchableOpacity
+                style={[styles.imageUploadButton, { backgroundColor: theme.colors.button.primary }]}
+                onPress={() => handleImagePicker('camera')}
+              >
+                <MaterialIcons name="camera-alt" size={24} color={theme.colors.button.text} />
+                <Text style={[styles.imageUploadText, { color: theme.colors.button.text }]}>
+                  Take Photo
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.imageUploadButton, { backgroundColor: theme.colors.button.primary }]}
+                onPress={() => handleImagePicker('library')}
+              >
+                <MaterialIcons name="photo-library" size={24} color={theme.colors.button.text} />
+                <Text style={[styles.imageUploadText, { color: theme.colors.button.text }]}>
+                  Choose from Library
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.selectedImageContainer}>
+              <TouchableOpacity 
+                style={styles.imagePreviewContainer}
+                onPress={() => setIsPreviewVisible(true)}
+              >
+                <Image
+                  source={{ uri: selectedImage }}
+                  style={[
+                    styles.selectedImage,
+                    {
+                      transform: [
+                        { rotate: `${imageRotation}deg` },
+                        { scaleX: imageFlip ? -1 : 1 }
+                      ]
+                    }
+                  ]}
+                  resizeMode="cover"
+                />
+                <View style={styles.imageOverlay}>
+                  <Text style={[styles.imageOverlayText, { color: '#fff' }]}>
+                    Tap to preview
+                  </Text>
+                </View>
+              </TouchableOpacity>
+              <View style={styles.imageControls}>
+                <TouchableOpacity
+                  style={[styles.imageControlButton, { backgroundColor: theme.colors.button.primary }]}
+                  onPress={handleRotateImage}
+                >
+                  <MaterialIcons name="rotate-right" size={20} color={theme.colors.button.text} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.imageControlButton, { backgroundColor: theme.colors.button.primary }]}
+                  onPress={handleFlipImage}
+                >
+                  <MaterialIcons name="flip" size={20} color={theme.colors.button.text} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.imageControlButton, { backgroundColor: theme.colors.error }]}
+                  onPress={() => {
+                    Alert.alert(
+                      'Remove Image',
+                      'Are you sure you want to remove this image?',
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        {
+                          text: 'Remove',
+                          style: 'destructive',
+                          onPress: () => {
+                            setSelectedImage(null);
+                            setImageRotation(0);
+                            setImageFlip(false);
+                            setImageSize(null);
+                            setOriginalSize(null);
+                            setCompressedSize(null);
+                          }
+                        }
+                      ]
+                    );
+                  }}
+                >
+                  <MaterialIcons name="delete" size={20} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </View>
+      )}
     </View>
   );
+
+  // Details folded into Advanced; renderer removed
 
   const renderStepContent = () => {
     switch (currentStep) {
       case 0:
         return renderBasicInfo();
       case 1:
-        return activeSteps[1] === 'Details' ? renderDetails() : renderImageUpload();
-      case 2:
-        return renderImageUpload();
+        return renderBasicInfo(); // This step is now redundant for image upload
       default:
         return null;
     }
@@ -963,6 +889,117 @@ const AddItemScreen: React.FC = () => {
               </View>
             </View>
           </Modal>
+          {/* Parent Picker Modal */}
+          <Modal
+            visible={isParentPickerVisible}
+            transparent={true}
+            animationType="slide"
+            onRequestClose={() => setIsParentPickerVisible(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={[styles.modalContent, { backgroundColor: theme.colors.background.primary }]}>
+                <TouchableOpacity 
+                  style={styles.modalCloseButton} 
+                  onPress={() => setIsParentPickerVisible(false)}
+                >
+                  <MaterialIcons name="close" size={32} color={theme.colors.text.primary} />
+                </TouchableOpacity>
+                <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Select Parent Item</Text>
+                <TextInput
+                  style={[styles.searchInput, { 
+                    backgroundColor: theme.colors.background.secondary,
+                    color: theme.colors.text.primary,
+                    borderColor: theme.colors.border,
+                  }]}
+                  placeholder="Search items..."
+                  placeholderTextColor={theme.colors.text.secondary}
+                  value={parentSearchQuery}
+                  onChangeText={setParentSearchQuery}
+                />
+                <ScrollView 
+                  style={[styles.labelList, { backgroundColor: theme.colors.background.secondary, borderColor: theme.colors.border }]}
+                  nestedScrollEnabled={true}
+                >
+                  {allItems
+                    .filter(i => (i.name || '').toLowerCase().includes(parentSearchQuery.toLowerCase()))
+                    .map(item => (
+                      <TouchableOpacity
+                        key={item.id}
+                        style={[styles.labelItem, selectedParent?.id === item.id && { backgroundColor: theme.colors.button.primary }]}
+                        onPress={() => {
+                          setSelectedParent(item);
+                          setIsParentPickerVisible(false);
+                        }}
+                      >
+                        <Text style={[styles.labelName, { color: selectedParent?.id === item.id ? theme.colors.button.text : theme.colors.text.primary }]}>
+                          {item.name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                </ScrollView>
+                {selectedParent && (
+                  <TouchableOpacity
+                    style={[styles.footerButton, { backgroundColor: theme.colors.error, marginTop: 12 }]}
+                    onPress={() => setSelectedParent(null)}
+                  >
+                    <Text style={[styles.footerButtonText, { color: '#fff' }]}>Clear Parent</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          </Modal>
+          {/* Location Picker Modal */}
+          <Modal
+            visible={isLocationPickerVisible}
+            transparent={true}
+            animationType="slide"
+            onRequestClose={() => setIsLocationPickerVisible(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={[styles.modalContent, { backgroundColor: theme.colors.background.primary }]}>
+                <TouchableOpacity 
+                  style={styles.modalCloseButton} 
+                  onPress={() => setIsLocationPickerVisible(false)}
+                >
+                  <MaterialIcons name="close" size={32} color={theme.colors.text.primary} />
+                </TouchableOpacity>
+                <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Select Location</Text>
+                <TextInput
+                  style={[styles.searchInput, { 
+                    backgroundColor: theme.colors.background.secondary,
+                    color: theme.colors.text.primary,
+                    borderColor: errors.location ? theme.colors.error : theme.colors.border,
+                  }]}
+                  placeholder="Search locations..."
+                  placeholderTextColor={theme.colors.text.secondary}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                />
+                <ScrollView 
+                  style={[styles.locationList, { backgroundColor: theme.colors.background.secondary, borderColor: theme.colors.border }]}
+                  nestedScrollEnabled={true}
+                >
+                  {filteredLocations.map(location => (
+                    <TouchableOpacity
+                      key={location.id}
+                      style={[styles.locationItem, selectedLocation?.id === location.id && { backgroundColor: theme.colors.button.primary }]}
+                      onPress={() => {
+                        setSelectedLocation(location);
+                        setIsLocationPickerVisible(false);
+                        if (errors.location) {
+                          setErrors(prev => ({ ...prev, location: '' }));
+                        }
+                      }}
+                    >
+                      <Text style={[styles.locationName, { color: selectedLocation?.id === location.id ? theme.colors.button.text : theme.colors.text.primary }]}>
+                        {location.name}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            </View>
+          </Modal>
         </>
       )}
     </SafeAreaView>
@@ -1041,6 +1078,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     fontSize: 16,
   },
+  nameQuantityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  inlineQuantityContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  inlineQtyButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  inlineQtyInput: {
+    width: 56,
+    height: 36,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    fontSize: 16,
+    textAlign: 'center',
+  },
   inputError: {
     borderWidth: 2,
   },
@@ -1075,15 +1138,24 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 16,
     fontSize: 16,
-    marginBottom: 8,
+    marginBottom: 4,
   },
   locationList: {
     maxHeight: 200,
     borderWidth: 1,
     borderRadius: 12,
   },
+  selectorButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    height: 48,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+  },
   locationItem: {
-    padding: 16,
+    padding: 12,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(0,0,0,0.1)',
   },
@@ -1108,6 +1180,63 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     paddingTop: 16,
   },
+  advancedHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  advancedContainer: {
+    marginTop: 8,
+  },
+  divider: {
+    height: 1,
+    width: '100%',
+    marginBottom: 12,
+    opacity: 0.6,
+  },
+  subSectionLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
+    marginTop: 8,
+  },
+  card: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  helperText: {
+    marginTop: 6,
+    fontSize: 12,
+  },
+  advancedSummary: {
+    marginTop: 2,
+    fontSize: 12,
+  },
+  chipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 8,
+  },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+  },
+  chipText: {
+    fontSize: 12,
+  },
   yesNoContainer: {
     flexDirection: 'row',
     gap: 12,
@@ -1131,7 +1260,7 @@ const styles = StyleSheet.create({
   },
   imageUploadButton: {
     flex: 1,
-    height: 120,
+    height: 80,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1151,7 +1280,7 @@ const styles = StyleSheet.create({
   },
   selectedImage: {
     width: '100%',
-    height: 300,
+    height: 200,
     borderRadius: 12,
   },
   imageOverlay: {
@@ -1211,10 +1340,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    width: '90%',
-    maxHeight: '80%',
+    width: '98%',
+    maxHeight: '85%',
     borderRadius: 16,
-    padding: 16,
+    padding: 12,
     alignItems: 'center',
   },
   modalCloseButton: {
