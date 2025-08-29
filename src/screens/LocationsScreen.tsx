@@ -65,7 +65,7 @@ const LocationTreeItem: React.FC<{
       >
         <View style={styles.locationContent}>
           <View style={styles.locationHeader}>
-            {hasChildren && (
+            {hasChildren ? (
               <TouchableOpacity
                 onPress={() => setIsExpanded(!isExpanded)}
                 style={styles.expandButton}
@@ -76,6 +76,8 @@ const LocationTreeItem: React.FC<{
                   color={theme.colors.text.primary}
                 />
               </TouchableOpacity>
+            ) : (
+              <View style={styles.expandPlaceholder} />
             )}
             <Text style={[styles.locationName, { color: theme.colors.text.primary }]}>
               {node.name}
@@ -242,13 +244,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minHeight: 40,
   },
+  expandPlaceholder: {
+    width: 32,
+    height: 32,
+    marginRight: 4,
+  },
   locationName: {
     fontSize: 16,
     fontWeight: '600',
     flex: 1,
   },
   expandButton: {
-    padding: 4,
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: 4,
   },
   errorIcon: {
