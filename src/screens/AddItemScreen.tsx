@@ -78,6 +78,9 @@ const AddItemScreen: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const windowWidth = Dimensions.get('window').width;
+  const windowHeight = Dimensions.get('window').height;
+  const LIST_MAX_HEIGHT = Math.min(480, Math.floor(windowHeight * 0.6));
+  const SELECTED_IMAGE_HEIGHT = Math.min(260, Math.floor(windowWidth * 0.7));
 
   // Get the active steps based on enabled fields
   const getActiveSteps = () => {
@@ -529,6 +532,95 @@ const AddItemScreen: React.FC = () => {
         )}
       </View>
 
+      {enabledFields.image && (
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Item Image</Text>
+          {!selectedImage ? (
+            <View style={styles.imageUploadContainer}>
+              <TouchableOpacity
+                style={[styles.imageUploadButton, { backgroundColor: theme.colors.button.primary }]}
+                onPress={() => handleImagePicker('camera')}
+              >
+                <MaterialIcons name="camera-alt" size={24} color={theme.colors.button.text} />
+                <Text style={[styles.imageUploadText, { color: theme.colors.button.text }]}>Take Photo</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.imageUploadButton, { backgroundColor: theme.colors.button.primary }]}
+                onPress={() => handleImagePicker('library')}
+              >
+                <MaterialIcons name="photo-library" size={24} color={theme.colors.button.text} />
+                <Text style={[styles.imageUploadText, { color: theme.colors.button.text }]}>Choose from Library</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.selectedImageContainer}>
+              <TouchableOpacity 
+                style={styles.imagePreviewContainer}
+                onPress={() => setIsPreviewVisible(true)}
+              >
+                <Image
+                  source={{ uri: selectedImage }}
+                  style={[
+                    styles.selectedImage,
+                    { height: SELECTED_IMAGE_HEIGHT },
+                    {
+                      transform: [
+                        { rotate: `${imageRotation}deg` },
+                        { scaleX: imageFlip ? -1 : 1 }
+                      ]
+                    }
+                  ]}
+                  resizeMode="cover"
+                />
+                <View style={styles.imageOverlay}>
+                  <Text style={[styles.imageOverlayText, { color: '#fff' }]}>Tap to preview</Text>
+                </View>
+              </TouchableOpacity>
+              <View style={styles.imageControls}>
+                <TouchableOpacity
+                  style={[styles.imageControlButton, { backgroundColor: theme.colors.button.primary }]}
+                  onPress={handleRotateImage}
+                >
+                  <MaterialIcons name="rotate-right" size={20} color={theme.colors.button.text} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.imageControlButton, { backgroundColor: theme.colors.button.primary }]}
+                  onPress={handleFlipImage}
+                >
+                  <MaterialIcons name="flip" size={20} color={theme.colors.button.text} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.imageControlButton, { backgroundColor: theme.colors.error }]}
+                  onPress={() => {
+                    Alert.alert(
+                      'Remove Image',
+                      'Are you sure you want to remove this image?',
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        {
+                          text: 'Remove',
+                          style: 'destructive',
+                          onPress: () => {
+                            setSelectedImage(null);
+                            setImageRotation(0);
+                            setImageFlip(false);
+                            setImageSize(null);
+                            setOriginalSize(null);
+                            setCompressedSize(null);
+                          }
+                        }
+                      ]
+                    );
+                  }}
+                >
+                  <MaterialIcons name="delete" size={20} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </View>
+      )}
+
       <View style={styles.section}>
         <TouchableOpacity style={styles.advancedHeader} onPress={() => setIsAdvancedOpen(!isAdvancedOpen)}>
           <View>
@@ -568,7 +660,16 @@ const AddItemScreen: React.FC = () => {
                   value={labelSearchQuery}
                   onChangeText={setLabelSearchQuery}
                 />
-                <ScrollView style={[styles.labelList, { backgroundColor: theme.colors.background.primary, borderColor: theme.colors.border }]} nestedScrollEnabled={true}>
+                <ScrollView 
+                  style={[
+                    styles.labelList, 
+                    { 
+                      backgroundColor: theme.colors.background.primary, 
+                      borderColor: theme.colors.border,
+                      maxHeight: LIST_MAX_HEIGHT,
+                    }
+                  ]} 
+                  nestedScrollEnabled={true}>
                   {filteredLabels.map(label => (
                     <TouchableOpacity
                       key={label.id}
@@ -659,100 +760,6 @@ const AddItemScreen: React.FC = () => {
           </View>
         )}
       </View>
-
-      {enabledFields.image && (
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Item Image</Text>
-          {!selectedImage ? (
-            <View style={styles.imageUploadContainer}>
-              <TouchableOpacity
-                style={[styles.imageUploadButton, { backgroundColor: theme.colors.button.primary }]}
-                onPress={() => handleImagePicker('camera')}
-              >
-                <MaterialIcons name="camera-alt" size={24} color={theme.colors.button.text} />
-                <Text style={[styles.imageUploadText, { color: theme.colors.button.text }]}>
-                  Take Photo
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.imageUploadButton, { backgroundColor: theme.colors.button.primary }]}
-                onPress={() => handleImagePicker('library')}
-              >
-                <MaterialIcons name="photo-library" size={24} color={theme.colors.button.text} />
-                <Text style={[styles.imageUploadText, { color: theme.colors.button.text }]}>
-                  Choose from Library
-                </Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View style={styles.selectedImageContainer}>
-              <TouchableOpacity 
-                style={styles.imagePreviewContainer}
-                onPress={() => setIsPreviewVisible(true)}
-              >
-                <Image
-                  source={{ uri: selectedImage }}
-                  style={[
-                    styles.selectedImage,
-                    {
-                      transform: [
-                        { rotate: `${imageRotation}deg` },
-                        { scaleX: imageFlip ? -1 : 1 }
-                      ]
-                    }
-                  ]}
-                  resizeMode="cover"
-                />
-                <View style={styles.imageOverlay}>
-                  <Text style={[styles.imageOverlayText, { color: '#fff' }]}>
-                    Tap to preview
-                  </Text>
-                </View>
-              </TouchableOpacity>
-              <View style={styles.imageControls}>
-                <TouchableOpacity
-                  style={[styles.imageControlButton, { backgroundColor: theme.colors.button.primary }]}
-                  onPress={handleRotateImage}
-                >
-                  <MaterialIcons name="rotate-right" size={20} color={theme.colors.button.text} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.imageControlButton, { backgroundColor: theme.colors.button.primary }]}
-                  onPress={handleFlipImage}
-                >
-                  <MaterialIcons name="flip" size={20} color={theme.colors.button.text} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.imageControlButton, { backgroundColor: theme.colors.error }]}
-                  onPress={() => {
-                    Alert.alert(
-                      'Remove Image',
-                      'Are you sure you want to remove this image?',
-                      [
-                        { text: 'Cancel', style: 'cancel' },
-                        {
-                          text: 'Remove',
-                          style: 'destructive',
-                          onPress: () => {
-                            setSelectedImage(null);
-                            setImageRotation(0);
-                            setImageFlip(false);
-                            setImageSize(null);
-                            setOriginalSize(null);
-                            setCompressedSize(null);
-                          }
-                        }
-                      ]
-                    );
-                  }}
-                >
-                  <MaterialIcons name="delete" size={20} color="#fff" />
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-        </View>
-      )}
     </View>
   );
 
@@ -976,7 +983,14 @@ const AddItemScreen: React.FC = () => {
                   onChangeText={setSearchQuery}
                 />
                 <ScrollView 
-                  style={[styles.locationList, { backgroundColor: theme.colors.background.secondary, borderColor: theme.colors.border }]}
+                  style={[
+                    styles.locationList, 
+                    { 
+                      backgroundColor: theme.colors.background.secondary, 
+                      borderColor: theme.colors.border,
+                      maxHeight: LIST_MAX_HEIGHT,
+                    }
+                  ]}
                   nestedScrollEnabled={true}
                 >
                   {filteredLocations.map(location => (
@@ -1097,12 +1111,15 @@ const styles = StyleSheet.create({
   },
   inlineQtyInput: {
     width: 56,
-    height: 36,
+    height: 40,
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 8,
+    paddingVertical: 0,
     fontSize: 16,
     textAlign: 'center',
+    textAlignVertical: 'center',
+    lineHeight: 20,
   },
   inputError: {
     borderWidth: 2,
@@ -1139,11 +1156,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     fontSize: 16,
     marginBottom: 4,
+    width: '95%',
   },
   locationList: {
     maxHeight: 200,
     borderWidth: 1,
     borderRadius: 12,
+    width: '95%',
   },
   selectorButton: {
     flexDirection: 'row',
@@ -1166,6 +1185,7 @@ const styles = StyleSheet.create({
     maxHeight: 200,
     borderWidth: 1,
     borderRadius: 12,
+    width: '100%',
   },
   labelItem: {
     padding: 16,
@@ -1341,7 +1361,7 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     width: '98%',
-    maxHeight: '85%',
+    maxHeight: '92%',
     borderRadius: 16,
     padding: 12,
     alignItems: 'center',
