@@ -9,7 +9,6 @@ import {
   Image,
   ActivityIndicator,
   Alert,
-  Switch,
   Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,7 +18,6 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import * as ImagePicker from 'react-native-image-picker';
 import ServerService from '../services/serverService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { STORAGE_KEYS } from '../constants/storage';
 import * as FileSystem from 'react-native-fs';
 import ImageResizer from '@bam.tech/react-native-image-resizer';
 
@@ -49,13 +47,13 @@ const AddItemScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isConnecting, setIsConnecting] = useState(true);
   const [formData, setFormData] = useState<Record<string, any>>({
-    quantity: '1' // Set default quantity to 1
+    quantity: '1', // Set default quantity to 1
   });
   const [enabledFields, setEnabledFields] = useState<Record<string, boolean>>({
     description: true,
     purchasePrice: false,
     insured: false,
-    labels: true  // Default to true, but will be overridden by settings
+    labels: true,  // Default to true, but will be overridden by settings
   });
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [imageRotation, setImageRotation] = useState(0);
@@ -124,7 +122,7 @@ const AddItemScreen: React.FC = () => {
       setIsConnecting(true);
       const service = ServerService.getInstance();
       const response = await service.autoConnect();
-      
+
       if (!response.success) {
         Alert.alert('Error', 'Failed to connect to server. Please check your connection settings.');
         navigation.goBack();
@@ -157,7 +155,7 @@ const AddItemScreen: React.FC = () => {
 
   // Helper function to format file size
   const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 B';
+    if (bytes === 0) {return '0 B';}
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
@@ -184,7 +182,7 @@ const AddItemScreen: React.FC = () => {
     };
 
     try {
-      const result = type === 'camera' 
+      const result = type === 'camera'
         ? await ImagePicker.launchCamera(options)
         : await ImagePicker.launchImageLibrary(options);
 
@@ -196,7 +194,7 @@ const AddItemScreen: React.FC = () => {
         // Create a temporary file for the compressed image
         const timestamp = new Date().getTime();
         // const tempFilePath = `${FileSystem.CachesDirectoryPath}/compressed_${timestamp}.jpg`;
-        
+
         // Compress the image using @bam.tech/react-native-image-resizer
         const compressedImage = await ImageResizer.createResizedImage(
           result.assets[0].uri,
@@ -209,7 +207,7 @@ const AddItemScreen: React.FC = () => {
           false,
           { mode: 'contain', onlyScaleDown: true }
         );
-        
+
 
         // Get the compressed file size
         const compressedFileSize = await getFileSize(compressedImage.uri);
@@ -275,7 +273,7 @@ const AddItemScreen: React.FC = () => {
         description: enabledFields.description ? formData.description || '' : '',
         purchasePrice: enabledFields.purchasePrice ? parseFloat(formData.purchasePrice) || 0 : 0,
         insured: enabledFields.insured ? formData.insured || false : false,
-        labels: selectedLabels.map(label => label.id)
+        labels: selectedLabels.map(label => label.id),
       };
 
       // First create the item
@@ -291,20 +289,20 @@ const AddItemScreen: React.FC = () => {
       if (selectedImage) {
         console.log('Starting image upload for item:', itemResponse.data.id);
         const formData = new FormData();
-        
+
         // Get the file extension from the URI
         const fileExtension = selectedImage.split('.').pop() || 'jpg';
         const fileName = `image.${fileExtension}`;
-        
+
         // Create the file object with proper type
         const file = {
           uri: selectedImage,
           type: `image/${fileExtension}`,
           name: fileName,
         };
-        
+
         console.log('File object:', file);
-        
+
         formData.append('file', file as any);
         formData.append('type', 'photo');
         formData.append('primary', 'true');
@@ -314,7 +312,7 @@ const AddItemScreen: React.FC = () => {
 
         const imageResponse = await service.uploadItemImage(itemResponse.data.id, formData);
         console.log('Image upload response:', imageResponse);
-        
+
         if (!imageResponse.success) {
           console.warn('Failed to upload image:', imageResponse.error);
           Alert.alert('Warning', 'Item was created but image upload failed');
@@ -359,7 +357,7 @@ const AddItemScreen: React.FC = () => {
   );
 
   return (
-    <SafeAreaView 
+    <SafeAreaView
       style={[styles.container, { backgroundColor: theme.colors.background.primary }]}
       edges={['right', 'left', 'bottom']}
     >
@@ -378,7 +376,7 @@ const AddItemScreen: React.FC = () => {
               Item Name
             </Text>
             <TextInput
-              style={[styles.input, { 
+              style={[styles.input, {
                 backgroundColor: theme.colors.background.secondary,
                 color: theme.colors.text.primary,
                 borderColor: theme.colors.border,
@@ -396,7 +394,7 @@ const AddItemScreen: React.FC = () => {
               Quantity
             </Text>
             <TextInput
-              style={[styles.input, { 
+              style={[styles.input, {
                 backgroundColor: theme.colors.background.secondary,
                 color: theme.colors.text.primary,
                 borderColor: theme.colors.border,
@@ -431,7 +429,7 @@ const AddItemScreen: React.FC = () => {
               Location
             </Text>
             <TextInput
-              style={[styles.searchInput, { 
+              style={[styles.searchInput, {
                 backgroundColor: theme.colors.background.secondary,
                 color: theme.colors.text.primary,
                 borderColor: theme.colors.border,
@@ -441,8 +439,8 @@ const AddItemScreen: React.FC = () => {
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
-            <ScrollView 
-              style={[styles.locationList, { 
+            <ScrollView
+              style={[styles.locationList, {
                 backgroundColor: theme.colors.background.secondary,
                 borderColor: theme.colors.border,
               }]}
@@ -453,18 +451,18 @@ const AddItemScreen: React.FC = () => {
                   key={location.id}
                   style={[
                     styles.locationItem,
-                    selectedLocation?.id === location.id && { 
-                      backgroundColor: theme.colors.button.primary 
-                    }
+                    selectedLocation?.id === location.id && {
+                      backgroundColor: theme.colors.button.primary,
+                    },
                   ]}
                   onPress={() => setSelectedLocation(location)}
                 >
                   <Text style={[
                     styles.locationName,
-                    { color: selectedLocation?.id === location.id 
-                      ? theme.colors.button.text 
-                      : theme.colors.text.primary 
-                    }
+                    { color: selectedLocation?.id === location.id
+                      ? theme.colors.button.text
+                      : theme.colors.text.primary,
+                    },
                   ]}>
                     {location.name}
                   </Text>
@@ -480,7 +478,7 @@ const AddItemScreen: React.FC = () => {
                 Labels
               </Text>
               <TextInput
-                style={[styles.searchInput, { 
+                style={[styles.searchInput, {
                   backgroundColor: theme.colors.background.secondary,
                   color: theme.colors.text.primary,
                   borderColor: theme.colors.border,
@@ -490,8 +488,8 @@ const AddItemScreen: React.FC = () => {
                 value={labelSearchQuery}
                 onChangeText={setLabelSearchQuery}
               />
-              <ScrollView 
-                style={[styles.locationList, { 
+              <ScrollView
+                style={[styles.locationList, {
                   backgroundColor: theme.colors.background.secondary,
                   borderColor: theme.colors.border,
                   maxHeight: 160, // Show 4 labels at a time
@@ -503,18 +501,18 @@ const AddItemScreen: React.FC = () => {
                     key={label.id}
                     style={[
                       styles.locationItem,
-                      selectedLabels.some(l => l.id === label.id) && { 
-                        backgroundColor: theme.colors.button.primary 
-                      }
+                      selectedLabels.some(l => l.id === label.id) && {
+                        backgroundColor: theme.colors.button.primary,
+                      },
                     ]}
                     onPress={() => handleLabelToggle(label)}
                   >
                     <Text style={[
                       styles.locationName,
                       { color: selectedLabels.some(l => l.id === label.id)
-                        ? theme.colors.button.text 
-                        : theme.colors.text.primary 
-                      }
+                        ? theme.colors.button.text
+                        : theme.colors.text.primary,
+                      },
                     ]}>
                       {label.name}
                     </Text>
@@ -531,7 +529,7 @@ const AddItemScreen: React.FC = () => {
                 Description
               </Text>
               <TextInput
-                style={[styles.input, styles.textArea, { 
+                style={[styles.input, styles.textArea, {
                   backgroundColor: theme.colors.background.secondary,
                   color: theme.colors.text.primary,
                   borderColor: theme.colors.border,
@@ -552,7 +550,7 @@ const AddItemScreen: React.FC = () => {
                 Purchase Price
               </Text>
               <TextInput
-                style={[styles.input, { 
+                style={[styles.input, {
                   backgroundColor: theme.colors.background.secondary,
                   color: theme.colors.text.primary,
                   borderColor: theme.colors.border,
@@ -575,21 +573,21 @@ const AddItemScreen: React.FC = () => {
                 <TouchableOpacity
                   style={[
                     styles.yesNoButton,
-                    { 
-                      backgroundColor: formData.insured === true 
-                        ? theme.colors.button.primary 
+                    {
+                      backgroundColor: formData.insured === true
+                        ? theme.colors.button.primary
                         : theme.colors.background.secondary,
-                      borderColor: theme.colors.border
-                    }
+                      borderColor: theme.colors.border,
+                    },
                   ]}
                   onPress={() => setFormData(prev => ({ ...prev, insured: true }))}
                 >
                   <Text style={[
                     styles.yesNoButtonText,
-                    { color: formData.insured === true 
-                      ? theme.colors.button.text 
-                      : theme.colors.text.primary 
-                    }
+                    { color: formData.insured === true
+                      ? theme.colors.button.text
+                      : theme.colors.text.primary,
+                    },
                   ]}>
                     Yes
                   </Text>
@@ -597,21 +595,21 @@ const AddItemScreen: React.FC = () => {
                 <TouchableOpacity
                   style={[
                     styles.yesNoButton,
-                    { 
-                      backgroundColor: formData.insured === false 
-                        ? theme.colors.button.primary 
+                    {
+                      backgroundColor: formData.insured === false
+                        ? theme.colors.button.primary
                         : theme.colors.background.secondary,
-                      borderColor: theme.colors.border
-                    }
+                      borderColor: theme.colors.border,
+                    },
                   ]}
                   onPress={() => setFormData(prev => ({ ...prev, insured: false }))}
                 >
                   <Text style={[
                     styles.yesNoButtonText,
-                    { color: formData.insured === false 
-                      ? theme.colors.button.text 
-                      : theme.colors.text.primary 
-                    }
+                    { color: formData.insured === false
+                      ? theme.colors.button.text
+                      : theme.colors.text.primary,
+                    },
                   ]}>
                     No
                   </Text>
@@ -656,9 +654,9 @@ const AddItemScreen: React.FC = () => {
                         {
                           transform: [
                             { rotate: `${imageRotation}deg` },
-                            { scaleX: imageFlip ? -1 : 1 }
-                          ]
-                        }
+                            { scaleX: imageFlip ? -1 : 1 },
+                          ],
+                        },
                       ]}
                       resizeMode="cover"
                     />
@@ -672,7 +670,7 @@ const AddItemScreen: React.FC = () => {
                         [
                           {
                             text: 'Cancel',
-                            style: 'cancel'
+                            style: 'cancel',
                           },
                           {
                             text: 'Remove',
@@ -684,8 +682,8 @@ const AddItemScreen: React.FC = () => {
                               setImageSize(null);
                               setOriginalSize(null);
                               setCompressedSize(null);
-                            }
-                          }
+                            },
+                          },
                         ]
                       );
                     }}
@@ -717,9 +715,9 @@ const AddItemScreen: React.FC = () => {
                       {
                         transform: [
                           { rotate: `${imageRotation}deg` },
-                          { scaleX: imageFlip ? -1 : 1 }
-                        ]
-                      }
+                          { scaleX: imageFlip ? -1 : 1 },
+                        ],
+                      },
                     ]}
                     resizeMode="contain"
                   />
@@ -766,7 +764,7 @@ const AddItemScreen: React.FC = () => {
                         [
                           {
                             text: 'Cancel',
-                            style: 'cancel'
+                            style: 'cancel',
                           },
                           {
                             text: 'Remove',
@@ -779,8 +777,8 @@ const AddItemScreen: React.FC = () => {
                               setOriginalSize(null);
                               setCompressedSize(null);
                               setIsPreviewVisible(false);
-                            }
-                          }
+                            },
+                          },
                         ]
                       );
                     }}

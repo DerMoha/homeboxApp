@@ -11,13 +11,11 @@ import {
   Modal,
   Dimensions,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { STORAGE_KEYS } from '../constants/storage';
 import ServerService from '../services/serverService';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -108,7 +106,7 @@ const InventoryScreen: React.FC = () => {
         const parsedPreferences = JSON.parse(savedPreferences);
         console.log('Loaded display preferences:', parsedPreferences.map((p: DisplayPreference) => ({
           id: p.id,
-          enabled: p.enabled
+          enabled: p.enabled,
         })));
         setDisplayPreferences(parsedPreferences);
       } else {
@@ -127,7 +125,7 @@ const InventoryScreen: React.FC = () => {
         ];
         console.log('Using default preferences:', defaultPreferences.map(p => ({
           id: p.id,
-          enabled: p.enabled
+          enabled: p.enabled,
         })));
         setDisplayPreferences(defaultPreferences);
         // Save default preferences
@@ -152,8 +150,8 @@ const InventoryScreen: React.FC = () => {
         navigation.navigate('SettingsTab', {
           screen: 'Settings',
           params: {
-            screen: 'ServerConfig'
-          }
+            screen: 'ServerConfig',
+          },
         });
         return;
       }
@@ -192,11 +190,11 @@ const InventoryScreen: React.FC = () => {
             <>
               <TouchableOpacity
                 style={[
-                  styles.headerButton, 
-                  { 
+                  styles.headerButton,
+                  {
                     backgroundColor: theme.colors.button.primary,
-                    opacity: itemsPerRow <= 1 ? 0.5 : 1
-                  }
+                    opacity: itemsPerRow <= 1 ? 0.5 : 1,
+                  },
                 ]}
                 onPress={() => setItemsPerRow(Math.max(1, itemsPerRow - 1))}
                 disabled={itemsPerRow <= 1}
@@ -205,11 +203,11 @@ const InventoryScreen: React.FC = () => {
               </TouchableOpacity>
               <TouchableOpacity
                 style={[
-                  styles.headerButton, 
-                  { 
+                  styles.headerButton,
+                  {
                     backgroundColor: theme.colors.button.primary,
-                    opacity: itemsPerRow >= 5 ? 0.5 : 1
-                  }
+                    opacity: itemsPerRow >= 5 ? 0.5 : 1,
+                  },
                 ]}
                 onPress={() => setItemsPerRow(Math.min(5, itemsPerRow + 1))}
                 disabled={itemsPerRow >= 5}
@@ -221,11 +219,11 @@ const InventoryScreen: React.FC = () => {
             <>
               <TouchableOpacity
                 style={[
-                  styles.headerButton, 
-                  { 
+                  styles.headerButton,
+                  {
                     backgroundColor: theme.colors.button.primary,
-                    opacity: listZoom >= 2 ? 0.5 : 1
-                  }
+                    opacity: listZoom >= 2 ? 0.5 : 1,
+                  },
                 ]}
                 onPress={() => setListZoom(Math.min(2, listZoom + 1))}
                 disabled={listZoom >= 2}
@@ -234,11 +232,11 @@ const InventoryScreen: React.FC = () => {
               </TouchableOpacity>
               <TouchableOpacity
                 style={[
-                  styles.headerButton, 
-                  { 
+                  styles.headerButton,
+                  {
                     backgroundColor: theme.colors.button.primary,
-                    opacity: listZoom <= 0 ? 0.5 : 1
-                  }
+                    opacity: listZoom <= 0 ? 0.5 : 1,
+                  },
                 ]}
                 onPress={() => setListZoom(Math.max(0, listZoom - 1))}
                 disabled={listZoom <= 0}
@@ -251,10 +249,10 @@ const InventoryScreen: React.FC = () => {
             style={[styles.headerButton, { backgroundColor: theme.colors.button.primary }]}
             onPress={toggleViewMode}
           >
-            <MaterialIcons 
-              name={viewMode === 'list' ? 'grid-view' : 'view-list'} 
-              size={20} 
-              color={theme.colors.button.text} 
+            <MaterialIcons
+              name={viewMode === 'list' ? 'grid-view' : 'view-list'}
+              size={20}
+              color={theme.colors.button.text}
             />
           </TouchableOpacity>
           <TouchableOpacity
@@ -336,7 +334,7 @@ const InventoryScreen: React.FC = () => {
 
   const renderListItem = ({ item, index }: { item: InventoryItem; index: number }): React.ReactElement => {
     const hasDescription = getPreference('description') && item.description;
-    const hasFooterContent = 
+    const hasFooterContent =
       (getPreference('location') && item.location) ||
       (getPreference('labels') && item.labels.length > 0) ||
       (getPreference('purchasePrice') && item.purchasePrice > 0) ||
@@ -364,7 +362,7 @@ const InventoryScreen: React.FC = () => {
               {getPreference('quantity') && (
                 <View style={[
                   styles.quantityBadge,
-                  { backgroundColor: item.quantity > 0 ? theme.colors.success : theme.colors.error }
+                  { backgroundColor: item.quantity > 0 ? theme.colors.success : theme.colors.error },
                 ]}>
                   <Text style={[styles.quantityText, { color: theme.colors.button.text }]}>
                     {item.quantity}
@@ -412,14 +410,14 @@ const InventoryScreen: React.FC = () => {
             <View style={styles.standardRow}>
               {/* Text Section */}
               <View style={styles.standardTextSection}>
-                <Text style={[styles.itemName, { color: theme.colors.text.primary }]}> 
+                <Text style={[styles.itemName, { color: theme.colors.text.primary }]}>
                   {item.name}
                 </Text>
                 <View style={styles.standardDetails}>
                   {getPreference('location') && item.location && (
                     <View style={styles.footerItem}>
                       <MaterialIcons name="location-on" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
-                      <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}> 
+                      <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
                         {item.location.name}
                       </Text>
                     </View>
@@ -427,7 +425,7 @@ const InventoryScreen: React.FC = () => {
                   {getPreference('labels') && item.labels.length > 0 && (
                     <View style={styles.footerItem}>
                       <MaterialIcons name="label" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
-                      <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}> 
+                      <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
                         {item.labels.map(label => label.name).join(', ')}
                       </Text>
                     </View>
@@ -439,11 +437,11 @@ const InventoryScreen: React.FC = () => {
               {hasImage && (
                 <View style={styles.standardImageSection}>
                   <Image
-                    source={{ 
+                    source={{
                       uri: getImageUrl(item.id, item.imageId!),
                       headers: {
-                        'Authorization': `Bearer ${ServerService.getInstance().getAxiosInstance()?.defaults.headers.common['Authorization']}`
-                      }
+                        'Authorization': `Bearer ${ServerService.getInstance().getAxiosInstance()?.defaults.headers.common.Authorization}`,
+                      },
                     }}
                     style={styles.standardImage}
                     resizeMode="cover"
@@ -455,9 +453,9 @@ const InventoryScreen: React.FC = () => {
               {getPreference('quantity') && (
                 <View style={[
                   styles.standardQuantityBadge,
-                  { backgroundColor: item.quantity > 0 ? theme.colors.success : theme.colors.error }
+                  { backgroundColor: item.quantity > 0 ? theme.colors.success : theme.colors.error },
                 ]}>
-                  <Text style={[styles.quantityText, { color: theme.colors.button.text }]}> 
+                  <Text style={[styles.quantityText, { color: theme.colors.button.text }]}>
                     {item.quantity}
                   </Text>
                 </View>
@@ -484,7 +482,7 @@ const InventoryScreen: React.FC = () => {
               {getPreference('quantity') && (
                 <View style={[
                   styles.quantityBadge,
-                  { backgroundColor: item.quantity > 0 ? theme.colors.success : theme.colors.error }
+                  { backgroundColor: item.quantity > 0 ? theme.colors.success : theme.colors.error },
                 ]}>
                   <Text style={[styles.quantityText, { color: theme.colors.button.text }]}>
                     {item.quantity}
@@ -496,24 +494,24 @@ const InventoryScreen: React.FC = () => {
             {hasImage && (
               <View style={styles.imageContainer}>
                 <Image
-                  source={{ 
+                  source={{
                     uri: getImageUrl(item.id, item.imageId!),
                     headers: {
-                      'Authorization': `Bearer ${ServerService.getInstance().getAxiosInstance()?.defaults.headers.common['Authorization']}`
-                    }
+                      'Authorization': `Bearer ${ServerService.getInstance().getAxiosInstance()?.defaults.headers.common.Authorization}`,
+                    },
                   }}
                   style={styles.itemImage}
                   resizeMode="cover"
                 />
               </View>
             )}
-            
+
             {hasDescription && (
               <Text style={[styles.itemDescription, { color: theme.colors.text.secondary }]}>
                 {item.description}
               </Text>
             )}
-            
+
             {hasFooterContent && (
               <View style={styles.itemFooter}>
                 {getPreference('location') && item.location && (
@@ -542,11 +540,11 @@ const InventoryScreen: React.FC = () => {
                 )}
                 {getPreference('insured') && (
                   <View key={`insured-${item.id}`} style={styles.footerItem}>
-                    <MaterialIcons 
-                      name={item.insured ? "verified" : "error-outline"} 
-                      size={16} 
-                      color={theme.colors.text.secondary} 
-                      style={styles.footerIcon} 
+                    <MaterialIcons
+                      name={item.insured ? 'verified' : 'error-outline'}
+                      size={16}
+                      color={theme.colors.text.secondary}
+                      style={styles.footerIcon}
                     />
                     <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
                       {item.insured ? 'Insured' : 'Uninsured'}
@@ -588,29 +586,29 @@ const InventoryScreen: React.FC = () => {
   const renderGridItem = ({ item }: { item: InventoryItem }): React.ReactElement => {
     const screenWidth = Dimensions.get('window').width;
     const itemWidth = Math.floor(screenWidth / itemsPerRow); // Full width division
-    
+
     return (
       <TouchableOpacity
         key={item.id}
         style={[
-          styles.gridItemContainer, 
-          { 
+          styles.gridItemContainer,
+          {
             backgroundColor: theme.colors.background.secondary,
             width: itemWidth,
             height: itemWidth, // Square aspect ratio
             margin: 0, // No margins
-          }
+          },
         ]}
         onPress={() => navigation.navigate('ItemDetail', { itemId: item.id })}
       >
         <View style={[styles.gridItemImageContainer, { height: itemWidth }]}>
           {item.imageId ? (
             <Image
-              source={{ 
+              source={{
                 uri: getImageUrl(item.id, item.imageId),
                 headers: {
-                  'Authorization': `Bearer ${ServerService.getInstance().getAxiosInstance()?.defaults.headers.common['Authorization']}`
-                }
+                  'Authorization': `Bearer ${ServerService.getInstance().getAxiosInstance()?.defaults.headers.common.Authorization}`,
+                },
               }}
               style={styles.gridItemImage}
               resizeMode="cover"
@@ -626,17 +624,17 @@ const InventoryScreen: React.FC = () => {
           <Text style={styles.gridItemName} numberOfLines={1} ellipsizeMode="tail">
             {item.name}
           </Text>
-          
+
           {item.location && (
             <Text style={styles.gridItemLocation} numberOfLines={1} ellipsizeMode="tail">
               {item.location.name}
             </Text>
           )}
-          
+
           {getPreference('quantity') && (
             <View style={[
               styles.gridQuantityBadge,
-              { backgroundColor: item.quantity > 0 ? theme.colors.success : theme.colors.error }
+              { backgroundColor: item.quantity > 0 ? theme.colors.success : theme.colors.error },
             ]}>
               <Text style={styles.gridQuantityText}>{item.quantity}</Text>
             </View>
@@ -664,7 +662,7 @@ const InventoryScreen: React.FC = () => {
       <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0, 0, 0, 0.5)' }]}>
         <View style={[styles.modalContent, { backgroundColor: theme.colors.background.primary }]}>
           <Text style={[styles.modalTitle, { color: theme.colors.text.primary }]}>Sort By</Text>
-          
+
           <TouchableOpacity
             style={[styles.sortOption, { borderColor: theme.colors.border }]}
             onPress={() => {
@@ -753,7 +751,7 @@ const InventoryScreen: React.FC = () => {
       </View>
     </Modal>
   );
-  
+
   const GridConfigModal = () => (
     <Modal
       animationType="slide"
@@ -764,30 +762,30 @@ const InventoryScreen: React.FC = () => {
       <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0, 0, 0, 0.5)' }]}>
         <View style={[styles.modalContent, { backgroundColor: theme.colors.background.primary }]}>
           <Text style={[styles.modalTitle, { color: theme.colors.text.primary }]}>Grid Configuration</Text>
-          
+
           <View style={styles.gridConfigControls}>
             <Text style={[styles.gridConfigLabel, { color: theme.colors.text.primary }]}>Items per row</Text>
-            
+
             <View style={styles.gridConfigButtons}>
               <TouchableOpacity
                 style={[
                   styles.gridConfigButton,
-                  { backgroundColor: theme.colors.button.secondary }
+                  { backgroundColor: theme.colors.button.secondary },
                 ]}
                 onPress={() => setItemsPerRow(Math.max(1, itemsPerRow - 1))}
                 disabled={itemsPerRow <= 1}
               >
                 <MaterialIcons name="remove" size={24} color={theme.colors.button.text} />
               </TouchableOpacity>
-              
+
               <Text style={[styles.gridConfigValue, { color: theme.colors.text.primary }]}>
                 {itemsPerRow}
               </Text>
-              
+
               <TouchableOpacity
                 style={[
                   styles.gridConfigButton,
-                  { backgroundColor: theme.colors.button.secondary }
+                  { backgroundColor: theme.colors.button.secondary },
                 ]}
                 onPress={() => setItemsPerRow(Math.min(5, itemsPerRow + 1))}
                 disabled={itemsPerRow >= 5}

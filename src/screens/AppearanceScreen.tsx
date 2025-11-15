@@ -27,7 +27,7 @@ const AppearanceScreen: React.FC = () => {
               style={[
                 styles.themeModeButton,
                 themeMode === 'light' && styles.selectedThemeMode,
-                { backgroundColor: theme.colors.background.primary }
+                { backgroundColor: theme.colors.background.primary },
               ]}
               onPress={() => setThemeMode('light')}
             >
@@ -37,7 +37,7 @@ const AppearanceScreen: React.FC = () => {
               style={[
                 styles.themeModeButton,
                 themeMode === 'dark' && styles.selectedThemeMode,
-                { backgroundColor: theme.colors.background.primary }
+                { backgroundColor: theme.colors.background.primary },
               ]}
               onPress={() => setThemeMode('dark')}
             >
@@ -47,7 +47,7 @@ const AppearanceScreen: React.FC = () => {
               style={[
                 styles.themeModeButton,
                 themeMode === 'auto' && styles.selectedThemeMode,
-                { backgroundColor: theme.colors.background.primary }
+                { backgroundColor: theme.colors.background.primary },
               ]}
               onPress={() => setThemeMode('auto')}
             >
@@ -57,7 +57,7 @@ const AppearanceScreen: React.FC = () => {
               style={[
                 styles.themeModeButton,
                 themeMode === 'oled' && styles.selectedThemeMode,
-                { backgroundColor: theme.colors.background.primary }
+                { backgroundColor: theme.colors.background.primary },
               ]}
               onPress={() => setThemeMode('oled')}
             >
@@ -132,4 +132,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AppearanceScreen; 
+export default AppearanceScreen;

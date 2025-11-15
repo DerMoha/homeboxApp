@@ -46,7 +46,7 @@ const LocationItemsScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<LocationItemsRouteProp>();
   const { locationId, locationName } = route.params;
-  
+
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -112,11 +112,11 @@ const LocationItemsScreen: React.FC = () => {
           {item.imageId && (
             <View style={styles.imageContainer}>
               <Image
-                source={{ 
+                source={{
                   uri: getImageUrl(item.id, item.imageId),
                   headers: {
-                    'Authorization': `Bearer ${ServerService.getInstance().getAxiosInstance()?.defaults.headers.common['Authorization']}`
-                  }
+                    'Authorization': `Bearer ${ServerService.getInstance().getAxiosInstance()?.defaults.headers.common.Authorization}`,
+                  },
                 }}
                 style={styles.itemImage}
                 resizeMode="cover"
@@ -134,11 +134,11 @@ const LocationItemsScreen: React.FC = () => {
               </View>
             )}
             <View style={styles.footerItem}>
-              <MaterialIcons 
-                name={item.insured ? "verified" : "error-outline"} 
-                size={16} 
-                color={theme.colors.text.secondary} 
-                style={styles.footerIcon} 
+              <MaterialIcons
+                name={item.insured ? 'verified' : 'error-outline'}
+                size={16}
+                color={theme.colors.text.secondary}
+                style={styles.footerIcon}
               />
               <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
                 {item.insured ? 'Insured' : 'Uninsured'}
@@ -312,4 +312,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default LocationItemsScreen; 
+export default LocationItemsScreen;

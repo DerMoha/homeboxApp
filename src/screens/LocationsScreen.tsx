@@ -59,7 +59,7 @@ const LocationTreeItem: React.FC<{
         style={[
           styles.locationContainer,
           { backgroundColor: theme.colors.background.secondary },
-          { marginLeft: level * 16 }
+          { marginLeft: level * 16 },
         ]}
         onPress={() => onPress(node.id, node.name)}
       >
@@ -71,7 +71,7 @@ const LocationTreeItem: React.FC<{
                 style={styles.expandButton}
               >
                 <MaterialIcons
-                  name={isExpanded ? "expand-more" : "chevron-right"}
+                  name={isExpanded ? 'expand-more' : 'chevron-right'}
                   size={24}
                   color={theme.colors.text.primary}
                 />
@@ -113,7 +113,7 @@ const LocationsScreen: React.FC = () => {
       setIsLoading(true);
       setError(null);
       const service = ServerService.getInstance();
-      
+
       // Verify server connection
       const axiosInstance = service.getAxiosInstance();
       if (!axiosInstance) {
@@ -147,9 +147,9 @@ const LocationsScreen: React.FC = () => {
   };
 
   const handleLocationPress = (locationId: string, locationName: string) => {
-    navigation.navigate('LocationItems', { 
+    navigation.navigate('LocationItems', {
       locationId,
-      locationName
+      locationName,
     });
   };
 
@@ -168,10 +168,10 @@ const LocationsScreen: React.FC = () => {
   if (error) {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
-        <MaterialIcons 
-          name="error-outline" 
-          size={48} 
-          color={theme.colors.error} 
+        <MaterialIcons
+          name="error-outline"
+          size={48}
+          color={theme.colors.error}
           style={styles.errorIcon}
         />
         <Text style={[styles.errorText, { color: theme.colors.error }]}>{error}</Text>
@@ -284,4 +284,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default LocationsScreen; 
+export default LocationsScreen;

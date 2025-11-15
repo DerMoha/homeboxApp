@@ -201,7 +201,7 @@ class ServerService {
         this.token = loginResponse.data.token;
         // Ensure we don't have duplicate 'Bearer' in the token
         const cleanToken = this.token && this.token.startsWith('Bearer ') ? this.token.substring(7) : this.token;
-        this.axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${cleanToken}`;
+        this.axiosInstance.defaults.headers.common.Authorization = `Bearer ${cleanToken}`;
         return {
           success: true,
           data: loginResponse.data,
@@ -319,8 +319,8 @@ class ServerService {
       const response = await this.axiosInstance.get('/api/v1/items', {
         params: {
           page,
-          pageSize
-        }
+          pageSize,
+        },
       });
 
       if (!response.data || !Array.isArray(response.data.items)) {
@@ -342,9 +342,9 @@ class ServerService {
         if (error.response?.status === 403) {
           return { success: false, error: 'Access denied' };
         }
-        return { 
-          success: false, 
-          error: error.response?.data?.message || 'Failed to get inventory' 
+        return {
+          success: false,
+          error: error.response?.data?.message || 'Failed to get inventory',
         };
       }
       return { success: false, error: 'An unexpected error occurred' };
@@ -354,7 +354,7 @@ class ServerService {
   public async getLastUsedServer(): Promise<ServerConfig | null> {
     try {
       const lastUsedId = await AsyncStorage.getItem('lastUsedServerId');
-      if (!lastUsedId) return null;
+      if (!lastUsedId) {return null;}
 
       const servers = await this.getServers();
       return servers.find(server => server.id === lastUsedId) || null;
@@ -421,7 +421,7 @@ class ServerService {
       locations,
       page: 1,
       pageSize: locations.length,
-      total: locations.length
+      total: locations.length,
     };
   }
 
@@ -479,11 +479,11 @@ class ServerService {
       console.log('[getLocationItems] /api/v1/locations/tree response:', JSON.stringify(tree, null, 2));
       // Helper to recursively search for the location
       function findLocation(node: any, id: string): any | null {
-        if (node.id === id) return node;
+        if (node.id === id) {return node;}
         if (node.children && Array.isArray(node.children)) {
           for (const child of node.children) {
             const found = findLocation(child, id);
-            if (found) return found;
+            if (found) {return found;}
           }
         }
         return null;
@@ -493,7 +493,7 @@ class ServerService {
         // If root is array, search each root node
         for (const node of tree) {
           locationNode = findLocation(node, locationId);
-          if (locationNode) break;
+          if (locationNode) {break;}
         }
       } else {
         // If root is object, search from root
@@ -515,7 +515,7 @@ class ServerService {
         items: items,
         page: 1,
         pageSize: items.length,
-        total: items.length
+        total: items.length,
       };
       return { success: true, data: inventoryResponse };
     } catch (error) {
@@ -572,4 +572,4 @@ class ServerService {
   }
 }
 
-export default ServerService; 
+export default ServerService;

@@ -28,7 +28,7 @@ const AddItemSettingsScreen: React.FC = () => {
     try {
       const savedFields = await AsyncStorage.getItem(STORAGE_KEY);
       const savedQuality = await AsyncStorage.getItem(IMAGE_QUALITY_KEY);
-      
+
       if (savedFields) {
         const parsedFields = JSON.parse(savedFields);
         // Ensure all default fields are present
@@ -70,7 +70,7 @@ const AddItemSettingsScreen: React.FC = () => {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}> 
+    <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
       <Text style={[styles.header, { color: theme.colors.text.primary }]}>Customize Optional Fields</Text>
       {fields.map(field => (
         <View style={styles.fieldRow} key={field.id}>
@@ -112,7 +112,7 @@ const AddItemSettingsScreen: React.FC = () => {
       </View>
 
       <View style={styles.buttonContainer}>
-        <Text 
+        <Text
           style={[styles.saveButton, { color: theme.colors.button.primary }]}
           onPress={saveSettings}
         >

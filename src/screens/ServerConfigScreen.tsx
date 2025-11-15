@@ -62,7 +62,7 @@ const ServerConfigScreen: React.FC = () => {
       const savedServers = await serverService.getServers();
       const serversWithStatus: ServerWithStatus[] = savedServers.map((server: ServerConfig) => ({
         ...server,
-        status: 'checking' as const
+        status: 'checking' as const,
       }));
       setServers(serversWithStatus);
 
@@ -73,12 +73,12 @@ const ServerConfigScreen: React.FC = () => {
             const result = await serverService.testConnection(server);
             return {
               ...server,
-              status: result.success ? 'online' as const : 'offline' as const
+              status: result.success ? 'online' as const : 'offline' as const,
             };
           } catch (error) {
             return {
               ...server,
-              status: 'offline' as const
+              status: 'offline' as const,
             };
           }
         })
@@ -109,7 +109,7 @@ const ServerConfigScreen: React.FC = () => {
     try {
       const serverService = ServerService.getInstance();
       const result = await serverService.testConnection(newServer);
-      
+
       if (result.success) {
         Alert.alert('Success', 'Connection successful! Server is reachable.');
         await serverService.setLastUsedServer(newServer.id);
@@ -134,18 +134,18 @@ const ServerConfigScreen: React.FC = () => {
     try {
       const serverService = ServerService.getInstance();
       const result = await serverService.testConnection(newServer);
-      
+
       if (!result.success) {
         Alert.alert('Connection Failed', result.error || 'Could not connect to the server. Save anyway?', [
           {
             text: 'Cancel',
             style: 'cancel',
-            onPress: () => setIsLoading(false)
+            onPress: () => setIsLoading(false),
           },
           {
             text: 'Save Anyway',
-            onPress: () => saveServerConfig()
-          }
+            onPress: () => saveServerConfig(),
+          },
         ]);
         return;
       }
@@ -187,7 +187,7 @@ const ServerConfigScreen: React.FC = () => {
   const deleteServer = async (serverId: string): Promise<void> => {
     const serverToDelete = servers.find(server => server.id === serverId);
     const serverName = serverToDelete?.name || serverToDelete?.host || 'this server';
-    
+
     Alert.alert(
       'Delete Server',
       `Are you sure you want to delete ${serverName}?`,
@@ -223,7 +223,7 @@ const ServerConfigScreen: React.FC = () => {
   const handleInputChange = (field: keyof ServerConfig, value: string): void => {
     setNewServer((prev: ServerConfig) => ({
       ...prev,
-      [field]: field === 'username' ? value.toLowerCase() : value
+      [field]: field === 'username' ? value.toLowerCase() : value,
     }));
   };
 
@@ -236,7 +236,7 @@ const ServerConfigScreen: React.FC = () => {
     try {
       const serverService = ServerService.getInstance();
       const server = servers.find(s => s.id === serverId);
-      
+
       if (server) {
         setSelectedServer(server.id);
         await serverService.initialize(server);
@@ -259,7 +259,7 @@ const ServerConfigScreen: React.FC = () => {
   };
 
   return (
-    <ScrollView 
+    <ScrollView
       style={[styles.container, { backgroundColor: theme.colors.background.primary }]}
       contentContainerStyle={{ flexGrow: 1 }}
       bounces={false}
@@ -272,7 +272,7 @@ const ServerConfigScreen: React.FC = () => {
       </View>
 
       <View style={[styles.card, { backgroundColor: theme.colors.background.secondary }]}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.addServerButton, { backgroundColor: theme.colors.button.primary }]}
           onPress={() => {
             setSelectedServer('');
@@ -294,7 +294,7 @@ const ServerConfigScreen: React.FC = () => {
         <View style={[styles.card, { backgroundColor: theme.colors.background.secondary }]}>
           <View style={styles.editHeader}>
             <Text style={[styles.formTitle, { color: theme.colors.text.primary }]}>Add New Server</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.cancelEditButton}
               onPress={() => {
                 setIsAddServerVisible(false);
@@ -310,11 +310,11 @@ const ServerConfigScreen: React.FC = () => {
               <Text style={[styles.cancelEditButtonText, { color: theme.colors.text.primary }]}>Cancel</Text>
             </TouchableOpacity>
           </View>
-          
+
           <View style={styles.inputContainer}>
             <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>Server Name</Text>
             <TextInput
-              style={[styles.input, { 
+              style={[styles.input, {
                 backgroundColor: theme.colors.background.primary,
                 color: theme.colors.text.primary,
                 borderColor: theme.colors.border,
@@ -325,11 +325,11 @@ const ServerConfigScreen: React.FC = () => {
               onChangeText={(text: string) => handleInputChange('name', text)}
             />
           </View>
-          
+
           <View style={styles.inputContainer}>
             <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>Host <Text style={styles.requiredStar}>*</Text></Text>
             <TextInput
-              style={[styles.input, { 
+              style={[styles.input, {
                 backgroundColor: theme.colors.background.primary,
                 color: theme.colors.text.primary,
                 borderColor: theme.colors.border,
@@ -341,11 +341,11 @@ const ServerConfigScreen: React.FC = () => {
               autoCapitalize="none"
             />
           </View>
-          
+
           <View style={styles.inputContainer}>
             <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>Username <Text style={styles.requiredStar}>*</Text></Text>
             <TextInput
-              style={[styles.input, { 
+              style={[styles.input, {
                 backgroundColor: theme.colors.background.primary,
                 color: theme.colors.text.primary,
                 borderColor: theme.colors.border,
@@ -358,11 +358,11 @@ const ServerConfigScreen: React.FC = () => {
               autoCorrect={false}
             />
           </View>
-          
+
           <View style={styles.inputContainer}>
             <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>Password <Text style={styles.requiredStar}>*</Text></Text>
             <TextInput
-              style={[styles.input, { 
+              style={[styles.input, {
                 backgroundColor: theme.colors.background.primary,
                 color: theme.colors.text.primary,
                 borderColor: theme.colors.border,
@@ -376,10 +376,10 @@ const ServerConfigScreen: React.FC = () => {
               autoCorrect={false}
             />
           </View>
-          
+
           <View style={styles.buttonContainer}>
-            <TouchableOpacity 
-              style={[styles.button, { backgroundColor: theme.colors.button.primary }]} 
+            <TouchableOpacity
+              style={[styles.button, { backgroundColor: theme.colors.button.primary }]}
               onPress={testConnection}
               disabled={isLoading}
             >
@@ -389,9 +389,9 @@ const ServerConfigScreen: React.FC = () => {
                 <Text style={[styles.buttonText, { color: theme.colors.button.text }]}>Test Connection</Text>
               )}
             </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={[styles.button, { backgroundColor: theme.colors.button.primary }]} 
+
+            <TouchableOpacity
+              style={[styles.button, { backgroundColor: theme.colors.button.primary }]}
               onPress={saveServer}
               disabled={isLoading}
             >
@@ -418,14 +418,14 @@ const ServerConfigScreen: React.FC = () => {
                     borderWidth: 2,
                     backgroundColor: theme.colors.button.primary + '10',
                   },
-                  { backgroundColor: theme.colors.background.primary }
+                  { backgroundColor: theme.colors.background.primary },
                 ]}
                 onPress={() => handleServerSelect(server)}
               >
                 <View style={styles.serverContent}>
                   <View style={styles.serverInfo}>
                     <Text style={[styles.serverName, { color: theme.colors.text.primary }]}>
-                      {server.name || "Unnamed Server"}
+                      {server.name || 'Unnamed Server'}
                     </Text>
                     <Text style={[styles.serverDetails, { color: theme.colors.text.primary }]}>
                       {server.host} • {server.username}
@@ -434,13 +434,13 @@ const ServerConfigScreen: React.FC = () => {
                 </View>
               </TouchableOpacity>
               <View style={styles.serverActions}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[styles.editButton, { backgroundColor: theme.colors.button.primary }]}
                   onPress={() => handleEditServer(server)}
                 >
                   <Text style={[styles.editButtonText, { color: theme.colors.button.text }]}>✎</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.deleteButton}
                   onPress={() => deleteServer(server.id)}
                 >
@@ -456,7 +456,7 @@ const ServerConfigScreen: React.FC = () => {
         <View style={[styles.card, { backgroundColor: theme.colors.background.secondary }]}>
           <View style={styles.editHeader}>
             <Text style={[styles.formTitle, { color: theme.colors.text.primary }]}>Edit Server</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.cancelEditButton}
               onPress={() => {
                 setSelectedServer('');
@@ -472,11 +472,11 @@ const ServerConfigScreen: React.FC = () => {
               <Text style={[styles.cancelEditButtonText, { color: theme.colors.text.primary }]}>Cancel</Text>
             </TouchableOpacity>
           </View>
-          
+
           <View style={styles.inputContainer}>
             <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>Server Name</Text>
             <TextInput
-              style={[styles.input, { 
+              style={[styles.input, {
                 backgroundColor: theme.colors.background.primary,
                 color: theme.colors.text.primary,
                 borderColor: theme.colors.border,
@@ -487,11 +487,11 @@ const ServerConfigScreen: React.FC = () => {
               onChangeText={(text: string) => handleInputChange('name', text)}
             />
           </View>
-          
+
           <View style={styles.inputContainer}>
             <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>Host <Text style={styles.requiredStar}>*</Text></Text>
             <TextInput
-              style={[styles.input, { 
+              style={[styles.input, {
                 backgroundColor: theme.colors.background.primary,
                 color: theme.colors.text.primary,
                 borderColor: theme.colors.border,
@@ -503,11 +503,11 @@ const ServerConfigScreen: React.FC = () => {
               autoCapitalize="none"
             />
           </View>
-          
+
           <View style={styles.inputContainer}>
             <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>Username <Text style={styles.requiredStar}>*</Text></Text>
             <TextInput
-              style={[styles.input, { 
+              style={[styles.input, {
                 backgroundColor: theme.colors.background.primary,
                 color: theme.colors.text.primary,
                 borderColor: theme.colors.border,
@@ -520,11 +520,11 @@ const ServerConfigScreen: React.FC = () => {
               autoCorrect={false}
             />
           </View>
-          
+
           <View style={styles.inputContainer}>
             <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>Password <Text style={styles.requiredStar}>*</Text></Text>
             <TextInput
-              style={[styles.input, { 
+              style={[styles.input, {
                 backgroundColor: theme.colors.background.primary,
                 color: theme.colors.text.primary,
                 borderColor: theme.colors.border,
@@ -538,10 +538,10 @@ const ServerConfigScreen: React.FC = () => {
               autoCorrect={false}
             />
           </View>
-          
+
           <View style={styles.buttonContainer}>
-            <TouchableOpacity 
-              style={[styles.button, { backgroundColor: theme.colors.button.primary }]} 
+            <TouchableOpacity
+              style={[styles.button, { backgroundColor: theme.colors.button.primary }]}
               onPress={testConnection}
               disabled={isLoading}
             >
@@ -551,9 +551,9 @@ const ServerConfigScreen: React.FC = () => {
                 <Text style={[styles.buttonText, { color: theme.colors.button.text }]}>Test Connection</Text>
               )}
             </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={[styles.button, { backgroundColor: theme.colors.button.primary }]} 
+
+            <TouchableOpacity
+              style={[styles.button, { backgroundColor: theme.colors.button.primary }]}
               onPress={saveServer}
               disabled={isLoading}
             >

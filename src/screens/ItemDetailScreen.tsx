@@ -22,7 +22,7 @@ type ItemDetailRouteProp = RouteProp<{ ItemDetail: { itemId: string } }, 'ItemDe
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
-  if (isNaN(date.getTime())) return dateString;
+  if (isNaN(date.getTime())) {return dateString;}
   // Format as YYYY-MM-DD HH:mm
   return date.toLocaleString(undefined, {
     year: 'numeric',
@@ -60,7 +60,7 @@ const ItemDetailScreen: React.FC = () => {
 
   if (loading) {
     return (
-      <View style={[styles.centered, { backgroundColor: theme.colors.background.primary }]}> 
+      <View style={[styles.centered, { backgroundColor: theme.colors.background.primary }]}>
         <ActivityIndicator size="large" color={theme.colors.button.primary} />
       </View>
     );
@@ -68,7 +68,7 @@ const ItemDetailScreen: React.FC = () => {
 
   if (error) {
     return (
-      <View style={[styles.centered, { backgroundColor: theme.colors.background.primary }]}> 
+      <View style={[styles.centered, { backgroundColor: theme.colors.background.primary }]}>
         <Text style={{ color: theme.colors.error }}>{error}</Text>
       </View>
     );
@@ -79,7 +79,7 @@ const ItemDetailScreen: React.FC = () => {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background.primary }]}> 
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {item.imageId ? (
           <Image source={{ uri: getImageUrl(item.id, item.imageId) }} style={styles.image} resizeMode="cover" />

@@ -120,4 +120,4 @@ export const oledTheme: Theme = {
     lg: 24,
     xl: 32,
   },
-}; 
+};

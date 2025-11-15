@@ -47,7 +47,7 @@ const InventorySettingsScreen: React.FC = () => {
     try {
       const savedPreferences = await AsyncStorage.getItem(STORAGE_KEYS.INVENTORY_DISPLAY_PREFERENCES);
       console.log('Loading preferences from storage:', savedPreferences);
-      
+
       if (savedPreferences) {
         const parsedPreferences = JSON.parse(savedPreferences);
         // Ensure core preferences are in the correct order
@@ -91,7 +91,7 @@ const InventorySettingsScreen: React.FC = () => {
   };
 
   const togglePreference = (id: string) => {
-    const newPreferences = preferences.map(pref => 
+    const newPreferences = preferences.map(pref =>
       pref.id === id ? { ...pref, enabled: !pref.enabled } : pref
     );
     savePreferences(newPreferences);
@@ -100,11 +100,11 @@ const InventorySettingsScreen: React.FC = () => {
   const moveItem = (fromIndex: number, toIndex: number) => {
     const corePreferences = preferences.filter(p => p.isCore);
     const nonCorePreferences = preferences.filter(p => !p.isCore);
-    
+
     // Adjust indices for non-core items
     const adjustedFromIndex = fromIndex - corePreferences.length;
     const adjustedToIndex = toIndex - corePreferences.length;
-    
+
     if (adjustedFromIndex < 0 || adjustedToIndex < 0) {
       return; // Don't move core items
     }
@@ -136,7 +136,7 @@ const InventorySettingsScreen: React.FC = () => {
         </Text>
       </View>
 
-      <ScrollView 
+      <ScrollView
         style={[styles.scrollView, { backgroundColor: theme.colors.background.primary }]}
         contentContainerStyle={styles.contentContainer}
       >
@@ -147,14 +147,14 @@ const InventorySettingsScreen: React.FC = () => {
           </Text>
           <View style={styles.preferencesContainer}>
             {preferences.filter(p => p.isCore).map((preference) => (
-              <View 
+              <View
                 key={preference.id}
                 style={[
                   styles.preferenceItem,
-                  { 
+                  {
                     backgroundColor: theme.colors.background.secondary,
                     borderColor: theme.colors.border,
-                  }
+                  },
                 ]}
               >
                 <Text style={[styles.preferenceLabel, { color: theme.colors.text.primary }]}>
@@ -182,14 +182,14 @@ const InventorySettingsScreen: React.FC = () => {
                 key={preference.id}
                 style={[
                   styles.preferenceItem,
-                  { 
+                  {
                     backgroundColor: theme.colors.background.secondary,
                     borderColor: theme.colors.border,
                     opacity: draggedItem === index ? 0.5 : 1,
                     transform: [
-                      { translateY: draggedItem === index ? 10 : 0 }
-                    ]
-                  }
+                      { translateY: draggedItem === index ? 10 : 0 },
+                    ],
+                  },
                 ]}
               >
                 <TouchableOpacity
@@ -303,4 +303,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default InventorySettingsScreen; 
+export default InventorySettingsScreen;

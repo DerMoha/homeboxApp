@@ -81,11 +81,11 @@ const SettingsScreen: React.FC = () => {
     try {
       const serverService = ServerService.getInstance();
       const savedServers = await serverService.getServers();
-      
+
       // Initialize servers with checking status
       const serversWithStatus: ServerWithStatus[] = savedServers.map(server => ({
         ...server,
-        status: 'checking'
+        status: 'checking',
       }));
       setServers(serversWithStatus);
 
@@ -143,7 +143,7 @@ const SettingsScreen: React.FC = () => {
   const deleteServer = async (serverId: string): Promise<void> => {
     const serverToDelete = servers.find(server => server.id === serverId);
     const serverName = serverToDelete?.name || serverToDelete?.host || 'this server';
-    
+
     Alert.alert(
       'Delete Server',
       `Are you sure you want to delete ${serverName}?`,
@@ -182,7 +182,7 @@ const SettingsScreen: React.FC = () => {
   const handleInputChange = (field: keyof ServerConfig, value: string): void => {
     setNewServer((prev: ServerConfig) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
@@ -195,7 +195,7 @@ const SettingsScreen: React.FC = () => {
     try {
       const serverService = ServerService.getInstance();
       const server = servers.find(s => s.id === serverId);
-      
+
       if (server) {
         await serverService.initialize(server);
         setSelectedServer(serverId);
@@ -220,7 +220,7 @@ const SettingsScreen: React.FC = () => {
     setSelectedServer(server.id);
     const serverService = ServerService.getInstance();
     await serverService.initialize(server);
-    
+
     // Navigate to ServerConfig with the server data
     navigation.navigate('ServerConfig', { server });
   };
@@ -233,7 +233,7 @@ const SettingsScreen: React.FC = () => {
       <View
         style={[
           styles.statusDot,
-          { backgroundColor: status === 'online' ? theme.colors.success : theme.colors.error }
+          { backgroundColor: status === 'online' ? theme.colors.success : theme.colors.error },
         ]}
       />
     );
@@ -251,10 +251,10 @@ const SettingsScreen: React.FC = () => {
           >
             {servers.length > 0 ? (
               servers.map((server) => (
-                <Picker.Item 
-                  key={server.id} 
+                <Picker.Item
+                  key={server.id}
                   label={server.name || server.host}
-                  value={server.id} 
+                  value={server.id}
                 />
               ))
             ) : (
@@ -265,7 +265,7 @@ const SettingsScreen: React.FC = () => {
         </View>
       </View>
 
-      <TouchableOpacity 
+      <TouchableOpacity
         style={[styles.sectionHeader, { backgroundColor: theme.colors.background.secondary }]}
         onPress={() => navigation.navigate('ServerConfig', { server: undefined })}
       >
@@ -275,7 +275,7 @@ const SettingsScreen: React.FC = () => {
         </View>
       </TouchableOpacity>
 
-      <TouchableOpacity 
+      <TouchableOpacity
         style={[styles.sectionHeader, { backgroundColor: theme.colors.background.secondary }]}
         onPress={() => navigation.navigate('Appearance')}
       >
@@ -285,7 +285,7 @@ const SettingsScreen: React.FC = () => {
         </View>
       </TouchableOpacity>
 
-      <TouchableOpacity 
+      <TouchableOpacity
         style={[styles.sectionHeader, { backgroundColor: theme.colors.background.secondary }]}
         onPress={() => navigation.navigate('InventorySettings')}
       >
@@ -295,7 +295,7 @@ const SettingsScreen: React.FC = () => {
         </View>
       </TouchableOpacity>
 
-      <TouchableOpacity 
+      <TouchableOpacity
         style={[styles.sectionHeader, { backgroundColor: theme.colors.background.secondary }]}
         onPress={() => navigation.navigate('AddItemSettings')}
       >
@@ -489,7 +489,7 @@ const styles = StyleSheet.create({
   placeholderText: {
     fontSize: 14,
     marginTop: 5,
-  }
+  },
 });
 
-export default SettingsScreen; 
+export default SettingsScreen;
