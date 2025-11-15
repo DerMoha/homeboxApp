@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { View, Text } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import SettingsScreen from './src/screens/SettingsScreen';
 import AddItemScreen from './src/screens/AddItemScreen';
@@ -23,11 +23,32 @@ const LocationsStack = createNativeStackNavigator();
 const InventoryStack = createNativeStackNavigator();
 const AddItemStack = createNativeStackNavigator();
 
+// Tab bar icon components (defined outside to prevent re-creation on each render)
+const HomeIcon = ({ color, size }: { color: string; size: number }) => (
+  <MaterialIcons name="home" size={size} color={color} />
+);
+
+const InventoryIcon = ({ color, size }: { color: string; size: number }) => (
+  <MaterialIcons name="inventory" size={size} color={color} />
+);
+
+const AddItemIcon = ({ color, size }: { color: string; size: number }) => (
+  <MaterialIcons name="add-box" size={size} color={color} />
+);
+
+const LocationIcon = ({ color, size }: { color: string; size: number }) => (
+  <MaterialIcons name="location-on" size={size} color={color} />
+);
+
+const SettingsIcon = ({ color, size }: { color: string; size: number }) => (
+  <MaterialIcons name="settings" size={size} color={color} />
+);
+
 // Placeholder screens
 const HomeScreen = () => {
   const { theme } = useTheme();
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background.primary }}>
+    <View style={[styles.centeredContainer, { backgroundColor: theme.colors.background.primary }]}>
       <Text style={{ color: theme.colors.text.primary }}>Home Screen</Text>
     </View>
   );
@@ -276,9 +297,7 @@ const AppContent = () => {
           name="Home"
           component={HomeScreen}
           options={{
-            tabBarIcon: ({ color, size }) => (
-              <MaterialIcons name="home" size={size} color={color} />
-            ),
+            tabBarIcon: HomeIcon,
           }}
         />
         <Tab.Screen
@@ -286,9 +305,7 @@ const AppContent = () => {
           component={InventoryStackScreen}
           options={{
             headerShown: false,
-            tabBarIcon: ({ color, size }) => (
-              <MaterialIcons name="inventory" size={size} color={color} />
-            ),
+            tabBarIcon: InventoryIcon,
             tabBarLabel: 'Inventory',
           }}
         />
@@ -297,9 +314,7 @@ const AppContent = () => {
           component={AddItemStackScreen}
           options={{
             headerShown: false,
-            tabBarIcon: ({ color, size }) => (
-              <MaterialIcons name="add-box" size={size} color={color} />
-            ),
+            tabBarIcon: AddItemIcon,
             tabBarLabel: 'Add Item',
           }}
         />
@@ -308,9 +323,7 @@ const AppContent = () => {
           component={LocationsStackScreen}
           options={{
             headerShown: false,
-            tabBarIcon: ({ color, size }) => (
-              <MaterialIcons name="location-on" size={size} color={color} />
-            ),
+            tabBarIcon: LocationIcon,
           }}
         />
         <Tab.Screen
@@ -318,9 +331,7 @@ const AppContent = () => {
           component={SettingsStackScreen}
           options={{
             headerShown: false,
-            tabBarIcon: ({ color, size }) => (
-              <MaterialIcons name="settings" size={size} color={color} />
-            ),
+            tabBarIcon: SettingsIcon,
           }}
         />
       </Tab.Navigator>
@@ -337,5 +348,13 @@ const App = () => {
     </SafeAreaProvider>
   );
 };
+
+const styles = StyleSheet.create({
+  centeredContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});
 
 export default App;

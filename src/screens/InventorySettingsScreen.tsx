@@ -12,6 +12,7 @@ import {
 import { useTheme } from '../theme/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS } from '../constants/storage';
+import { logger } from '../utils/logger';
 
 interface DisplayPreference {
   id: string;
@@ -42,7 +43,7 @@ const InventorySettingsScreen: React.FC = () => {
   const loadPreferences = useCallback(async () => {
     try {
       const savedPreferences = await AsyncStorage.getItem(STORAGE_KEYS.INVENTORY_DISPLAY_PREFERENCES);
-      console.log('Loading preferences from storage:', savedPreferences);
+      logger.log('Loading preferences from storage:', savedPreferences);
 
       if (savedPreferences) {
         const parsedPreferences = JSON.parse(savedPreferences);
@@ -50,11 +51,11 @@ const InventorySettingsScreen: React.FC = () => {
         const corePreferences = defaultPreferences.filter(p => p.isCore);
         const nonCorePreferences = parsedPreferences.filter((p: DisplayPreference) => !p.isCore);
         const mergedPreferences = [...corePreferences, ...nonCorePreferences];
-        console.log('Loaded preferences:', mergedPreferences);
+        logger.log('Loaded preferences:', mergedPreferences);
         setPreferences(mergedPreferences);
         setIsFirstLoad(false);
       } else {
-        console.log('No saved preferences, using defaults:', defaultPreferences);
+        logger.log('No saved preferences, using defaults:', defaultPreferences);
         setPreferences(defaultPreferences);
         if (isFirstLoad) {
           await AsyncStorage.setItem(STORAGE_KEYS.INVENTORY_DISPLAY_PREFERENCES, JSON.stringify(defaultPreferences));
@@ -62,7 +63,7 @@ const InventorySettingsScreen: React.FC = () => {
         }
       }
     } catch (error) {
-      console.error('Error loading preferences:', error);
+      logger.error('Error loading preferences:', error);
     }
   }, [isFirstLoad]);
 
@@ -72,21 +73,21 @@ const InventorySettingsScreen: React.FC = () => {
 
   const savePreferences = async (newPreferences: DisplayPreference[]) => {
     try {
-      console.log('Saving preferences:', newPreferences);
+      logger.log('Saving preferences:', newPreferences);
       await AsyncStorage.setItem(STORAGE_KEYS.INVENTORY_DISPLAY_PREFERENCES, JSON.stringify(newPreferences));
       setPreferences(newPreferences);
     } catch (error) {
-      console.error('Error saving preferences:', error);
+      logger.error('Error saving preferences:', error);
     }
   };
 
   const resetToDefaults = async () => {
     try {
-      console.log('Resetting to default preferences');
+      logger.log('Resetting to default preferences');
       await AsyncStorage.setItem(STORAGE_KEYS.INVENTORY_DISPLAY_PREFERENCES, JSON.stringify(defaultPreferences));
       setPreferences(defaultPreferences);
     } catch (error) {
-      console.error('Error resetting preferences:', error);
+      logger.error('Error resetting preferences:', error);
     }
   };
 
@@ -151,7 +152,7 @@ const InventorySettingsScreen: React.FC = () => {
           </View>
         </View>
 
-        <View style={[styles.section, { marginTop: 24 }]}>
+        <View style={styles.additionalAttributesSection}>
           <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Additional Attributes</Text>
           <Text style={[styles.sectionSubtitle, { color: theme.colors.text.secondary }]}>
             Optional information that can be reordered
@@ -233,6 +234,10 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   section: {
+    marginBottom: 16,
+  },
+  additionalAttributesSection: {
+    marginTop: 24,
     marginBottom: 16,
   },
   sectionTitle: {

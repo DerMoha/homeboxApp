@@ -15,6 +15,7 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import ServerService from '../services/serverService';
 import { LocationsStackParamList } from '../types/navigation';
 import axios from 'axios';
+import { logger } from '../utils/logger';
 
 type RootStackParamList = LocationsStackParamList;
 
@@ -106,7 +107,7 @@ const LocationsScreen: React.FC = () => {
       setLocationTree(response.data);
       setError(null);
     } catch (err) {
-      console.error('Error loading locations:', err);
+      logger.error('Error loading locations:', err);
       if (axios.isAxiosError(err)) {
         if (err.response?.status === 500) {
           setError('Server error occurred. Please check if the server is running and try again.');

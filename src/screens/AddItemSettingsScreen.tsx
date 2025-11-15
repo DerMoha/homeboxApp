@@ -3,6 +3,7 @@ import { View, Text, Switch, StyleSheet, Alert } from 'react-native';
 import Slider from '@react-native-community/slider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../theme/ThemeContext';
+import { logger } from '../utils/logger';
 
 const STORAGE_KEY = '@add_item_fields';
 const IMAGE_QUALITY_KEY = '@image_quality';
@@ -43,7 +44,7 @@ const AddItemSettingsScreen: React.FC = () => {
         setImageQuality(parseFloat(savedQuality));
       }
     } catch (error) {
-      console.error('Error loading settings:', error);
+      logger.error('Error loading settings:', error);
       // If there's an error, use default values
       setFields(DEFAULT_FIELDS);
       setImageQuality(DEFAULT_IMAGE_QUALITY);
@@ -64,7 +65,7 @@ const AddItemSettingsScreen: React.FC = () => {
       await AsyncStorage.setItem(IMAGE_QUALITY_KEY, imageQuality.toString());
       Alert.alert('Saved', 'Settings updated successfully');
     } catch (error) {
-      console.error('Error saving settings:', error);
+      logger.error('Error saving settings:', error);
       Alert.alert('Error', 'Failed to save settings');
     }
   };

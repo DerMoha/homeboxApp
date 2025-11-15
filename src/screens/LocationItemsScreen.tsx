@@ -14,6 +14,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import ServerService from '../services/serverService';
+import { logger } from '../utils/logger';
 
 type RootStackParamList = {
   LocationItems: { locationId: string; locationName: string };
@@ -57,7 +58,7 @@ const LocationItemsScreen: React.FC = () => {
         setError(result.error || 'Failed to load items');
       }
     } catch (err) {
-      console.error('Error loading items:', err);
+      logger.error('Error loading items:', err);
       setError('An unexpected error occurred');
     } finally {
       setIsLoading(false);

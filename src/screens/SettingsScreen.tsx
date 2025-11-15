@@ -15,6 +15,7 @@ import ServerService, { ServerConfig } from '../services/serverService';
 import { useTheme } from '../theme/ThemeContext';
 import { SettingsStackParamList } from '../types/navigation';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import { logger } from '../utils/logger';
 
 type SettingsScreenNavigationProp = NativeStackNavigationProp<SettingsStackParamList, 'Settings'>;
 
@@ -94,7 +95,7 @@ const SettingsScreen: React.FC = () => {
         setSelectedServer('');
       }
     } catch (error) {
-      console.error('Error loading servers:', error);
+      logger.error('Error loading servers:', error);
     }
   }, [checkServerStatus]);
 
@@ -133,7 +134,7 @@ const SettingsScreen: React.FC = () => {
         Alert.alert('Error', 'Failed to save server configuration');
       }
     } catch (error) {
-      console.error('Error saving server:', error);
+      logger.error('Error saving server:', error);
       Alert.alert('Error', 'Failed to save server configuration');
     }
   };
@@ -168,7 +169,7 @@ const SettingsScreen: React.FC = () => {
                 Alert.alert('Error', 'Failed to delete server');
               }
             } catch (error) {
-              console.error('Error deleting server:', error);
+              logger.error('Error deleting server:', error);
               Alert.alert('Error', 'Failed to delete server');
             }
           },
@@ -201,7 +202,7 @@ const SettingsScreen: React.FC = () => {
         setSelectedServer(serverId);
       }
     } catch (error) {
-      console.error('Error changing server:', error);
+      logger.error('Error changing server:', error);
       Alert.alert('Error', 'Failed to change server. Please try again.');
     }
   };

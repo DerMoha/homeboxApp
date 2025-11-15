@@ -12,6 +12,7 @@ import {
 import { useRoute, RouteProp } from '@react-navigation/native';
 import ServerService, { ServerConfig } from '../services/serverService';
 import { useTheme } from '../theme/ThemeContext';
+import { logger } from '../utils/logger';
 
 type RootStackParamList = {
   Settings: undefined;
@@ -77,7 +78,7 @@ const ServerConfigScreen: React.FC = () => {
         setSelectedServer(updatedServers[0].id);
       }
     } catch (error) {
-      console.error('Error loading servers:', error);
+      logger.error('Error loading servers:', error);
       Alert.alert('Error', 'Failed to load saved servers');
     }
   }, []);
@@ -110,7 +111,7 @@ const ServerConfigScreen: React.FC = () => {
         Alert.alert('Connection Failed', result.error || 'Could not connect to the server. Please check your settings.');
       }
     } catch (error) {
-      console.error('Error testing connection:', error);
+      logger.error('Error testing connection:', error);
       Alert.alert('Error', 'Failed to test connection');
     } finally {
       setIsLoading(false);
@@ -145,7 +146,7 @@ const ServerConfigScreen: React.FC = () => {
 
       await saveServerConfig();
     } catch (error) {
-      console.error('Error saving server:', error);
+      logger.error('Error saving server:', error);
       Alert.alert('Error', 'Failed to save server configuration');
       setIsLoading(false);
     }
@@ -170,7 +171,7 @@ const ServerConfigScreen: React.FC = () => {
         Alert.alert('Error', 'Failed to save server configuration');
       }
     } catch (error) {
-      console.error('Error in saveServerConfig:', error);
+      logger.error('Error in saveServerConfig:', error);
       Alert.alert('Error', 'Failed to save server configuration');
     } finally {
       setIsLoading(false);
@@ -203,7 +204,7 @@ const ServerConfigScreen: React.FC = () => {
                 Alert.alert('Error', 'Failed to delete server');
               }
             } catch (error) {
-              console.error('Error deleting server:', error);
+              logger.error('Error deleting server:', error);
               Alert.alert('Error', 'Failed to delete server');
             }
           },
@@ -234,7 +235,7 @@ const ServerConfigScreen: React.FC = () => {
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: theme.colors.background.primary }]}
-      contentContainerStyle={{ flexGrow: 1 }}
+      contentContainerStyle={styles.scrollViewContent}
       bounces={false}
       overScrollMode="never"
       showsVerticalScrollIndicator={false}
@@ -386,11 +387,13 @@ const ServerConfigScreen: React.FC = () => {
               <TouchableOpacity
                 style={[
                   styles.serverItem,
-                  selectedServer === server.id && {
-                    borderColor: theme.colors.button.primary,
-                    borderWidth: 2,
-                    backgroundColor: theme.colors.button.primary + '10',
-                  },
+                  selectedServer === server.id && [
+                    styles.selectedServerBorder,
+                    {
+                      borderColor: theme.colors.button.primary,
+                      backgroundColor: theme.colors.button.primary + '10',
+                    },
+                  ],
                   { backgroundColor: theme.colors.background.primary },
                 ]}
                 onPress={() => handleServerSelect(server)}
@@ -546,6 +549,12 @@ const ServerConfigScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+  },
+  selectedServerBorder: {
+    borderWidth: 2,
   },
   header: {
     padding: 20,

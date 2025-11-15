@@ -18,6 +18,7 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ServerService from '../services/serverService';
 import { STORAGE_KEYS } from '../constants/storage';
+import { logger } from '../utils/logger';
 
 type RootStackParamList = {
   InventoryTab: undefined;
@@ -97,7 +98,7 @@ const InventoryScreen: React.FC = () => {
       const savedPreferences = await AsyncStorage.getItem(STORAGE_KEYS.INVENTORY_DISPLAY_PREFERENCES);
       if (savedPreferences) {
         const parsedPreferences = JSON.parse(savedPreferences);
-        console.log('Loaded display preferences:', parsedPreferences.map((p: DisplayPreference) => ({
+        logger.log('Loaded display preferences:', parsedPreferences.map((p: DisplayPreference) => ({
           id: p.id,
           enabled: p.enabled,
         })));
@@ -116,7 +117,7 @@ const InventoryScreen: React.FC = () => {
           { id: 'updatedAt', label: 'Last Updated', enabled: false },
           { id: 'image', label: 'Image', enabled: true },
         ];
-        console.log('Using default preferences:', defaultPreferences.map(p => ({
+        logger.log('Using default preferences:', defaultPreferences.map(p => ({
           id: p.id,
           enabled: p.enabled,
         })));
@@ -125,7 +126,7 @@ const InventoryScreen: React.FC = () => {
         await AsyncStorage.setItem(STORAGE_KEYS.INVENTORY_DISPLAY_PREFERENCES, JSON.stringify(defaultPreferences));
       }
     } catch (err) {
-      console.error('Error loading display preferences:', err);
+      logger.error('Error loading display preferences:', err);
     }
   }, []);
 
@@ -155,7 +156,7 @@ const InventoryScreen: React.FC = () => {
       setIsLoading(true);
       setError(null);
       const response = await ServerService.getInstance().getInventory(1, 50);
-      console.log('API Response:', response);
+      logger.log('API Response:', response);
       if (response.success && response.data) {
         const sortedItems = sortInventory(response.data.items);
         setInventory(sortedItems);
@@ -164,7 +165,7 @@ const InventoryScreen: React.FC = () => {
       }
     } catch (err) {
       setError('An unexpected error occurred');
-      console.error('Error loading inventory:', err);
+      logger.error('Error loading inventory:', err);
     } finally {
       setIsLoading(false);
       setRefreshing(false);
@@ -195,7 +196,7 @@ const InventoryScreen: React.FC = () => {
       await loadDisplayPreferences();
       await loadInventory();
     } catch (err) {
-      console.error('Error initializing screen:', err);
+      logger.error('Error initializing screen:', err);
       setError('Failed to initialize screen');
     } finally {
       setIsLoading(false);
@@ -217,89 +218,95 @@ const InventoryScreen: React.FC = () => {
     return unsubscribe;
   }, [navigation, loadDisplayPreferences]);
 
+  const toggleViewMode = useCallback(() => {
+    setViewMode(prevMode => prevMode === 'list' ? 'grid' : 'list');
+  }, []);
+
+  const renderHeaderRight = useCallback(() => (
+    <View style={styles.headerControls}>
+      {viewMode === 'grid' ? (
+        <>
+          <TouchableOpacity
+            style={[
+              styles.headerButton,
+              {
+                backgroundColor: theme.colors.button.primary,
+                opacity: itemsPerRow <= 1 ? 0.5 : 1,
+              },
+            ]}
+            onPress={() => setItemsPerRow(Math.max(1, itemsPerRow - 1))}
+            disabled={itemsPerRow <= 1}
+          >
+            <MaterialIcons name="remove" size={20} color={theme.colors.button.text} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.headerButton,
+              {
+                backgroundColor: theme.colors.button.primary,
+                opacity: itemsPerRow >= 5 ? 0.5 : 1,
+              },
+            ]}
+            onPress={() => setItemsPerRow(Math.min(5, itemsPerRow + 1))}
+            disabled={itemsPerRow >= 5}
+          >
+            <MaterialIcons name="add" size={20} color={theme.colors.button.text} />
+          </TouchableOpacity>
+        </>
+      ) : (
+        <>
+          <TouchableOpacity
+            style={[
+              styles.headerButton,
+              {
+                backgroundColor: theme.colors.button.primary,
+                opacity: listZoom >= 2 ? 0.5 : 1,
+              },
+            ]}
+            onPress={() => setListZoom(Math.min(2, listZoom + 1))}
+            disabled={listZoom >= 2}
+          >
+            <MaterialIcons name="zoom-in" size={20} color={theme.colors.button.text} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.headerButton,
+              {
+                backgroundColor: theme.colors.button.primary,
+                opacity: listZoom <= 0 ? 0.5 : 1,
+              },
+            ]}
+            onPress={() => setListZoom(Math.max(0, listZoom - 1))}
+            disabled={listZoom <= 0}
+          >
+            <MaterialIcons name="zoom-out" size={20} color={theme.colors.button.text} />
+          </TouchableOpacity>
+        </>
+      )}
+      <TouchableOpacity
+        style={[styles.headerButton, { backgroundColor: theme.colors.button.primary }]}
+        onPress={toggleViewMode}
+      >
+        <MaterialIcons
+          name={viewMode === 'list' ? 'grid-view' : 'view-list'}
+          size={20}
+          color={theme.colors.button.text}
+        />
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.headerButton, { backgroundColor: theme.colors.button.primary }]}
+        onPress={() => setSortModalVisible(true)}
+      >
+        <MaterialIcons name="sort" size={20} color={theme.colors.button.text} />
+      </TouchableOpacity>
+    </View>
+  ), [theme, viewMode, itemsPerRow, listZoom, toggleViewMode]);
+
   useEffect(() => {
     navigation.setOptions({
-      headerRight: () => (
-        <View style={styles.headerControls}>
-          {viewMode === 'grid' ? (
-            <>
-              <TouchableOpacity
-                style={[
-                  styles.headerButton,
-                  {
-                    backgroundColor: theme.colors.button.primary,
-                    opacity: itemsPerRow <= 1 ? 0.5 : 1,
-                  },
-                ]}
-                onPress={() => setItemsPerRow(Math.max(1, itemsPerRow - 1))}
-                disabled={itemsPerRow <= 1}
-              >
-                <MaterialIcons name="remove" size={20} color={theme.colors.button.text} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.headerButton,
-                  {
-                    backgroundColor: theme.colors.button.primary,
-                    opacity: itemsPerRow >= 5 ? 0.5 : 1,
-                  },
-                ]}
-                onPress={() => setItemsPerRow(Math.min(5, itemsPerRow + 1))}
-                disabled={itemsPerRow >= 5}
-              >
-                <MaterialIcons name="add" size={20} color={theme.colors.button.text} />
-              </TouchableOpacity>
-            </>
-          ) : (
-            <>
-              <TouchableOpacity
-                style={[
-                  styles.headerButton,
-                  {
-                    backgroundColor: theme.colors.button.primary,
-                    opacity: listZoom >= 2 ? 0.5 : 1,
-                  },
-                ]}
-                onPress={() => setListZoom(Math.min(2, listZoom + 1))}
-                disabled={listZoom >= 2}
-              >
-                <MaterialIcons name="zoom-in" size={20} color={theme.colors.button.text} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.headerButton,
-                  {
-                    backgroundColor: theme.colors.button.primary,
-                    opacity: listZoom <= 0 ? 0.5 : 1,
-                  },
-                ]}
-                onPress={() => setListZoom(Math.max(0, listZoom - 1))}
-                disabled={listZoom <= 0}
-              >
-                <MaterialIcons name="zoom-out" size={20} color={theme.colors.button.text} />
-              </TouchableOpacity>
-            </>
-          )}
-          <TouchableOpacity
-            style={[styles.headerButton, { backgroundColor: theme.colors.button.primary }]}
-            onPress={toggleViewMode}
-          >
-            <MaterialIcons
-              name={viewMode === 'list' ? 'grid-view' : 'view-list'}
-              size={20}
-              color={theme.colors.button.text}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.headerButton, { backgroundColor: theme.colors.button.primary }]}
-            onPress={() => setSortModalVisible(true)}
-          >
-            <MaterialIcons name="sort" size={20} color={theme.colors.button.text} />
-          </TouchableOpacity>
-        </View>
-      ),
+      headerRight: renderHeaderRight,
     });
-  }, [navigation, theme, viewMode, itemsPerRow, listZoom]);
+  }, [navigation, renderHeaderRight]);
 
   const getPreference = (id: string): boolean => {
     const preference = displayPreferences.find(p => p.id === id);
@@ -589,7 +596,6 @@ const InventoryScreen: React.FC = () => {
             backgroundColor: theme.colors.background.secondary,
             width: itemWidth,
             height: itemWidth, // Square aspect ratio
-            margin: 0, // No margins
           },
         ]}
         onPress={() => navigation.navigate('ItemDetail', { itemId: item.id })}
@@ -607,7 +613,7 @@ const InventoryScreen: React.FC = () => {
               resizeMode="cover"
             />
           ) : (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <View style={styles.placeholderContainer}>
               <MaterialIcons name="image-not-supported" size={48} color={theme.colors.text.secondary} />
             </View>
           )}
@@ -637,15 +643,11 @@ const InventoryScreen: React.FC = () => {
     );
   };
 
-  const toggleViewMode = () => {
-    setViewMode(prevMode => prevMode === 'list' ? 'grid' : 'list');
-  };
-
   const renderItem = ({ item, index }: { item: InventoryItem; index: number }): React.ReactElement => {
     return viewMode === 'list' ? renderListItem({ item, index }) : renderGridItem({ item });
   };
 
-  const SortModal = () => (
+  const SortModal = useCallback(() => (
     <Modal
       animationType="slide"
       transparent={true}
@@ -743,9 +745,9 @@ const InventoryScreen: React.FC = () => {
         </View>
       </View>
     </Modal>
-  );
+  ), [sortModalVisible, sortOption, theme]);
 
-  const GridConfigModal = () => (
+  const GridConfigModal = useCallback(() => (
     <Modal
       animationType="slide"
       transparent={true}
@@ -797,7 +799,7 @@ const InventoryScreen: React.FC = () => {
         </View>
       </View>
     </Modal>
-  );
+  ), [gridConfigVisible, itemsPerRow, theme]);
 
   if (isLoading) {
     return (
@@ -1017,6 +1019,11 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     margin: 0,
     position: 'relative',
+  },
+  placeholderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   gridItemImageContainer: {
     borderRadius: 3,

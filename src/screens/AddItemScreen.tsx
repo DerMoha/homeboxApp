@@ -20,6 +20,7 @@ import ServerService from '../services/serverService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'react-native-fs';
 import ImageResizer from '@bam.tech/react-native-image-resizer';
+import { logger } from '../utils/logger';
 
 interface Location {
   id: string;
@@ -78,7 +79,7 @@ const AddItemScreen: React.FC = () => {
         setEnabledFields(enabledMap);
       }
     } catch (error) {
-      console.error('Error loading enabled fields:', error);
+      logger.error('Error loading enabled fields:', error);
     }
   };
 
@@ -89,7 +90,7 @@ const AddItemScreen: React.FC = () => {
         setImageQuality(parseFloat(savedQuality));
       }
     } catch (error) {
-      console.error('Error loading image quality setting:', error);
+      logger.error('Error loading image quality setting:', error);
     }
   };
 
@@ -101,7 +102,7 @@ const AddItemScreen: React.FC = () => {
         setLabels(response.data);
       }
     } catch (error) {
-      console.error('Error loading labels:', error);
+      logger.error('Error loading labels:', error);
       Alert.alert('Error', 'Failed to load labels');
     }
   };
@@ -121,7 +122,7 @@ const AddItemScreen: React.FC = () => {
       await loadLocations();
       await loadLabels();
     } catch (error) {
-      console.error('Error auto-connecting:', error);
+      logger.error('Error auto-connecting:', error);
       Alert.alert('Error', 'Failed to connect to server');
       navigation.goBack();
     } finally {
@@ -137,7 +138,7 @@ const AddItemScreen: React.FC = () => {
         setLocations(response.data.locations);
       }
     } catch (error) {
-      console.error('Error loading locations:', error);
+      logger.error('Error loading locations:', error);
       Alert.alert('Error', 'Failed to load locations');
     }
   };
@@ -167,7 +168,7 @@ const AddItemScreen: React.FC = () => {
       const fileInfo = await FileSystem.stat(uri);
       return fileInfo.size;
     } catch (error) {
-      console.error('Error getting file size:', error);
+      logger.error('Error getting file size:', error);
       return 0;
     }
   };
@@ -218,7 +219,7 @@ const AddItemScreen: React.FC = () => {
         Image.getSize(compressedImage.uri, (width, height) => {
           setImageSize({ width, height });
         }, (error) => {
-          console.error('Error getting image size:', error);
+          logger.error('Error getting image size:', error);
           setImageSize(null);
         });
 
@@ -227,12 +228,12 @@ const AddItemScreen: React.FC = () => {
           try {
             await FileSystem.unlink(result.assets[0].uri);
           } catch (error) {
-            console.error('Error cleaning up original file:', error);
+            logger.error('Error cleaning up original file:', error);
           }
         }
       }
     } catch (error) {
-      console.error('Error picking image:', error);
+      logger.error('Error picking image:', error);
       Alert.alert('Error', 'Failed to pick image');
     }
   };
@@ -275,7 +276,7 @@ const AddItemScreen: React.FC = () => {
       // First create the item
       const itemResponse = await service.createItem(itemData);
 
-      console.log('Item creation response:', itemResponse);
+      logger.log('Item creation response:', itemResponse);
 
       if (!itemResponse.success || !itemResponse.data) {
         throw new Error('Failed to create item');
@@ -283,7 +284,7 @@ const AddItemScreen: React.FC = () => {
 
       // If there's an image, upload it
       if (selectedImage) {
-        console.log('Starting image upload for item:', itemResponse.data.id);
+        logger.log('Starting image upload for item:', itemResponse.data.id);
         const imageFormData = new FormData();
 
         // Get the file extension from the URI
@@ -297,26 +298,26 @@ const AddItemScreen: React.FC = () => {
           name: fileName,
         };
 
-        console.log('File object:', file);
+        logger.log('File object:', file);
 
         imageFormData.append('file', file as any);
         imageFormData.append('type', 'photo');
         imageFormData.append('primary', 'true');
         imageFormData.append('name', 'Item Image');
 
-        console.log('FormData for image upload:', imageFormData);
+        logger.log('FormData for image upload:', imageFormData);
 
         const imageResponse = await service.uploadItemImage(itemResponse.data.id, imageFormData);
-        console.log('Image upload response:', imageResponse);
+        logger.log('Image upload response:', imageResponse);
 
         if (!imageResponse.success) {
-          console.warn('Failed to upload image:', imageResponse.error);
+          logger.warn('Failed to upload image:', imageResponse.error);
           Alert.alert('Warning', 'Item was created but image upload failed');
         } else if (imageResponse.data) {
-          console.log('Image uploaded successfully, updated item:', imageResponse.data);
+          logger.log('Image uploaded successfully, updated item:', imageResponse.data);
           // The item data in imageResponse.data should now include the imageId
         } else {
-          console.log('Image uploaded successfully but no updated item data received');
+          logger.log('Image uploaded successfully but no updated item data received');
         }
       }
 
@@ -324,7 +325,7 @@ const AddItemScreen: React.FC = () => {
       resetForm();
       navigation.goBack();
     } catch (error) {
-      console.error('Error adding item:', error);
+      logger.error('Error adding item:', error);
       Alert.alert('Error', 'Failed to add item');
     } finally {
       setIsLoading(false);
@@ -485,10 +486,9 @@ const AddItemScreen: React.FC = () => {
                 onChangeText={setLabelSearchQuery}
               />
               <ScrollView
-                style={[styles.locationList, {
+                style={[styles.labelsList, {
                   backgroundColor: theme.colors.background.secondary,
                   borderColor: theme.colors.border,
-                  maxHeight: 160, // Show 4 labels at a time
                 }]}
                 nestedScrollEnabled={true}
               >
@@ -831,6 +831,11 @@ const styles = StyleSheet.create({
   },
   locationList: {
     maxHeight: 200,
+    borderWidth: 1,
+    borderRadius: 8,
+  },
+  labelsList: {
+    maxHeight: 160,
     borderWidth: 1,
     borderRadius: 8,
   },
