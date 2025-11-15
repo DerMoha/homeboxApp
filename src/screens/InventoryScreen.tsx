@@ -17,7 +17,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ServerService from '../services/serverService';
-import { useFocusEffect } from '@react-navigation/native';
+import { STORAGE_KEYS } from '../constants/storage';
 
 type RootStackParamList = {
   InventoryTab: undefined;
@@ -68,13 +68,6 @@ interface InventoryItem {
   purchasePrice: number;
 }
 
-interface InventoryResponse {
-  items: InventoryItem[];
-  page: number;
-  pageSize: number;
-  total: number;
-}
-
 interface DisplayPreference {
   id: string;
   label: string;
@@ -99,7 +92,7 @@ const InventoryScreen: React.FC = () => {
   const [gridConfigVisible, setGridConfigVisible] = useState(false);
   const [listZoom, setListZoom] = useState(2); // 0: compact, 1: standard, 2: detailed
 
-  const loadDisplayPreferences = async () => {
+  const loadDisplayPreferences = useCallback(async () => {
     try {
       const savedPreferences = await AsyncStorage.getItem(STORAGE_KEYS.INVENTORY_DISPLAY_PREFERENCES);
       if (savedPreferences) {
@@ -131,12 +124,54 @@ const InventoryScreen: React.FC = () => {
         // Save default preferences
         await AsyncStorage.setItem(STORAGE_KEYS.INVENTORY_DISPLAY_PREFERENCES, JSON.stringify(defaultPreferences));
       }
-    } catch (error) {
-      console.error('Error loading display preferences:', error);
+    } catch (err) {
+      console.error('Error loading display preferences:', err);
     }
-  };
+  }, []);
 
-  const initializeScreen = async () => {
+  const sortInventory = useCallback((items: InventoryItem[]) => {
+    return [...items].sort((a, b) => {
+      switch (sortOption) {
+        case 'name-asc':
+          return a.name.localeCompare(b.name);
+        case 'name-desc':
+          return b.name.localeCompare(a.name);
+        case 'date-asc':
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        case 'date-desc':
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        case 'quantity-asc':
+          return a.quantity - b.quantity;
+        case 'quantity-desc':
+          return b.quantity - a.quantity;
+        default:
+          return 0;
+      }
+    });
+  }, [sortOption]);
+
+  const loadInventory = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await ServerService.getInstance().getInventory(1, 50);
+      console.log('API Response:', response);
+      if (response.success && response.data) {
+        const sortedItems = sortInventory(response.data.items);
+        setInventory(sortedItems);
+      } else {
+        setError(response.error || 'Failed to load inventory');
+      }
+    } catch (err) {
+      setError('An unexpected error occurred');
+      console.error('Error loading inventory:', err);
+    } finally {
+      setIsLoading(false);
+      setRefreshing(false);
+    }
+  }, [sortInventory]);
+
+  const initializeScreen = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -159,18 +194,18 @@ const InventoryScreen: React.FC = () => {
       // Load preferences and inventory
       await loadDisplayPreferences();
       await loadInventory();
-    } catch (error) {
-      console.error('Error initializing screen:', error);
+    } catch (err) {
+      console.error('Error initializing screen:', err);
       setError('Failed to initialize screen');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [navigation, loadDisplayPreferences, loadInventory]);
 
   // Initial load
   useEffect(() => {
     initializeScreen();
-  }, []);
+  }, [initializeScreen]);
 
   // Listen for preference changes from InventorySettingsScreen
   useEffect(() => {
@@ -180,7 +215,7 @@ const InventoryScreen: React.FC = () => {
     });
 
     return unsubscribe;
-  }, [navigation]);
+  }, [navigation, loadDisplayPreferences]);
 
   useEffect(() => {
     navigation.setOptions({
@@ -271,48 +306,6 @@ const InventoryScreen: React.FC = () => {
     return preference?.enabled ?? false;
   };
 
-  const sortInventory = useCallback((items: InventoryItem[]) => {
-    return [...items].sort((a, b) => {
-      switch (sortOption) {
-        case 'name-asc':
-          return a.name.localeCompare(b.name);
-        case 'name-desc':
-          return b.name.localeCompare(a.name);
-        case 'date-asc':
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-        case 'date-desc':
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        case 'quantity-asc':
-          return a.quantity - b.quantity;
-        case 'quantity-desc':
-          return b.quantity - a.quantity;
-        default:
-          return 0;
-      }
-    });
-  }, [sortOption]);
-
-  const loadInventory = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const response = await ServerService.getInstance().getInventory(1, 50);
-      console.log('API Response:', response);
-      if (response.success && response.data) {
-        const sortedItems = sortInventory(response.data.items);
-        setInventory(sortedItems);
-      } else {
-        setError(response.error || 'Failed to load inventory');
-      }
-    } catch (err) {
-      setError('An unexpected error occurred');
-      console.error('Error loading inventory:', err);
-    } finally {
-      setIsLoading(false);
-      setRefreshing(false);
-    }
-  }, [sortInventory]);
-
   const onRefresh = (): void => {
     setRefreshing(true);
     loadInventory();
@@ -332,7 +325,7 @@ const InventoryScreen: React.FC = () => {
     return `${service.getBaseUrl()}/api/v1/items/${itemId}/attachments/${imageId}`;
   };
 
-  const renderListItem = ({ item, index }: { item: InventoryItem; index: number }): React.ReactElement => {
+  const renderListItem = ({ item }: { item: InventoryItem; index: number }): React.ReactElement => {
     const hasDescription = getPreference('description') && item.description;
     const hasFooterContent =
       (getPreference('location') && item.location) ||

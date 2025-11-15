@@ -34,13 +34,6 @@ interface InventoryItem {
   updatedAt: string;
 }
 
-interface InventoryResponse {
-  items: InventoryItem[];
-  page: number;
-  pageSize: number;
-  total: number;
-}
-
 const LocationItemsScreen: React.FC = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -52,7 +45,7 @@ const LocationItemsScreen: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadItems = async (): Promise<void> => {
+  const loadItems = useCallback(async (): Promise<void> => {
     try {
       const service = ServerService.getInstance();
       const result = await service.getLocationItems(locationId);
@@ -63,14 +56,14 @@ const LocationItemsScreen: React.FC = () => {
       } else {
         setError(result.error || 'Failed to load items');
       }
-    } catch (error) {
-      console.error('Error loading items:', error);
+    } catch (err) {
+      console.error('Error loading items:', err);
       setError('An unexpected error occurred');
     } finally {
       setIsLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [locationId]);
 
   const onRefresh = (): void => {
     setRefreshing(true);
@@ -160,13 +153,13 @@ const LocationItemsScreen: React.FC = () => {
 
   useEffect(() => {
     loadItems();
-  }, [locationId]);
+  }, [loadItems]);
 
   useEffect(() => {
     navigation.setOptions({
       title: locationName,
     });
-  }, [locationName]);
+  }, [locationName, navigation]);
 
   if (isLoading) {
     return (

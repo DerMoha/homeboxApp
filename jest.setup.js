@@ -1,3 +1,5 @@
+/* eslint-env jest */
+
 // Mock AsyncStorage
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,

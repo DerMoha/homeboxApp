@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -66,17 +66,6 @@ const AddItemScreen: React.FC = () => {
   const [compressedSize, setCompressedSize] = useState<number | null>(null);
 
   // Load enabled fields and image quality whenever the screen comes into focus
-  useFocusEffect(
-    React.useCallback(() => {
-      loadEnabledFields();
-      loadImageQuality();
-    }, [])
-  );
-
-  useEffect(() => {
-    autoConnect();
-  }, []);
-
   const loadEnabledFields = async () => {
     try {
       const savedFields = await AsyncStorage.getItem('@add_item_fields');
@@ -117,7 +106,7 @@ const AddItemScreen: React.FC = () => {
     }
   };
 
-  const autoConnect = async () => {
+  const autoConnect = useCallback(async () => {
     try {
       setIsConnecting(true);
       const service = ServerService.getInstance();
@@ -138,7 +127,7 @@ const AddItemScreen: React.FC = () => {
     } finally {
       setIsConnecting(false);
     }
-  };
+  }, [navigation]);
 
   const loadLocations = async () => {
     try {
@@ -152,6 +141,17 @@ const AddItemScreen: React.FC = () => {
       Alert.alert('Error', 'Failed to load locations');
     }
   };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadEnabledFields();
+      loadImageQuality();
+    }, [])
+  );
+
+  useEffect(() => {
+    autoConnect();
+  }, [autoConnect]);
 
   // Helper function to format file size
   const formatFileSize = (bytes: number): string => {
@@ -190,10 +190,6 @@ const AddItemScreen: React.FC = () => {
         // Get original file size before compression
         const originalFileSize = await getFileSize(result.assets[0].uri);
         setOriginalSize(originalFileSize);
-
-        // Create a temporary file for the compressed image
-        const timestamp = new Date().getTime();
-        // const tempFilePath = `${FileSystem.CachesDirectoryPath}/compressed_${timestamp}.jpg`;
 
         // Compress the image using @bam.tech/react-native-image-resizer
         const compressedImage = await ImageResizer.createResizedImage(
@@ -268,7 +264,7 @@ const AddItemScreen: React.FC = () => {
       // Create the item data object with only enabled fields
       const itemData = {
         name: formData.name,
-        quantity: parseInt(formData.quantity || '1'), // Use 1 as fallback if empty
+        quantity: parseInt(formData.quantity || '1', 10), // Use 1 as fallback if empty
         locationId: selectedLocation?.id,
         description: enabledFields.description ? formData.description || '' : '',
         purchasePrice: enabledFields.purchasePrice ? parseFloat(formData.purchasePrice) || 0 : 0,
@@ -288,7 +284,7 @@ const AddItemScreen: React.FC = () => {
       // If there's an image, upload it
       if (selectedImage) {
         console.log('Starting image upload for item:', itemResponse.data.id);
-        const formData = new FormData();
+        const imageFormData = new FormData();
 
         // Get the file extension from the URI
         const fileExtension = selectedImage.split('.').pop() || 'jpg';
@@ -303,14 +299,14 @@ const AddItemScreen: React.FC = () => {
 
         console.log('File object:', file);
 
-        formData.append('file', file as any);
-        formData.append('type', 'photo');
-        formData.append('primary', 'true');
-        formData.append('name', 'Item Image');
+        imageFormData.append('file', file as any);
+        imageFormData.append('type', 'photo');
+        imageFormData.append('primary', 'true');
+        imageFormData.append('name', 'Item Image');
 
-        console.log('FormData for image upload:', formData);
+        console.log('FormData for image upload:', imageFormData);
 
-        const imageResponse = await service.uploadItemImage(itemResponse.data.id, formData);
+        const imageResponse = await service.uploadItemImage(itemResponse.data.id, imageFormData);
         console.log('Image upload response:', imageResponse);
 
         if (!imageResponse.success) {

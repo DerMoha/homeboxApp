@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -39,11 +39,7 @@ const InventorySettingsScreen: React.FC = () => {
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const [draggedItem, setDraggedItem] = useState<number | null>(null);
 
-  useEffect(() => {
-    loadPreferences();
-  }, []);
-
-  const loadPreferences = async () => {
+  const loadPreferences = useCallback(async () => {
     try {
       const savedPreferences = await AsyncStorage.getItem(STORAGE_KEYS.INVENTORY_DISPLAY_PREFERENCES);
       console.log('Loading preferences from storage:', savedPreferences);
@@ -68,7 +64,11 @@ const InventorySettingsScreen: React.FC = () => {
     } catch (error) {
       console.error('Error loading preferences:', error);
     }
-  };
+  }, [isFirstLoad]);
+
+  useEffect(() => {
+    loadPreferences();
+  }, [loadPreferences]);
 
   const savePreferences = async (newPreferences: DisplayPreference[]) => {
     try {
@@ -94,26 +94,6 @@ const InventorySettingsScreen: React.FC = () => {
     const newPreferences = preferences.map(pref =>
       pref.id === id ? { ...pref, enabled: !pref.enabled } : pref
     );
-    savePreferences(newPreferences);
-  };
-
-  const moveItem = (fromIndex: number, toIndex: number) => {
-    const corePreferences = preferences.filter(p => p.isCore);
-    const nonCorePreferences = preferences.filter(p => !p.isCore);
-
-    // Adjust indices for non-core items
-    const adjustedFromIndex = fromIndex - corePreferences.length;
-    const adjustedToIndex = toIndex - corePreferences.length;
-
-    if (adjustedFromIndex < 0 || adjustedToIndex < 0) {
-      return; // Don't move core items
-    }
-
-    const newNonCorePreferences = [...nonCorePreferences];
-    const [movedItem] = newNonCorePreferences.splice(adjustedFromIndex, 1);
-    newNonCorePreferences.splice(adjustedToIndex, 0, movedItem);
-
-    const newPreferences = [...corePreferences, ...newNonCorePreferences];
     savePreferences(newPreferences);
   };
 

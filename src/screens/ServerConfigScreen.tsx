@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,11 +8,8 @@ import {
   Alert,
   ScrollView,
   ActivityIndicator,
-  StatusBar,
-  SafeAreaView,
 } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useRoute, RouteProp } from '@react-navigation/native';
 import ServerService, { ServerConfig } from '../services/serverService';
 import { useTheme } from '../theme/ThemeContext';
 
@@ -22,14 +19,12 @@ type RootStackParamList = {
 };
 
 type ServerConfigRouteProp = RouteProp<RootStackParamList, 'ServerConfig'>;
-type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'ServerConfig'>;
 
 interface ServerWithStatus extends ServerConfig {
   status: 'checking' | 'online' | 'offline';
 }
 
 const ServerConfigScreen: React.FC = () => {
-  const navigation = useNavigation<NavigationProp>();
   const route = useRoute<ServerConfigRouteProp>();
   const { theme } = useTheme();
   const [servers, setServers] = useState<ServerWithStatus[]>([]);
@@ -43,20 +38,8 @@ const ServerConfigScreen: React.FC = () => {
     password: '',
     name: '',
   });
-  const [isCheckingStatus, setIsCheckingStatus] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadServers();
-    if (route.params?.server) {
-      setNewServer(route.params.server);
-      // Set as active server
-      const serverService = ServerService.getInstance();
-      serverService.initialize(route.params.server);
-    }
-  }, [route.params]);
-
-  const loadServers = async (): Promise<void> => {
+  const loadServers = useCallback(async (): Promise<void> => {
     try {
       const serverService = ServerService.getInstance();
       const savedServers = await serverService.getServers();
@@ -95,9 +78,19 @@ const ServerConfigScreen: React.FC = () => {
       }
     } catch (error) {
       console.error('Error loading servers:', error);
-      setError('Failed to load saved servers');
+      Alert.alert('Error', 'Failed to load saved servers');
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadServers();
+    if (route.params?.server) {
+      setNewServer(route.params.server);
+      // Set as active server
+      const serverService = ServerService.getInstance();
+      serverService.initialize(route.params.server);
+    }
+  }, [route.params, loadServers]);
 
   const testConnection = async (): Promise<void> => {
     if (!newServer.host || !newServer.username || !newServer.password) {
@@ -225,26 +218,6 @@ const ServerConfigScreen: React.FC = () => {
       ...prev,
       [field]: field === 'username' ? value.toLowerCase() : value,
     }));
-  };
-
-  const handleServerChange = async (serverId: string): Promise<void> => {
-    if (serverId === 'add_new') {
-      navigation.navigate('ServerConfig', { server: undefined });
-      return;
-    }
-
-    try {
-      const serverService = ServerService.getInstance();
-      const server = servers.find(s => s.id === serverId);
-
-      if (server) {
-        setSelectedServer(server.id);
-        await serverService.initialize(server);
-      }
-    } catch (error) {
-      console.error('Error changing server:', error);
-      Alert.alert('Error', 'Failed to change server. Please try again.');
-    }
   };
 
   const handleServerSelect = async (server: ServerWithStatus): Promise<void> => {

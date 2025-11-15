@@ -6,8 +6,6 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
-  Image,
-  SafeAreaView,
   ScrollView,
 } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
@@ -25,23 +23,6 @@ interface LocationNode {
   name: string;
   type: string;
   children: LocationNode[];
-}
-
-interface Location {
-  id: string;
-  name: string;
-  description: string;
-  itemCount: number;
-  imageId: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface LocationResponse {
-  locations: Location[];
-  page: number;
-  pageSize: number;
-  total: number;
 }
 
 const LocationTreeItem: React.FC<{
@@ -108,7 +89,7 @@ const LocationsScreen: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadLocations = async (): Promise<void> => {
+  const loadLocations = useCallback(async (): Promise<void> => {
     try {
       setIsLoading(true);
       setError(null);
@@ -124,13 +105,13 @@ const LocationsScreen: React.FC = () => {
       const response = await axiosInstance.get('/api/v1/locations/tree');
       setLocationTree(response.data);
       setError(null);
-    } catch (error) {
-      console.error('Error loading locations:', error);
-      if (axios.isAxiosError(error)) {
-        if (error.response?.status === 500) {
+    } catch (err) {
+      console.error('Error loading locations:', err);
+      if (axios.isAxiosError(err)) {
+        if (err.response?.status === 500) {
           setError('Server error occurred. Please check if the server is running and try again.');
         } else {
-          setError(`Error: ${error.message}. Please try again later.`);
+          setError(`Error: ${err.message}. Please try again later.`);
         }
       } else {
         setError('An unexpected error occurred. Please try again later.');
@@ -139,7 +120,7 @@ const LocationsScreen: React.FC = () => {
       setIsLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
 
   const onRefresh = (): void => {
     setRefreshing(true);
@@ -155,7 +136,7 @@ const LocationsScreen: React.FC = () => {
 
   useEffect(() => {
     loadLocations();
-  }, []);
+  }, [loadLocations]);
 
   if (isLoading) {
     return (
