@@ -1,16 +1,14 @@
 import React, { useEffect, useCallback } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   FlatList,
-  ActivityIndicator,
   RefreshControl,
 } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useInventoryData } from '../hooks/useInventoryData';
+import { useInventoryData, InventoryItem } from '../hooks/useInventoryData';
 import { useInventoryDisplay } from '../hooks/useInventoryDisplay';
 import { useDisplayPreferences } from '../hooks/useDisplayPreferences';
 import {
@@ -19,6 +17,8 @@ import {
   InventoryListItem,
   InventoryGridItem,
 } from '../components/Inventory';
+import { LoadingState } from '../components/common/LoadingState';
+import { EmptyState } from '../components/common/EmptyState';
 
 type RootStackParamList = {
   InventoryTab: undefined;
@@ -115,7 +115,7 @@ const InventoryScreen: React.FC = () => {
   }, [navigation]);
 
   // Render item based on view mode
-  const renderItem = useCallback(({ item }: { item: any }) => {
+  const renderItem = useCallback(({ item }: { item: InventoryItem }) => {
     if (viewMode === 'list') {
       return (
         <InventoryListItem
@@ -139,25 +139,12 @@ const InventoryScreen: React.FC = () => {
 
   // Loading state
   if (isLoading && inventory.length === 0) {
-    return (
-      <View style={[styles.loadingContainer, { backgroundColor: theme.colors.background.primary }]}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-        <Text style={[styles.loadingText, { color: theme.colors.text.secondary }]}>
-          Loading inventory...
-        </Text>
-      </View>
-    );
+    return <LoadingState message="Loading inventory..." />;
   }
 
   // Empty state
   if (!isLoading && inventory.length === 0) {
-    return (
-      <View style={[styles.emptyContainer, { backgroundColor: theme.colors.background.primary }]}>
-        <Text style={[styles.emptyText, { color: theme.colors.text.secondary }]}>
-          No items in inventory
-        </Text>
-      </View>
-    );
+    return <EmptyState message="No items in inventory" icon="inventory" />;
   }
 
   return (
@@ -195,23 +182,6 @@ const InventoryScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: 16,
   },
   listContent: {
     padding: 8,

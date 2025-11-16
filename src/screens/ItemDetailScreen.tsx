@@ -1,22 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, ScrollView, Image } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
 import { RouteProp, useRoute } from '@react-navigation/native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import ServerService from '../services/serverService';
+import ServerService, { InventoryItem } from '../services/serverService';
 import { useTheme } from '../theme/ThemeContext';
-
-// Utility to generate image URL for an item (copied from InventoryScreen)
-const getImageUrl = (itemId: string, imageId: string): string => {
-  const service = ServerService.getInstance();
-  const axiosInstance = service.getAxiosInstance();
-  if (!axiosInstance) {
-    throw new Error('No active server connection');
-  }
-  return `${service.getBaseUrl()}/api/v1/items/${itemId}/attachments/${imageId}`;
-};
-
-// Type for navigation params
-
+import { useAsyncState } from '../hooks/useAsyncState';
+import { getImageSource } from '../utils/imageUtils';
+import { LoadingState } from '../components/common/LoadingState';
+import { ErrorState } from '../components/common/ErrorState';
 
 type ItemDetailRouteProp = RouteProp<{ ItemDetail: { itemId: string } }, 'ItemDetail'>;
 
@@ -38,40 +28,35 @@ const ItemDetailScreen: React.FC = () => {
   const { theme } = useTheme();
   const route = useRoute<ItemDetailRouteProp>();
   const { itemId } = route.params;
-  const [item, setItem] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: item, isLoading, error, execute } = useAsyncState<InventoryItem>();
 
   useEffect(() => {
     const fetchItem = async () => {
-      setLoading(true);
-      setError(null);
       const service = ServerService.getInstance();
       const result = await service.getItemById(itemId);
-      if (result.success) {
-        setItem(result.data);
+      if (result.success && result.data) {
+        return result.data;
       } else {
-        setError(result.error || 'Failed to load item');
+        throw new Error(result.error || 'Failed to load item');
       }
-      setLoading(false);
     };
-    fetchItem();
-  }, [itemId]);
 
-  if (loading) {
-    return (
-      <View style={[styles.centered, { backgroundColor: theme.colors.background.primary }]}>
-        <ActivityIndicator size="large" color={theme.colors.button.primary} />
-      </View>
-    );
+    execute(fetchItem);
+  }, [itemId, execute]);
+
+  if (isLoading) {
+    return <LoadingState message="Loading item details..." />;
   }
 
   if (error) {
-    return (
-      <View style={[styles.centered, { backgroundColor: theme.colors.background.primary }]}>
-        <Text style={{ color: theme.colors.error }}>{error}</Text>
-      </View>
-    );
+    return <ErrorState message={error} onRetry={() => execute(async () => {
+      const service = ServerService.getInstance();
+      const result = await service.getItemById(itemId);
+      if (result.success && result.data) {
+        return result.data;
+      }
+      throw new Error(result.error || 'Failed to load item');
+    })} />;
   }
 
   if (!item) {
@@ -79,10 +64,10 @@ const ItemDetailScreen: React.FC = () => {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {item.imageId ? (
-          <Image source={{ uri: getImageUrl(item.id, item.imageId) }} style={styles.image} resizeMode="cover" />
+          <Image source={getImageSource(item.id, item.imageId)} style={styles.image} resizeMode="cover" />
         ) : null}
         <Text style={[styles.title, { color: theme.colors.text.primary }]}>{item.name}</Text>
         <Text style={[styles.desc, { color: theme.colors.text.secondary }]}>{item.description}</Text>
@@ -114,7 +99,7 @@ const ItemDetailScreen: React.FC = () => {
         </View>
         {/* Add more fields as needed */}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -124,11 +109,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 20,
-    alignItems: 'center',
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
   },
   image: {

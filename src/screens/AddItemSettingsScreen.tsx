@@ -9,7 +9,13 @@ const STORAGE_KEY = '@add_item_fields';
 const IMAGE_QUALITY_KEY = '@image_quality';
 const DEFAULT_IMAGE_QUALITY = 0.8; // 80% quality by default
 
-const DEFAULT_FIELDS = [
+interface FieldConfig {
+  id: string;
+  label: string;
+  enabled: boolean;
+}
+
+const DEFAULT_FIELDS: FieldConfig[] = [
   { id: 'description', label: 'Description', enabled: true },
   { id: 'purchasePrice', label: 'Purchase Price', enabled: false },
   { id: 'insured', label: 'Insured', enabled: false },
@@ -31,10 +37,10 @@ const AddItemSettingsScreen: React.FC = () => {
       const savedQuality = await AsyncStorage.getItem(IMAGE_QUALITY_KEY);
 
       if (savedFields) {
-        const parsedFields = JSON.parse(savedFields);
+        const parsedFields: FieldConfig[] = JSON.parse(savedFields);
         // Ensure all default fields are present
         const updatedFields = DEFAULT_FIELDS.map(defaultField => {
-          const savedField = parsedFields.find((f: any) => f.id === defaultField.id);
+          const savedField = parsedFields.find((f: FieldConfig) => f.id === defaultField.id);
           return savedField || defaultField;
         });
         setFields(updatedFields);

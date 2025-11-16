@@ -4,10 +4,10 @@ import { useTheme } from '../../theme/ThemeContext';
 import { EnabledFields } from '../../hooks/useItemData';
 
 interface ItemFormFieldsProps {
-  formData: Record<string, any>;
+  formData: Record<string, string | number>;
   enabledFields: EnabledFields;
   isQuantityFocused: boolean;
-  onUpdateField: (field: string, value: any) => void;
+  onUpdateField: (field: string, value: string | number) => void;
   onQuantityFocus: () => void;
   onQuantityBlur: () => void;
 }

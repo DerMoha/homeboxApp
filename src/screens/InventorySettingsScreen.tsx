@@ -5,7 +5,6 @@ import {
   StyleSheet,
   Switch,
   ScrollView,
-  SafeAreaView,
   TouchableOpacity,
   Animated,
 } from 'react-native';
@@ -109,7 +108,7 @@ const InventorySettingsScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { color: theme.colors.text.primary }]}>Inventory Display</Text>
         <Text style={[styles.headerSubtitle, { color: theme.colors.text.secondary }]}>
@@ -204,7 +203,7 @@ const InventorySettingsScreen: React.FC = () => {
           </Text>
         </TouchableOpacity>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 

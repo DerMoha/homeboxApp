@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
 } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 
@@ -13,7 +12,7 @@ const AppearanceScreen: React.FC = () => {
   const { theme, themeMode, setThemeMode } = useTheme();
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { color: theme.colors.text.primary }]}>Appearance</Text>
         <Text style={[styles.headerSubtitle, { color: theme.colors.text.secondary }]}>Customize the app's look and feel</Text>
@@ -71,7 +70,7 @@ const AppearanceScreen: React.FC = () => {
           <Text style={[styles.placeholderText, { color: theme.colors.text.secondary }]}>Coming soon...</Text>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
