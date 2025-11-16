@@ -37,10 +37,11 @@ export const getImageUrl = (itemId: string, imageId: string): string => {
 export const getAuthHeaders = (): Record<string, string> => {
   const service = ServerService.getInstance();
   const axiosInstance = service.getAxiosInstance();
-  const token = axiosInstance?.defaults.headers.common.Authorization;
+  const authHeader = axiosInstance?.defaults.headers.common.Authorization;
 
+  // The token already includes "Bearer " prefix, so use it directly
   return {
-    Authorization: `Bearer ${token}`,
+    Authorization: (authHeader as string) || '',
   };
 };
 
