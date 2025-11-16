@@ -32,6 +32,11 @@ export const useInventoryData = () => {
   const [error, setError] = useState<string | null>(null);
 
   const sortInventory = useCallback((items: InventoryItem[], sortBy: SortOption): InventoryItem[] => {
+    // Ensure items is an array before spreading
+    if (!items || !Array.isArray(items)) {
+      return [];
+    }
+
     return [...items].sort((a, b) => {
       switch (sortBy) {
         case 'name':
@@ -59,8 +64,8 @@ export const useInventoryData = () => {
 
       logger.log('API Response:', response);
 
-      if (response.success && response.data) {
-        const sortedItems = sortInventory(response.data, sortOption);
+      if (response.success && response.data && response.data.items) {
+        const sortedItems = sortInventory(response.data.items, sortOption);
         setInventory(sortedItems);
       } else {
         setError('Failed to load inventory');
