@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { useTheme } from '../../theme/ThemeContext';
@@ -21,27 +21,44 @@ const InventoryListItemComponent: React.FC<InventoryListItemProps> = ({
 }) => {
   const { theme } = useTheme();
 
-  const getPreference = (id: string): boolean => {
+  // Memoize preference lookup function
+  const getPreference = useCallback((id: string): boolean => {
     const preference = displayPreferences.find(p => p.id === id);
     return preference?.enabled ?? false;
-  };
+  }, [displayPreferences]);
 
-  const hasDescription = getPreference('description') && item.description;
-  const hasImage = getPreference('image') && item.imageId;
-  const hasFooterContent =
+  // Memoize computed values for better performance
+  const hasDescription = useMemo(() =>
+    getPreference('description') && item.description,
+    [getPreference, item.description]
+  );
+
+  const hasImage = useMemo(() =>
+    getPreference('image') && item.imageId,
+    [getPreference, item.imageId]
+  );
+
+  const hasFooterContent = useMemo(() =>
     (getPreference('location') && item.location) ||
     (getPreference('labels') && item.labels.length > 0) ||
     (getPreference('purchasePrice') && item.purchasePrice && item.purchasePrice > 0) ||
-    (getPreference('insured')) ||
-    (getPreference('createdAt')) ||
-    (getPreference('updatedAt'));
+    getPreference('insured') ||
+    getPreference('createdAt') ||
+    getPreference('updatedAt'),
+    [getPreference, item.location, item.labels.length, item.purchasePrice]
+  );
+
+  // Memoize onPress handler
+  const handlePress = useCallback(() => {
+    onPress(item.id);
+  }, [onPress, item.id]);
 
   // Compact view (listZoom === 0)
   if (listZoom === 0) {
     return (
       <TouchableOpacity
         style={[styles.itemContainer, { backgroundColor: theme.colors.background.secondary }]}
-        onPress={() => onPress(item.id)}
+        onPress={handlePress}
       >
         <View style={styles.compactContent}>
           <View style={styles.compactHeader}>
@@ -96,7 +113,7 @@ const InventoryListItemComponent: React.FC<InventoryListItemProps> = ({
     return (
       <TouchableOpacity
         style={[styles.itemContainer, { backgroundColor: theme.colors.background.secondary }]}
-        onPress={() => onPress(item.id)}
+        onPress={handlePress}
       >
         <View style={styles.standardContent}>
           <View style={styles.standardRow}>

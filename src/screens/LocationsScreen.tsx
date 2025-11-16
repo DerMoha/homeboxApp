@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ActivityIndicator,
   RefreshControl,
   ScrollView,
 } from 'react-native';
@@ -16,6 +15,8 @@ import ServerService from '../services/serverService';
 import { LocationsStackParamList } from '../types/navigation';
 import axios from 'axios';
 import { logger } from '../utils/logger';
+import { useAsyncState } from '../hooks/useAsyncState';
+import { LoadingState, ErrorState } from '../components/common';
 
 type RootStackParamList = LocationsStackParamList;
 
@@ -85,47 +86,48 @@ const LocationTreeItem: React.FC<{
 const LocationsScreen: React.FC = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const [locationTree, setLocationTree] = useState<LocationNode[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: locationTree,
+    isLoading,
+    refreshing,
+    error,
+    execute,
+  } = useAsyncState<LocationNode[]>([]);
 
   const loadLocations = useCallback(async (): Promise<void> => {
-    try {
-      setIsLoading(true);
-      setError(null);
+    await execute(async () => {
       const service = ServerService.getInstance();
 
       // Verify server connection
       const axiosInstance = service.getAxiosInstance();
       if (!axiosInstance) {
-        setError('No active server connection. Please check your server settings.');
-        return;
+        throw new Error('No active server connection. Please check your server settings.');
       }
 
       const response = await axiosInstance.get('/api/v1/locations/tree');
-      setLocationTree(response.data);
-      setError(null);
-    } catch (err) {
-      logger.error('Error loading locations:', err);
-      if (axios.isAxiosError(err)) {
-        if (err.response?.status === 500) {
-          setError('Server error occurred. Please check if the server is running and try again.');
-        } else {
-          setError(`Error: ${err.message}. Please try again later.`);
+      return response.data;
+    }, {
+      onError: (err) => {
+        logger.error('Error loading locations:', err);
+        if (axios.isAxiosError(err)) {
+          if (err.response?.status === 500) {
+            throw new Error('Server error occurred. Please check if the server is running and try again.');
+          }
         }
-      } else {
-        setError('An unexpected error occurred. Please try again later.');
-      }
-    } finally {
-      setIsLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
+      },
+    });
+  }, [execute]);
 
   const onRefresh = (): void => {
-    setRefreshing(true);
-    loadLocations();
+    execute(async () => {
+      const service = ServerService.getInstance();
+      const axiosInstance = service.getAxiosInstance();
+      if (!axiosInstance) {
+        throw new Error('No active server connection. Please check your server settings.');
+      }
+      const response = await axiosInstance.get('/api/v1/locations/tree');
+      return response.data;
+    }, { isRefresh: true });
   };
 
   const handleLocationPress = (locationId: string, locationName: string) => {
@@ -140,33 +142,11 @@ const LocationsScreen: React.FC = () => {
   }, [loadLocations]);
 
   if (isLoading) {
-    return (
-      <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
-        <ActivityIndicator size="large" color={theme.colors.button.primary} />
-      </View>
-    );
+    return <LoadingState message="Loading locations..." />;
   }
 
   if (error) {
-    return (
-      <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
-        <MaterialIcons
-          name="error-outline"
-          size={48}
-          color={theme.colors.error}
-          style={styles.errorIcon}
-        />
-        <Text style={[styles.errorText, { color: theme.colors.error }]}>{error}</Text>
-        <TouchableOpacity
-          style={[styles.retryButton, { backgroundColor: theme.colors.button.primary }]}
-          onPress={loadLocations}
-        >
-          <Text style={[styles.retryButtonText, { color: theme.colors.button.text }]}>
-            Retry
-          </Text>
-        </TouchableOpacity>
-      </View>
-    );
+    return <ErrorState error={error} onRetry={loadLocations} />;
   }
 
   return (
@@ -181,7 +161,7 @@ const LocationsScreen: React.FC = () => {
           />
         }
       >
-        {locationTree.map((node) => (
+        {locationTree && locationTree.map((node) => (
           <LocationTreeItem
             key={node.id}
             node={node}
@@ -190,7 +170,7 @@ const LocationsScreen: React.FC = () => {
             theme={theme}
           />
         ))}
-        {locationTree.length === 0 && (
+        {locationTree && locationTree.length === 0 && (
           <View style={styles.emptyContainer}>
             <Text style={[styles.emptyText, { color: theme.colors.text.secondary }]}>
               No locations found

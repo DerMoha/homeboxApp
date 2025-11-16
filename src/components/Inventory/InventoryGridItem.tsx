@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet, Dimensions } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { useTheme } from '../../theme/ThemeContext';
@@ -21,13 +21,22 @@ const InventoryGridItemComponent: React.FC<InventoryGridItemProps> = ({
 }) => {
   const { theme } = useTheme();
 
-  const getPreference = (id: string): boolean => {
+  // Memoize preference lookup
+  const getPreference = useCallback((id: string): boolean => {
     const preference = displayPreferences.find(p => p.id === id);
     return preference?.enabled ?? false;
-  };
+  }, [displayPreferences]);
 
-  const screenWidth = Dimensions.get('window').width;
-  const itemWidth = Math.floor(screenWidth / itemsPerRow);
+  // Memoize screen calculations
+  const itemWidth = useMemo(() => {
+    const screenWidth = Dimensions.get('window').width;
+    return Math.floor(screenWidth / itemsPerRow);
+  }, [itemsPerRow]);
+
+  // Memoize onPress handler
+  const handlePress = useCallback(() => {
+    onPress(item.id);
+  }, [onPress, item.id]);
 
   return (
     <TouchableOpacity
@@ -39,7 +48,7 @@ const InventoryGridItemComponent: React.FC<InventoryGridItemProps> = ({
           height: itemWidth,
         },
       ]}
-      onPress={() => onPress(item.id)}
+      onPress={handlePress}
     >
       <View style={[styles.gridItemImageContainer, { height: itemWidth }]}>
         {item.imageId ? (
