@@ -5,7 +5,6 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  ActivityIndicator,
   RefreshControl,
   Image,
 } from 'react-native';
@@ -16,6 +15,8 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import ServerService from '../services/serverService';
 import { logger } from '../utils/logger';
 import { getImageSource } from '../utils/imageUtils';
+import { useAsyncState } from '../hooks/useAsyncState';
+import { LoadingState, ErrorState, EmptyState } from '../components/common';
 
 type RootStackParamList = {
   LocationItems: { locationId: string; locationName: string };
@@ -42,34 +43,40 @@ const LocationItemsScreen: React.FC = () => {
   const route = useRoute<LocationItemsRouteProp>();
   const { locationId, locationName } = route.params;
 
-  const [items, setItems] = useState<InventoryItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: items,
+    isLoading,
+    refreshing,
+    error,
+    execute,
+  } = useAsyncState<InventoryItem[]>([]);
 
   const loadItems = useCallback(async (): Promise<void> => {
-    try {
+    await execute(async () => {
       const service = ServerService.getInstance();
       const result = await service.getLocationItems(locationId);
       if (result.success && result.data) {
-        // result.data is InventoryResponse, already filtered by locationId
-        setItems(result.data.items);
-        setError(null);
+        return result.data.items;
       } else {
-        setError(result.error || 'Failed to load items');
+        throw new Error(result.error || 'Failed to load items');
       }
-    } catch (err) {
-      logger.error('Error loading items:', err);
-      setError('An unexpected error occurred');
-    } finally {
-      setIsLoading(false);
-      setRefreshing(false);
-    }
-  }, [locationId]);
+    }, {
+      onError: (err) => {
+        logger.error('Error loading items:', err);
+      },
+    });
+  }, [locationId, execute]);
 
   const onRefresh = (): void => {
-    setRefreshing(true);
-    loadItems();
+    execute(async () => {
+      const service = ServerService.getInstance();
+      const result = await service.getLocationItems(locationId);
+      if (result.success && result.data) {
+        return result.data.items;
+      } else {
+        throw new Error(result.error || 'Failed to load items');
+      }
+    }, { isRefresh: true });
   };
 
   const renderItem = ({ item }: { item: InventoryItem }): React.ReactElement => {
@@ -150,27 +157,11 @@ const LocationItemsScreen: React.FC = () => {
   }, [locationName, navigation]);
 
   if (isLoading) {
-    return (
-      <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
-        <ActivityIndicator size="large" color={theme.colors.button.primary} />
-      </View>
-    );
+    return <LoadingState message={`Loading items from ${locationName}...`} />;
   }
 
   if (error) {
-    return (
-      <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
-        <Text style={[styles.errorText, { color: theme.colors.error }]}>Error: {error}</Text>
-        <TouchableOpacity
-          style={[styles.retryButton, { backgroundColor: theme.colors.button.primary }]}
-          onPress={loadItems}
-        >
-          <Text style={[styles.retryButtonText, { color: theme.colors.button.text }]}>
-            Retry
-          </Text>
-        </TouchableOpacity>
-      </View>
-    );
+    return <ErrorState error={error} onRetry={loadItems} />;
   }
 
   return (
@@ -187,11 +178,11 @@ const LocationItemsScreen: React.FC = () => {
         />
       }
       ListEmptyComponent={
-        <View style={styles.emptyContainer}>
-          <Text style={[styles.emptyText, { color: theme.colors.text.secondary }]}>
-            No items found in this location
-          </Text>
-        </View>
+        <EmptyState
+          message="No items in this location"
+          subtitle="Items you add to this location will appear here"
+          icon="inventory-2"
+        />
       }
     />
   );

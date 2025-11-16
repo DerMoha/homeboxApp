@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
+import type { Theme } from '../theme/theme';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
@@ -27,30 +28,54 @@ interface LocationNode {
   children: LocationNode[];
 }
 
-const LocationTreeItem: React.FC<{
+interface LocationTreeItemProps {
   node: LocationNode;
   level: number;
   onPress: (locationId: string, locationName: string) => void;
-  theme: any;
-}> = ({ node, level, onPress, theme }) => {
+  theme: Theme;
+}
+
+const LocationTreeItemComponent: React.FC<LocationTreeItemProps> = ({
+  node,
+  level,
+  onPress,
+  theme,
+}) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const hasChildren = node.children && node.children.length > 0;
+
+  // Memoize hasChildren check
+  const hasChildren = useMemo(() =>
+    node.children && node.children.length > 0,
+    [node.children]
+  );
+
+  // Memoize style calculations
+  const containerStyle = useMemo(() => [
+    styles.locationContainer,
+    { backgroundColor: theme.colors.background.secondary },
+    { marginLeft: level * 16 },
+  ], [theme.colors.background.secondary, level]);
+
+  // Memoize callbacks
+  const handlePress = useCallback(() => {
+    onPress(node.id, node.name);
+  }, [onPress, node.id, node.name]);
+
+  const toggleExpanded = useCallback(() => {
+    setIsExpanded(prev => !prev);
+  }, []);
 
   return (
     <View>
       <TouchableOpacity
-        style={[
-          styles.locationContainer,
-          { backgroundColor: theme.colors.background.secondary },
-          { marginLeft: level * 16 },
-        ]}
-        onPress={() => onPress(node.id, node.name)}
+        style={containerStyle}
+        onPress={handlePress}
       >
         <View style={styles.locationContent}>
           <View style={styles.locationHeader}>
             {hasChildren && (
               <TouchableOpacity
-                onPress={() => setIsExpanded(!isExpanded)}
+                onPress={toggleExpanded}
                 style={styles.expandButton}
               >
                 <MaterialIcons
@@ -82,6 +107,9 @@ const LocationTreeItem: React.FC<{
     </View>
   );
 };
+
+// Memoized export to prevent unnecessary re-renders in recursive tree
+const LocationTreeItem = React.memo(LocationTreeItemComponent);
 
 const LocationsScreen: React.FC = () => {
   const { theme } = useTheme();
