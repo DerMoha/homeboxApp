@@ -78,7 +78,6 @@ const SettingsStackScreen = () => {
         component={SettingsScreen}
         options={{
           headerShown: true,
-          headerLargeTitle: true,
         }}
       />
       <SettingsStack.Screen
@@ -86,7 +85,6 @@ const SettingsStackScreen = () => {
         component={ServerConfigScreen}
         options={{
           headerShown: true,
-          headerLargeTitle: true,
           title: 'Server Configuration',
         }}
       />
@@ -95,7 +93,6 @@ const SettingsStackScreen = () => {
         component={AppearanceScreen}
         options={{
           headerShown: true,
-          headerLargeTitle: true,
           title: 'Appearance',
         }}
       />
@@ -104,7 +101,6 @@ const SettingsStackScreen = () => {
         component={InventorySettingsScreen}
         options={{
           headerShown: true,
-          headerLargeTitle: true,
           title: 'Inventory Display',
         }}
       />
@@ -113,7 +109,6 @@ const SettingsStackScreen = () => {
         component={require('./src/screens/AddItemSettingsScreen').default}
         options={{
           headerShown: true,
-          headerLargeTitle: true,
           title: 'Add Fields',
         }}
       />
@@ -145,7 +140,6 @@ const LocationsStackScreen = () => {
         component={LocationsScreen}
         options={{
           headerShown: true,
-          headerLargeTitle: true,
           title: 'Locations',
         }}
       />
@@ -154,7 +148,6 @@ const LocationsStackScreen = () => {
         component={LocationItemsScreen}
         options={{
           headerShown: true,
-          headerLargeTitle: true,
         }}
       />
     </LocationsStack.Navigator>
@@ -185,7 +178,6 @@ const InventoryStackScreen = () => {
         component={InventoryScreen}
         options={{
           headerShown: true,
-          headerLargeTitle: true,
           title: 'Inventory',
         }}
       />
@@ -194,7 +186,6 @@ const InventoryStackScreen = () => {
         component={ItemDetailScreen}
         options={{
           headerShown: true,
-          headerLargeTitle: true,
           title: 'Item Details',
         }}
       />
@@ -226,7 +217,6 @@ const AddItemStackScreen = () => {
         component={AddItemScreen}
         options={{
           headerShown: true,
-          headerLargeTitle: true,
           title: 'Add Item',
         }}
       />
