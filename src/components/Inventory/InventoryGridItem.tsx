@@ -4,7 +4,7 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { useTheme } from '../../theme/ThemeContext';
 import { InventoryItem } from '../../hooks/useInventoryData';
 import { DisplayPreference } from '../../hooks/useDisplayPreferences';
-import ServerService from '../../services/serverService';
+import { getImageSource } from '../../utils/imageUtils';
 
 interface InventoryGridItemProps {
   item: InventoryItem;
@@ -13,7 +13,7 @@ interface InventoryGridItemProps {
   itemsPerRow: number;
 }
 
-export const InventoryGridItem: React.FC<InventoryGridItemProps> = ({
+const InventoryGridItemComponent: React.FC<InventoryGridItemProps> = ({
   item,
   displayPreferences,
   onPress,
@@ -24,11 +24,6 @@ export const InventoryGridItem: React.FC<InventoryGridItemProps> = ({
   const getPreference = (id: string): boolean => {
     const preference = displayPreferences.find(p => p.id === id);
     return preference?.enabled ?? false;
-  };
-
-  const getImageUrl = (itemId: string, imageId: string): string => {
-    const service = ServerService.getInstance();
-    return `${service.getBaseUrl()}/api/v1/items/${itemId}/attachments/${imageId}`;
   };
 
   const screenWidth = Dimensions.get('window').width;
@@ -49,12 +44,7 @@ export const InventoryGridItem: React.FC<InventoryGridItemProps> = ({
       <View style={[styles.gridItemImageContainer, { height: itemWidth }]}>
         {item.imageId ? (
           <Image
-            source={{
-              uri: getImageUrl(item.id, item.imageId),
-              headers: {
-                'Authorization': `Bearer ${ServerService.getInstance().getAxiosInstance()?.defaults.headers.common.Authorization}`,
-              },
-            }}
+            source={getImageSource(item.id, item.imageId)}
             style={styles.gridItemImage}
             resizeMode="cover"
           />
@@ -88,6 +78,9 @@ export const InventoryGridItem: React.FC<InventoryGridItemProps> = ({
     </TouchableOpacity>
   );
 };
+
+// Memoized export to prevent unnecessary re-renders
+export const InventoryGridItem = React.memo(InventoryGridItemComponent);
 
 const styles = StyleSheet.create({
   gridItemContainer: {

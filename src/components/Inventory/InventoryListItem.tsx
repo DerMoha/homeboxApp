@@ -4,7 +4,7 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { useTheme } from '../../theme/ThemeContext';
 import { InventoryItem } from '../../hooks/useInventoryData';
 import { DisplayPreference } from '../../hooks/useDisplayPreferences';
-import ServerService from '../../services/serverService';
+import { getImageSource, formatDate } from '../../utils/imageUtils';
 
 interface InventoryListItemProps {
   item: InventoryItem;
@@ -13,7 +13,7 @@ interface InventoryListItemProps {
   onPress: (itemId: string) => void;
 }
 
-export const InventoryListItem: React.FC<InventoryListItemProps> = ({
+const InventoryListItemComponent: React.FC<InventoryListItemProps> = ({
   item,
   displayPreferences,
   listZoom,
@@ -24,16 +24,6 @@ export const InventoryListItem: React.FC<InventoryListItemProps> = ({
   const getPreference = (id: string): boolean => {
     const preference = displayPreferences.find(p => p.id === id);
     return preference?.enabled ?? false;
-  };
-
-  const getImageUrl = (itemId: string, imageId: string): string => {
-    const service = ServerService.getInstance();
-    return `${service.getBaseUrl()}/api/v1/items/${itemId}/attachments/${imageId}`;
-  };
-
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString();
   };
 
   const hasDescription = getPreference('description') && item.description;
@@ -139,12 +129,7 @@ export const InventoryListItem: React.FC<InventoryListItemProps> = ({
             {hasImage && (
               <View style={styles.standardImageSection}>
                 <Image
-                  source={{
-                    uri: getImageUrl(item.id, item.imageId!),
-                    headers: {
-                      'Authorization': `Bearer ${ServerService.getInstance().getAxiosInstance()?.defaults.headers.common.Authorization}`,
-                    },
-                  }}
+                  source={getImageSource(item.id, item.imageId!)}
                   style={styles.standardImage}
                   resizeMode="cover"
                 />
@@ -196,12 +181,7 @@ export const InventoryListItem: React.FC<InventoryListItemProps> = ({
         {hasImage && (
           <View style={styles.imageContainer}>
             <Image
-              source={{
-                uri: getImageUrl(item.id, item.imageId!),
-                headers: {
-                  'Authorization': `Bearer ${ServerService.getInstance().getAxiosInstance()?.defaults.headers.common.Authorization}`,
-                },
-              }}
+              source={getImageSource(item.id, item.imageId!)}
               style={styles.itemImage}
               resizeMode="cover"
             />
@@ -275,6 +255,9 @@ export const InventoryListItem: React.FC<InventoryListItemProps> = ({
     </TouchableOpacity>
   );
 };
+
+// Memoized export to prevent unnecessary re-renders
+export const InventoryListItem = React.memo(InventoryListItemComponent);
 
 const styles = StyleSheet.create({
   itemContainer: {

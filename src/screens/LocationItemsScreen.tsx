@@ -15,6 +15,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import ServerService from '../services/serverService';
 import { logger } from '../utils/logger';
+import { getImageSource } from '../utils/imageUtils';
 
 type RootStackParamList = {
   LocationItems: { locationId: string; locationName: string };
@@ -71,15 +72,6 @@ const LocationItemsScreen: React.FC = () => {
     loadItems();
   };
 
-  const getImageUrl = (itemId: string, imageId: string): string => {
-    const service = ServerService.getInstance();
-    const axiosInstance = service.getAxiosInstance();
-    if (!axiosInstance) {
-      return '';
-    }
-    return `${service.getBaseUrl()}/api/v1/items/${itemId}/attachments/${imageId}`;
-  };
-
   const renderItem = ({ item }: { item: InventoryItem }): React.ReactElement => {
     return (
       <TouchableOpacity
@@ -106,12 +98,7 @@ const LocationItemsScreen: React.FC = () => {
           {item.imageId && (
             <View style={styles.imageContainer}>
               <Image
-                source={{
-                  uri: getImageUrl(item.id, item.imageId),
-                  headers: {
-                    'Authorization': `Bearer ${ServerService.getInstance().getAxiosInstance()?.defaults.headers.common.Authorization}`,
-                  },
-                }}
+                source={getImageSource(item.id, item.imageId)}
                 style={styles.itemImage}
                 resizeMode="cover"
               />

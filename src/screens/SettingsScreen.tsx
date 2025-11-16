@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Alert,
   ScrollView,
-  ActivityIndicator,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -28,15 +27,7 @@ const SettingsScreen: React.FC = () => {
   const { theme } = useTheme();
   const [servers, setServers] = useState<ServerWithStatus[]>([]);
   const [selectedServer, setSelectedServer] = useState<string>('');
-  const [_isServerSettingsOpen, _setIsServerSettingsOpen] = useState(false);
-  const [newServer, setNewServer] = useState<ServerConfig>({
-    id: Date.now().toString(),
-    host: '',
-    username: '',
-    password: '',
-  });
   const [_isCheckingStatus, _setIsCheckingStatus] = useState(false);
-  const [_themeMode, _setThemeMode] = useState<'light' | 'dark' | 'auto' | 'oled'>('auto');
 
   useEffect(() => {
     navigation.setOptions({
@@ -115,78 +106,6 @@ const SettingsScreen: React.FC = () => {
     loadServers();
   }, [loadServers]);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _saveServer = async (): Promise<void> => {
-    if (!newServer.host || !newServer.username || !newServer.password) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
-
-    try {
-      const serverService = ServerService.getInstance();
-      const saved = await serverService.saveServer(newServer);
-      if (saved) {
-        await loadServers();
-        setSelectedServer(newServer.id);
-        resetNewServer();
-        Alert.alert('Success', 'Server configuration saved');
-      } else {
-        Alert.alert('Error', 'Failed to save server configuration');
-      }
-    } catch (error) {
-      logger.error('Error saving server:', error);
-      Alert.alert('Error', 'Failed to save server configuration');
-    }
-  };
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _deleteServer = async (serverId: string): Promise<void> => {
-    const serverToDelete = servers.find(server => server.id === serverId);
-    const serverName = serverToDelete?.name || serverToDelete?.host || 'this server';
-
-    Alert.alert(
-      'Delete Server',
-      `Are you sure you want to delete ${serverName}?`,
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const serverService = ServerService.getInstance();
-              const deleted = await serverService.deleteServer(serverId);
-              if (deleted) {
-                await loadServers();
-                if (selectedServer === serverId) {
-                  setSelectedServer('');
-                }
-                Alert.alert('Success', 'Server deleted');
-              } else {
-                Alert.alert('Error', 'Failed to delete server');
-              }
-            } catch (error) {
-              logger.error('Error deleting server:', error);
-              Alert.alert('Error', 'Failed to delete server');
-            }
-          },
-        },
-      ],
-      { cancelable: true }
-    );
-  };
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _handleInputChange = (field: keyof ServerConfig, value: string): void => {
-    setNewServer((prev: ServerConfig) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
   const handleServerChange = async (serverId: string): Promise<void> => {
     if (serverId === 'add_new') {
       navigation.navigate('ServerConfig', { server: undefined });
@@ -205,41 +124,6 @@ const SettingsScreen: React.FC = () => {
       logger.error('Error changing server:', error);
       Alert.alert('Error', 'Failed to change server. Please try again.');
     }
-  };
-
-  const resetNewServer = (): void => {
-    setNewServer({
-      id: Date.now().toString(),
-      host: '',
-      username: '',
-      password: '',
-    });
-  };
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _handleServerItemPress = async (server: ServerWithStatus): Promise<void> => {
-    // Set as active server
-    setSelectedServer(server.id);
-    const serverService = ServerService.getInstance();
-    await serverService.initialize(server);
-
-    // Navigate to ServerConfig with the server data
-    navigation.navigate('ServerConfig', { server });
-  };
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars, react/no-unstable-nested-components
-  const _StatusIndicator: React.FC<{ status: ServerWithStatus['status'] }> = ({ status }) => {
-    if (status === 'checking') {
-      return <ActivityIndicator size="small" color={theme.colors.text.primary} style={styles.statusIndicator} />;
-    }
-    return (
-      <View
-        style={[
-          styles.statusDot,
-          { backgroundColor: status === 'online' ? theme.colors.success : theme.colors.error },
-        ]}
-      />
-    );
   };
 
   return (
