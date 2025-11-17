@@ -1,22 +1,23 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  ActivityIndicator,
   RefreshControl,
-  Image,
-  SafeAreaView,
   ScrollView,
 } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
+import type { Theme } from '../theme/theme';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import ServerService from '../services/serverService';
 import { LocationsStackParamList } from '../types/navigation';
 import axios from 'axios';
+import { logger } from '../utils/logger';
+import { useAsyncState } from '../hooks/useAsyncState';
+import { LoadingState, ErrorState } from '../components/common';
 
 type RootStackParamList = LocationsStackParamList;
 
@@ -27,51 +28,58 @@ interface LocationNode {
   children: LocationNode[];
 }
 
-interface Location {
-  id: string;
-  name: string;
-  description: string;
-  itemCount: number;
-  imageId: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface LocationResponse {
-  locations: Location[];
-  page: number;
-  pageSize: number;
-  total: number;
-}
-
-const LocationTreeItem: React.FC<{
+interface LocationTreeItemProps {
   node: LocationNode;
   level: number;
   onPress: (locationId: string, locationName: string) => void;
-  theme: any;
-}> = ({ node, level, onPress, theme }) => {
+  theme: Theme;
+}
+
+const LocationTreeItemComponent: React.FC<LocationTreeItemProps> = ({
+  node,
+  level,
+  onPress,
+  theme,
+}) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const hasChildren = node.children && node.children.length > 0;
+
+  // Memoize hasChildren check
+  const hasChildren = useMemo(() =>
+    node.children && node.children.length > 0,
+    [node.children]
+  );
+
+  // Memoize style calculations
+  const containerStyle = useMemo(() => [
+    styles.locationContainer,
+    { backgroundColor: theme.colors.background.secondary },
+    { marginLeft: level * 16 },
+  ], [theme.colors.background.secondary, level]);
+
+  // Memoize callbacks
+  const handlePress = useCallback(() => {
+    onPress(node.id, node.name);
+  }, [onPress, node.id, node.name]);
+
+  const toggleExpanded = useCallback(() => {
+    setIsExpanded(prev => !prev);
+  }, []);
 
   return (
     <View>
       <TouchableOpacity
-        style={[
-          styles.locationContainer,
-          { backgroundColor: theme.colors.background.secondary },
-          { marginLeft: level * 16 }
-        ]}
-        onPress={() => onPress(node.id, node.name)}
+        style={containerStyle}
+        onPress={handlePress}
       >
         <View style={styles.locationContent}>
           <View style={styles.locationHeader}>
             {hasChildren && (
               <TouchableOpacity
-                onPress={() => setIsExpanded(!isExpanded)}
+                onPress={toggleExpanded}
                 style={styles.expandButton}
               >
                 <MaterialIcons
-                  name={isExpanded ? "expand-more" : "chevron-right"}
+                  name={isExpanded ? 'expand-more' : 'chevron-right'}
                   size={24}
                   color={theme.colors.text.primary}
                 />
@@ -100,91 +108,73 @@ const LocationTreeItem: React.FC<{
   );
 };
 
+// Memoized export to prevent unnecessary re-renders in recursive tree
+const LocationTreeItem = React.memo(LocationTreeItemComponent);
+
 const LocationsScreen: React.FC = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const [locationTree, setLocationTree] = useState<LocationNode[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: locationTree,
+    isLoading,
+    refreshing,
+    error,
+    execute,
+  } = useAsyncState<LocationNode[]>([]);
 
-  const loadLocations = async (): Promise<void> => {
-    try {
-      setIsLoading(true);
-      setError(null);
+  const loadLocations = useCallback(async (): Promise<void> => {
+    await execute(async () => {
       const service = ServerService.getInstance();
-      
+
       // Verify server connection
       const axiosInstance = service.getAxiosInstance();
       if (!axiosInstance) {
-        setError('No active server connection. Please check your server settings.');
-        return;
+        throw new Error('No active server connection. Please check your server settings.');
       }
 
       const response = await axiosInstance.get('/api/v1/locations/tree');
-      setLocationTree(response.data);
-      setError(null);
-    } catch (error) {
-      console.error('Error loading locations:', error);
-      if (axios.isAxiosError(error)) {
-        if (error.response?.status === 500) {
-          setError('Server error occurred. Please check if the server is running and try again.');
-        } else {
-          setError(`Error: ${error.message}. Please try again later.`);
+      return response.data;
+    }, {
+      onError: (err) => {
+        logger.error('Error loading locations:', err);
+        if (axios.isAxiosError(err)) {
+          if (err.response?.status === 500) {
+            throw new Error('Server error occurred. Please check if the server is running and try again.');
+          }
         }
-      } else {
-        setError('An unexpected error occurred. Please try again later.');
-      }
-    } finally {
-      setIsLoading(false);
-      setRefreshing(false);
-    }
-  };
+      },
+    });
+  }, [execute]);
 
   const onRefresh = (): void => {
-    setRefreshing(true);
-    loadLocations();
+    execute(async () => {
+      const service = ServerService.getInstance();
+      const axiosInstance = service.getAxiosInstance();
+      if (!axiosInstance) {
+        throw new Error('No active server connection. Please check your server settings.');
+      }
+      const response = await axiosInstance.get('/api/v1/locations/tree');
+      return response.data;
+    }, { isRefresh: true });
   };
 
   const handleLocationPress = (locationId: string, locationName: string) => {
-    navigation.navigate('LocationItems', { 
+    navigation.navigate('LocationItems', {
       locationId,
-      locationName
+      locationName,
     });
   };
 
   useEffect(() => {
     loadLocations();
-  }, []);
+  }, [loadLocations]);
 
   if (isLoading) {
-    return (
-      <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
-        <ActivityIndicator size="large" color={theme.colors.button.primary} />
-      </View>
-    );
+    return <LoadingState message="Loading locations..." />;
   }
 
   if (error) {
-    return (
-      <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
-        <MaterialIcons 
-          name="error-outline" 
-          size={48} 
-          color={theme.colors.error} 
-          style={styles.errorIcon}
-        />
-        <Text style={[styles.errorText, { color: theme.colors.error }]}>{error}</Text>
-        <TouchableOpacity
-          style={[styles.retryButton, { backgroundColor: theme.colors.button.primary }]}
-          onPress={loadLocations}
-        >
-          <Text style={[styles.retryButtonText, { color: theme.colors.button.text }]}>
-            Retry
-          </Text>
-        </TouchableOpacity>
-      </View>
-    );
+    return <ErrorState error={error} onRetry={loadLocations} />;
   }
 
   return (
@@ -199,7 +189,7 @@ const LocationsScreen: React.FC = () => {
           />
         }
       >
-        {locationTree.map((node) => (
+        {locationTree && locationTree.map((node) => (
           <LocationTreeItem
             key={node.id}
             node={node}
@@ -208,7 +198,7 @@ const LocationsScreen: React.FC = () => {
             theme={theme}
           />
         ))}
-        {locationTree.length === 0 && (
+        {locationTree && locationTree.length === 0 && (
           <View style={styles.emptyContainer}>
             <Text style={[styles.emptyText, { color: theme.colors.text.secondary }]}>
               No locations found
@@ -284,4 +274,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default LocationsScreen; 
+export default LocationsScreen;

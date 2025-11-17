@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  ActivityIndicator,
   RefreshControl,
   Image,
 } from 'react-native';
@@ -14,6 +13,10 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import ServerService from '../services/serverService';
+import { logger } from '../utils/logger';
+import { getImageSource } from '../utils/imageUtils';
+import { useAsyncState } from '../hooks/useAsyncState';
+import { LoadingState, ErrorState, EmptyState } from '../components/common';
 
 type RootStackParamList = {
   LocationItems: { locationId: string; locationName: string };
@@ -34,56 +37,46 @@ interface InventoryItem {
   updatedAt: string;
 }
 
-interface InventoryResponse {
-  items: InventoryItem[];
-  page: number;
-  pageSize: number;
-  total: number;
-}
-
 const LocationItemsScreen: React.FC = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<LocationItemsRouteProp>();
   const { locationId, locationName } = route.params;
-  
-  const [items, setItems] = useState<InventoryItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const loadItems = async (): Promise<void> => {
-    try {
+  const {
+    data: items,
+    isLoading,
+    refreshing,
+    error,
+    execute,
+  } = useAsyncState<InventoryItem[]>([]);
+
+  const loadItems = useCallback(async (): Promise<void> => {
+    await execute(async () => {
       const service = ServerService.getInstance();
       const result = await service.getLocationItems(locationId);
       if (result.success && result.data) {
-        // result.data is InventoryResponse, already filtered by locationId
-        setItems(result.data.items);
-        setError(null);
+        return result.data.items;
       } else {
-        setError(result.error || 'Failed to load items');
+        throw new Error(result.error || 'Failed to load items');
       }
-    } catch (error) {
-      console.error('Error loading items:', error);
-      setError('An unexpected error occurred');
-    } finally {
-      setIsLoading(false);
-      setRefreshing(false);
-    }
-  };
+    }, {
+      onError: (err) => {
+        logger.error('Error loading items:', err);
+      },
+    });
+  }, [locationId, execute]);
 
   const onRefresh = (): void => {
-    setRefreshing(true);
-    loadItems();
-  };
-
-  const getImageUrl = (itemId: string, imageId: string): string => {
-    const service = ServerService.getInstance();
-    const axiosInstance = service.getAxiosInstance();
-    if (!axiosInstance) {
-      return '';
-    }
-    return `${service.getBaseUrl()}/api/v1/items/${itemId}/attachments/${imageId}`;
+    execute(async () => {
+      const service = ServerService.getInstance();
+      const result = await service.getLocationItems(locationId);
+      if (result.success && result.data) {
+        return result.data.items;
+      } else {
+        throw new Error(result.error || 'Failed to load items');
+      }
+    }, { isRefresh: true });
   };
 
   const renderItem = ({ item }: { item: InventoryItem }): React.ReactElement => {
@@ -112,12 +105,7 @@ const LocationItemsScreen: React.FC = () => {
           {item.imageId && (
             <View style={styles.imageContainer}>
               <Image
-                source={{ 
-                  uri: getImageUrl(item.id, item.imageId),
-                  headers: {
-                    'Authorization': `Bearer ${ServerService.getInstance().getAxiosInstance()?.defaults.headers.common['Authorization']}`
-                  }
-                }}
+                source={getImageSource(item.id, item.imageId)}
                 style={styles.itemImage}
                 resizeMode="cover"
               />
@@ -134,11 +122,11 @@ const LocationItemsScreen: React.FC = () => {
               </View>
             )}
             <View style={styles.footerItem}>
-              <MaterialIcons 
-                name={item.insured ? "verified" : "error-outline"} 
-                size={16} 
-                color={theme.colors.text.secondary} 
-                style={styles.footerIcon} 
+              <MaterialIcons
+                name={item.insured ? 'verified' : 'error-outline'}
+                size={16}
+                color={theme.colors.text.secondary}
+                style={styles.footerIcon}
               />
               <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
                 {item.insured ? 'Insured' : 'Uninsured'}
@@ -160,36 +148,20 @@ const LocationItemsScreen: React.FC = () => {
 
   useEffect(() => {
     loadItems();
-  }, [locationId]);
+  }, [loadItems]);
 
   useEffect(() => {
     navigation.setOptions({
       title: locationName,
     });
-  }, [locationName]);
+  }, [locationName, navigation]);
 
   if (isLoading) {
-    return (
-      <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
-        <ActivityIndicator size="large" color={theme.colors.button.primary} />
-      </View>
-    );
+    return <LoadingState message={`Loading items from ${locationName}...`} />;
   }
 
   if (error) {
-    return (
-      <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
-        <Text style={[styles.errorText, { color: theme.colors.error }]}>Error: {error}</Text>
-        <TouchableOpacity
-          style={[styles.retryButton, { backgroundColor: theme.colors.button.primary }]}
-          onPress={loadItems}
-        >
-          <Text style={[styles.retryButtonText, { color: theme.colors.button.text }]}>
-            Retry
-          </Text>
-        </TouchableOpacity>
-      </View>
-    );
+    return <ErrorState error={error} onRetry={loadItems} />;
   }
 
   return (
@@ -206,11 +178,11 @@ const LocationItemsScreen: React.FC = () => {
         />
       }
       ListEmptyComponent={
-        <View style={styles.emptyContainer}>
-          <Text style={[styles.emptyText, { color: theme.colors.text.secondary }]}>
-            No items found in this location
-          </Text>
-        </View>
+        <EmptyState
+          message="No items in this location"
+          subtitle="Items you add to this location will appear here"
+          icon="inventory-2"
+        />
       }
     />
   );
@@ -312,4 +284,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default LocationItemsScreen; 
+export default LocationItemsScreen;

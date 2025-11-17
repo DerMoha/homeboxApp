@@ -15,4 +15,4 @@ export type LocationsStackParamList = {
 
 export interface ServerWithStatus extends ServerConfig {
   status: 'checking' | 'online' | 'offline';
-} 
+}

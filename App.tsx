@@ -2,8 +2,8 @@ import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { View, Text } from 'react-native';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import SettingsScreen from './src/screens/SettingsScreen';
 import AddItemScreen from './src/screens/AddItemScreen';
 import ServerConfigScreen from './src/screens/ServerConfigScreen';
@@ -14,7 +14,6 @@ import InventorySettingsScreen from './src/screens/InventorySettingsScreen';
 import LocationsScreen from './src/screens/LocationsScreen';
 import LocationItemsScreen from './src/screens/LocationItemsScreen';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
-import { darkTheme } from './src/theme/theme';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import ServerService from './src/services/serverService';
 
@@ -24,11 +23,32 @@ const LocationsStack = createNativeStackNavigator();
 const InventoryStack = createNativeStackNavigator();
 const AddItemStack = createNativeStackNavigator();
 
+// Tab bar icon components (defined outside to prevent re-creation on each render)
+const HomeIcon = ({ color, size }: { color: string; size: number }) => (
+  <MaterialIcons name="home" size={size} color={color} />
+);
+
+const InventoryIcon = ({ color, size }: { color: string; size: number }) => (
+  <MaterialIcons name="inventory" size={size} color={color} />
+);
+
+const AddItemIcon = ({ color, size }: { color: string; size: number }) => (
+  <MaterialIcons name="add-box" size={size} color={color} />
+);
+
+const LocationIcon = ({ color, size }: { color: string; size: number }) => (
+  <MaterialIcons name="location-on" size={size} color={color} />
+);
+
+const SettingsIcon = ({ color, size }: { color: string; size: number }) => (
+  <MaterialIcons name="settings" size={size} color={color} />
+);
+
 // Placeholder screens
 const HomeScreen = () => {
   const { theme } = useTheme();
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background.primary }}>
+    <View style={[styles.centeredContainer, { backgroundColor: theme.colors.background.primary }]}>
       <Text style={{ color: theme.colors.text.primary }}>Home Screen</Text>
     </View>
   );
@@ -53,48 +73,43 @@ const SettingsStackScreen = () => {
         },
       }}
     >
-      <SettingsStack.Screen 
-        name="Settings" 
+      <SettingsStack.Screen
+        name="Settings"
         component={SettingsScreen}
-        options={{ 
+        options={{
           headerShown: true,
-          headerLargeTitle: true,
         }}
       />
-      <SettingsStack.Screen 
-        name="ServerConfig" 
+      <SettingsStack.Screen
+        name="ServerConfig"
         component={ServerConfigScreen}
-        options={{ 
+        options={{
           headerShown: true,
-          headerLargeTitle: true,
-          title: 'Server Configuration'
+          title: 'Server Configuration',
         }}
       />
-      <SettingsStack.Screen 
-        name="Appearance" 
+      <SettingsStack.Screen
+        name="Appearance"
         component={AppearanceScreen}
-        options={{ 
+        options={{
           headerShown: true,
-          headerLargeTitle: true,
-          title: 'Appearance'
+          title: 'Appearance',
         }}
       />
-      <SettingsStack.Screen 
-        name="InventorySettings" 
+      <SettingsStack.Screen
+        name="InventorySettings"
         component={InventorySettingsScreen}
-        options={{ 
+        options={{
           headerShown: true,
-          headerLargeTitle: true,
-          title: 'Inventory Display'
+          title: 'Inventory Display',
         }}
       />
-      <SettingsStack.Screen 
-        name="AddItemSettings" 
+      <SettingsStack.Screen
+        name="AddItemSettings"
         component={require('./src/screens/AddItemSettingsScreen').default}
-        options={{ 
+        options={{
           headerShown: true,
-          headerLargeTitle: true,
-          title: 'Add Fields'
+          title: 'Add Fields',
         }}
       />
     </SettingsStack.Navigator>
@@ -120,21 +135,19 @@ const LocationsStackScreen = () => {
         },
       }}
     >
-      <LocationsStack.Screen 
-        name="LocationsList" 
+      <LocationsStack.Screen
+        name="LocationsList"
         component={LocationsScreen}
-        options={{ 
+        options={{
           headerShown: true,
-          headerLargeTitle: true,
-          title: 'Locations'
+          title: 'Locations',
         }}
       />
-      <LocationsStack.Screen 
-        name="LocationItems" 
+      <LocationsStack.Screen
+        name="LocationItems"
         component={LocationItemsScreen}
-        options={{ 
+        options={{
           headerShown: true,
-          headerLargeTitle: true,
         }}
       />
     </LocationsStack.Navigator>
@@ -160,22 +173,20 @@ const InventoryStackScreen = () => {
         },
       }}
     >
-      <InventoryStack.Screen 
-        name="Inventory" 
+      <InventoryStack.Screen
+        name="Inventory"
         component={InventoryScreen}
-        options={{ 
+        options={{
           headerShown: true,
-          headerLargeTitle: true,
-          title: 'Inventory'
+          title: 'Inventory',
         }}
       />
-      <InventoryStack.Screen 
-        name="ItemDetail" 
+      <InventoryStack.Screen
+        name="ItemDetail"
         component={ItemDetailScreen}
-        options={{ 
+        options={{
           headerShown: true,
-          headerLargeTitle: true,
-          title: 'Item Details'
+          title: 'Item Details',
         }}
       />
     </InventoryStack.Navigator>
@@ -201,13 +212,12 @@ const AddItemStackScreen = () => {
         },
       }}
     >
-      <AddItemStack.Screen 
-        name="AddItem" 
+      <AddItemStack.Screen
+        name="AddItem"
         component={AddItemScreen}
-        options={{ 
+        options={{
           headerShown: true,
-          headerLargeTitle: true,
-          title: 'Add Item'
+          title: 'Add Item',
         }}
       />
     </AddItemStack.Navigator>
@@ -273,55 +283,45 @@ const AppContent = () => {
           },
         }}
       >
-        <Tab.Screen 
-          name="Home" 
+        <Tab.Screen
+          name="Home"
           component={HomeScreen}
           options={{
-            tabBarIcon: ({ color, size }) => (
-              <MaterialIcons name="home" size={size} color={color} />
-            ),
+            tabBarIcon: HomeIcon,
           }}
         />
-        <Tab.Screen 
-          name="InventoryTab" 
+        <Tab.Screen
+          name="InventoryTab"
           component={InventoryStackScreen}
           options={{
             headerShown: false,
-            tabBarIcon: ({ color, size }) => (
-              <MaterialIcons name="inventory" size={size} color={color} />
-            ),
-            tabBarLabel: 'Inventory'
+            tabBarIcon: InventoryIcon,
+            tabBarLabel: 'Inventory',
           }}
         />
-        <Tab.Screen 
-          name="AddItemTab" 
+        <Tab.Screen
+          name="AddItemTab"
           component={AddItemStackScreen}
           options={{
             headerShown: false,
-            tabBarIcon: ({ color, size }) => (
-              <MaterialIcons name="add-box" size={size} color={color} />
-            ),
-            tabBarLabel: 'Add Item'
+            tabBarIcon: AddItemIcon,
+            tabBarLabel: 'Add Item',
           }}
         />
-        <Tab.Screen 
-          name="Locations" 
+        <Tab.Screen
+          name="Locations"
           component={LocationsStackScreen}
           options={{
             headerShown: false,
-            tabBarIcon: ({ color, size }) => (
-              <MaterialIcons name="location-on" size={size} color={color} />
-            ),
+            tabBarIcon: LocationIcon,
           }}
         />
-        <Tab.Screen 
-          name="SettingsTab" 
+        <Tab.Screen
+          name="SettingsTab"
           component={SettingsStackScreen}
           options={{
             headerShown: false,
-            tabBarIcon: ({ color, size }) => (
-              <MaterialIcons name="settings" size={size} color={color} />
-            ),
+            tabBarIcon: SettingsIcon,
           }}
         />
       </Tab.Navigator>
@@ -339,4 +339,12 @@ const App = () => {
   );
 };
 
-export default App; 
+const styles = StyleSheet.create({
+  centeredContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});
+
+export default App;

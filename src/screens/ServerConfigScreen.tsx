@@ -1,20 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
-  Alert,
   ScrollView,
-  ActivityIndicator,
-  StatusBar,
-  SafeAreaView,
 } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import ServerService, { ServerConfig } from '../services/serverService';
+import { useRoute, RouteProp } from '@react-navigation/native';
 import { useTheme } from '../theme/ThemeContext';
+import { useServerConfig } from '../hooks/useServerConfig';
+import { ServerFormFields, ServerActions } from '../components/ServerConfig';
+import { ServerConfig } from '../services/serverService';
 
 type RootStackParamList = {
   Settings: undefined;
@@ -22,410 +18,134 @@ type RootStackParamList = {
 };
 
 type ServerConfigRouteProp = RouteProp<RootStackParamList, 'ServerConfig'>;
-type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'ServerConfig'>;
-
-interface ServerWithStatus extends ServerConfig {
-  status: 'checking' | 'online' | 'offline';
-}
 
 const ServerConfigScreen: React.FC = () => {
-  const navigation = useNavigation<NavigationProp>();
   const route = useRoute<ServerConfigRouteProp>();
   const { theme } = useTheme();
-  const [servers, setServers] = useState<ServerWithStatus[]>([]);
-  const [selectedServer, setSelectedServer] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isAddServerVisible, setIsAddServerVisible] = useState(false);
-  const [newServer, setNewServer] = useState<ServerConfig>({
-    id: Date.now().toString(),
-    host: '',
-    username: '',
-    password: '',
-    name: '',
-  });
-  const [isCheckingStatus, setIsCheckingStatus] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    formData,
+    isLoading,
+    isSaving,
+    servers,
+    selectedServer,
+    updateField,
+    loadServers,
+    testConnection,
+    saveServer,
+    deleteServer,
+    selectServer,
+    editServer,
+    clearSelection,
+  } = useServerConfig();
 
+  // Load servers and handle route params on mount
   useEffect(() => {
     loadServers();
     if (route.params?.server) {
-      setNewServer(route.params.server);
-      // Set as active server
-      const serverService = ServerService.getInstance();
-      serverService.initialize(route.params.server);
+      const serverService = require('../services/serverService').default;
+      serverService.getInstance().initialize(route.params.server);
     }
-  }, [route.params]);
+  }, [loadServers, route.params]);
 
-  const loadServers = async (): Promise<void> => {
-    try {
-      const serverService = ServerService.getInstance();
-      const savedServers = await serverService.getServers();
-      const serversWithStatus: ServerWithStatus[] = savedServers.map((server: ServerConfig) => ({
-        ...server,
-        status: 'checking' as const
-      }));
-      setServers(serversWithStatus);
-
-      // Check status for each server
-      const updatedServers = await Promise.all(
-        serversWithStatus.map(async (server: ServerWithStatus) => {
-          try {
-            const result = await serverService.testConnection(server);
-            return {
-              ...server,
-              status: result.success ? 'online' as const : 'offline' as const
-            };
-          } catch (error) {
-            return {
-              ...server,
-              status: 'offline' as const
-            };
-          }
-        })
-      );
-
-      setServers(updatedServers);
-
-      // Set selected server based on current config or first server
-      const currentConfig = serverService.getCurrentConfig();
-      if (currentConfig) {
-        setSelectedServer(currentConfig.id);
-      } else if (updatedServers.length > 0) {
-        setSelectedServer(updatedServers[0].id);
-      }
-    } catch (error) {
-      console.error('Error loading servers:', error);
-      setError('Failed to load saved servers');
-    }
+  const handleAddServer = (): void => {
+    clearSelection();
   };
 
-  const testConnection = async (): Promise<void> => {
-    if (!newServer.host || !newServer.username || !newServer.password) {
-      Alert.alert('Error', 'Please fill in all required fields');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const serverService = ServerService.getInstance();
-      const result = await serverService.testConnection(newServer);
-      
-      if (result.success) {
-        Alert.alert('Success', 'Connection successful! Server is reachable.');
-        await serverService.setLastUsedServer(newServer.id);
-      } else {
-        Alert.alert('Connection Failed', result.error || 'Could not connect to the server. Please check your settings.');
-      }
-    } catch (error) {
-      console.error('Error testing connection:', error);
-      Alert.alert('Error', 'Failed to test connection');
-    } finally {
-      setIsLoading(false);
-    }
+  const handleCancelEdit = (): void => {
+    clearSelection();
   };
 
-  const saveServer = async (): Promise<void> => {
-    if (!newServer.host || !newServer.username || !newServer.password) {
-      Alert.alert('Error', 'Please fill in all required fields');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const serverService = ServerService.getInstance();
-      const result = await serverService.testConnection(newServer);
-      
-      if (!result.success) {
-        Alert.alert('Connection Failed', result.error || 'Could not connect to the server. Save anyway?', [
-          {
-            text: 'Cancel',
-            style: 'cancel',
-            onPress: () => setIsLoading(false)
-          },
-          {
-            text: 'Save Anyway',
-            onPress: () => saveServerConfig()
-          }
-        ]);
-        return;
-      }
-
-      await saveServerConfig();
-    } catch (error) {
-      console.error('Error saving server:', error);
-      Alert.alert('Error', 'Failed to save server configuration');
-      setIsLoading(false);
-    }
-  };
-
-  const saveServerConfig = async (): Promise<void> => {
-    try {
-      const serverService = ServerService.getInstance();
-      const saved = await serverService.saveServer(newServer);
-      if (saved) {
-        await loadServers();
-        setNewServer({
-          id: Date.now().toString(),
-          host: '',
-          username: '',
-          password: '',
-          name: '',
-        });
-        Alert.alert('Success', 'Server configuration saved successfully');
-        await serverService.setLastUsedServer(newServer.id);
-      } else {
-        Alert.alert('Error', 'Failed to save server configuration');
-      }
-    } catch (error) {
-      console.error('Error in saveServerConfig:', error);
-      Alert.alert('Error', 'Failed to save server configuration');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const deleteServer = async (serverId: string): Promise<void> => {
-    const serverToDelete = servers.find(server => server.id === serverId);
-    const serverName = serverToDelete?.name || serverToDelete?.host || 'this server';
-    
-    Alert.alert(
-      'Delete Server',
-      `Are you sure you want to delete ${serverName}?`,
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const serverService = ServerService.getInstance();
-              const deleted = await serverService.deleteServer(serverId);
-              if (deleted) {
-                await loadServers();
-                Alert.alert('Success', 'Server deleted successfully');
-              } else {
-                Alert.alert('Error', 'Failed to delete server');
-              }
-            } catch (error) {
-              console.error('Error deleting server:', error);
-              Alert.alert('Error', 'Failed to delete server');
-            }
-          },
-        },
-      ],
-      { cancelable: true }
-    );
-  };
-
-  const handleInputChange = (field: keyof ServerConfig, value: string): void => {
-    setNewServer((prev: ServerConfig) => ({
-      ...prev,
-      [field]: field === 'username' ? value.toLowerCase() : value
-    }));
-  };
-
-  const handleServerChange = async (serverId: string): Promise<void> => {
-    if (serverId === 'add_new') {
-      navigation.navigate('ServerConfig', { server: undefined });
-      return;
-    }
-
-    try {
-      const serverService = ServerService.getInstance();
-      const server = servers.find(s => s.id === serverId);
-      
-      if (server) {
-        setSelectedServer(server.id);
-        await serverService.initialize(server);
-      }
-    } catch (error) {
-      console.error('Error changing server:', error);
-      Alert.alert('Error', 'Failed to change server. Please try again.');
-    }
-  };
-
-  const handleServerSelect = async (server: ServerWithStatus): Promise<void> => {
-    setSelectedServer(server.id);
-    const serverService = ServerService.getInstance();
-    await serverService.initialize(server);
-  };
-
-  const handleEditServer = (server: ServerWithStatus): void => {
-    setSelectedServer(server.id);
-    setNewServer(server);
-  };
+  const isEditingForm = selectedServer && formData.id === selectedServer;
 
   return (
-    <ScrollView 
+    <ScrollView
       style={[styles.container, { backgroundColor: theme.colors.background.primary }]}
-      contentContainerStyle={{ flexGrow: 1 }}
+      contentContainerStyle={styles.scrollViewContent}
       bounces={false}
       overScrollMode="never"
       showsVerticalScrollIndicator={false}
     >
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: theme.colors.text.primary }]}>Server Configuration</Text>
-        <Text style={[styles.headerSubtitle, { color: theme.colors.text.primary }]}>Configure and manage your server connections</Text>
+        <Text style={[styles.headerTitle, { color: theme.colors.text.primary }]}>
+          Server Configuration
+        </Text>
+        <Text style={[styles.headerSubtitle, { color: theme.colors.text.primary }]}>
+          Configure and manage your server connections
+        </Text>
       </View>
 
+      {/* Add Server Button */}
       <View style={[styles.card, { backgroundColor: theme.colors.background.secondary }]}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.addServerButton, { backgroundColor: theme.colors.button.primary }]}
-          onPress={() => {
-            setSelectedServer('');
-            setNewServer({
-              id: Date.now().toString(),
-              host: '',
-              username: '',
-              password: '',
-              name: '',
-            });
-            setIsAddServerVisible(true);
-          }}
+          onPress={handleAddServer}
         >
-          <Text style={[styles.addServerButtonText, { color: theme.colors.button.text }]}>+ Add Server</Text>
+          <Text style={[styles.addServerButtonText, { color: theme.colors.button.text }]}>
+            + Add Server
+          </Text>
         </TouchableOpacity>
       </View>
 
-      {isAddServerVisible && (
+      {/* Add/Edit Server Form */}
+      {(!selectedServer || isEditingForm) && (
         <View style={[styles.card, { backgroundColor: theme.colors.background.secondary }]}>
           <View style={styles.editHeader}>
-            <Text style={[styles.formTitle, { color: theme.colors.text.primary }]}>Add New Server</Text>
-            <TouchableOpacity 
+            <Text style={[styles.formTitle, { color: theme.colors.text.primary }]}>
+              {isEditingForm ? 'Edit Server' : 'Add New Server'}
+            </Text>
+            <TouchableOpacity
               style={styles.cancelEditButton}
-              onPress={() => {
-                setIsAddServerVisible(false);
-                setNewServer({
-                  id: Date.now().toString(),
-                  host: '',
-                  username: '',
-                  password: '',
-                  name: '',
-                });
-              }}
+              onPress={handleCancelEdit}
             >
-              <Text style={[styles.cancelEditButtonText, { color: theme.colors.text.primary }]}>Cancel</Text>
+              <Text style={[styles.cancelEditButtonText, { color: theme.colors.text.primary }]}>
+                Cancel
+              </Text>
             </TouchableOpacity>
           </View>
-          
-          <View style={styles.inputContainer}>
-            <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>Server Name</Text>
-            <TextInput
-              style={[styles.input, { 
-                backgroundColor: theme.colors.background.primary,
-                color: theme.colors.text.primary,
-                borderColor: theme.colors.border,
-              }]}
-              placeholder="My Server"
-              placeholderTextColor={theme.colors.text.secondary}
-              value={newServer.name}
-              onChangeText={(text: string) => handleInputChange('name', text)}
-            />
-          </View>
-          
-          <View style={styles.inputContainer}>
-            <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>Host <Text style={styles.requiredStar}>*</Text></Text>
-            <TextInput
-              style={[styles.input, { 
-                backgroundColor: theme.colors.background.primary,
-                color: theme.colors.text.primary,
-                borderColor: theme.colors.border,
-              }]}
-              placeholder="localhost:8080 or 192.168.1.100:8080"
-              placeholderTextColor={theme.colors.text.secondary}
-              value={newServer.host}
-              onChangeText={(text: string) => handleInputChange('host', text)}
-              autoCapitalize="none"
-            />
-          </View>
-          
-          <View style={styles.inputContainer}>
-            <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>Username <Text style={styles.requiredStar}>*</Text></Text>
-            <TextInput
-              style={[styles.input, { 
-                backgroundColor: theme.colors.background.primary,
-                color: theme.colors.text.primary,
-                borderColor: theme.colors.border,
-              }]}
-              placeholder="admin"
-              placeholderTextColor={theme.colors.text.secondary}
-              value={newServer.username}
-              onChangeText={(text: string) => handleInputChange('username', text)}
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </View>
-          
-          <View style={styles.inputContainer}>
-            <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>Password <Text style={styles.requiredStar}>*</Text></Text>
-            <TextInput
-              style={[styles.input, { 
-                backgroundColor: theme.colors.background.primary,
-                color: theme.colors.text.primary,
-                borderColor: theme.colors.border,
-              }]}
-              placeholder="••••••••"
-              placeholderTextColor={theme.colors.text.secondary}
-              value={newServer.password}
-              onChangeText={(text: string) => handleInputChange('password', text)}
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </View>
-          
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity 
-              style={[styles.button, { backgroundColor: theme.colors.button.primary }]} 
-              onPress={testConnection}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator color={theme.colors.button.text} size="small" />
-              ) : (
-                <Text style={[styles.buttonText, { color: theme.colors.button.text }]}>Test Connection</Text>
-              )}
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={[styles.button, { backgroundColor: theme.colors.button.primary }]} 
-              onPress={saveServer}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator color={theme.colors.button.text} size="small" />
-              ) : (
-                <Text style={[styles.buttonText, { color: theme.colors.button.text }]}>Save Server</Text>
-              )}
-            </TouchableOpacity>
-          </View>
+
+          <ServerFormFields
+            formData={formData}
+            onUpdateField={updateField}
+          />
+
+          <ServerActions
+            onTest={testConnection}
+            onSave={saveServer}
+            onDelete={isEditingForm ? () => deleteServer(formData.id) : undefined}
+            isLoading={isLoading}
+            isSaving={isSaving}
+            canDelete={!!isEditingForm}
+          />
         </View>
       )}
 
+      {/* Saved Servers List */}
       {servers.length > 0 && (
         <View style={[styles.card, { backgroundColor: theme.colors.background.secondary }]}>
-          <Text style={[styles.formTitle, { color: theme.colors.text.primary }]}>Saved Servers</Text>
+          <Text style={[styles.formTitle, { color: theme.colors.text.primary }]}>
+            Saved Servers
+          </Text>
           {servers.map((server) => (
-            <View key={server.id} style={[styles.serverItemContainer, { backgroundColor: theme.colors.background.secondary }]}>
+            <View key={server.id} style={[styles.serverItemContainer]}>
               <TouchableOpacity
                 style={[
                   styles.serverItem,
-                  selectedServer === server.id && {
-                    borderColor: theme.colors.button.primary,
-                    borderWidth: 2,
-                    backgroundColor: theme.colors.button.primary + '10',
-                  },
-                  { backgroundColor: theme.colors.background.primary }
+                  selectedServer === server.id && [
+                    styles.selectedServerBorder,
+                    {
+                      borderColor: theme.colors.button.primary,
+                      backgroundColor: theme.colors.button.primary + '10',
+                    },
+                  ],
+                  { backgroundColor: theme.colors.background.primary },
                 ]}
-                onPress={() => handleServerSelect(server)}
+                onPress={() => selectServer(server)}
               >
                 <View style={styles.serverContent}>
                   <View style={styles.serverInfo}>
                     <Text style={[styles.serverName, { color: theme.colors.text.primary }]}>
-                      {server.name || "Unnamed Server"}
+                      {server.name || 'Unnamed Server'}
                     </Text>
                     <Text style={[styles.serverDetails, { color: theme.colors.text.primary }]}>
                       {server.host} • {server.username}
@@ -434,13 +154,15 @@ const ServerConfigScreen: React.FC = () => {
                 </View>
               </TouchableOpacity>
               <View style={styles.serverActions}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[styles.editButton, { backgroundColor: theme.colors.button.primary }]}
-                  onPress={() => handleEditServer(server)}
+                  onPress={() => editServer(server)}
                 >
-                  <Text style={[styles.editButtonText, { color: theme.colors.button.text }]}>✎</Text>
+                  <Text style={[styles.editButtonText, { color: theme.colors.button.text }]}>
+                    ✎
+                  </Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.deleteButton}
                   onPress={() => deleteServer(server.id)}
                 >
@@ -451,121 +173,6 @@ const ServerConfigScreen: React.FC = () => {
           ))}
         </View>
       )}
-
-      {selectedServer && newServer.id === selectedServer && (
-        <View style={[styles.card, { backgroundColor: theme.colors.background.secondary }]}>
-          <View style={styles.editHeader}>
-            <Text style={[styles.formTitle, { color: theme.colors.text.primary }]}>Edit Server</Text>
-            <TouchableOpacity 
-              style={styles.cancelEditButton}
-              onPress={() => {
-                setSelectedServer('');
-                setNewServer({
-                  id: Date.now().toString(),
-                  host: '',
-                  username: '',
-                  password: '',
-                  name: '',
-                });
-              }}
-            >
-              <Text style={[styles.cancelEditButtonText, { color: theme.colors.text.primary }]}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-          
-          <View style={styles.inputContainer}>
-            <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>Server Name</Text>
-            <TextInput
-              style={[styles.input, { 
-                backgroundColor: theme.colors.background.primary,
-                color: theme.colors.text.primary,
-                borderColor: theme.colors.border,
-              }]}
-              placeholder="My Server"
-              placeholderTextColor={theme.colors.text.secondary}
-              value={newServer.name}
-              onChangeText={(text: string) => handleInputChange('name', text)}
-            />
-          </View>
-          
-          <View style={styles.inputContainer}>
-            <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>Host <Text style={styles.requiredStar}>*</Text></Text>
-            <TextInput
-              style={[styles.input, { 
-                backgroundColor: theme.colors.background.primary,
-                color: theme.colors.text.primary,
-                borderColor: theme.colors.border,
-              }]}
-              placeholder="localhost:8080 or 192.168.1.100:8080"
-              placeholderTextColor={theme.colors.text.secondary}
-              value={newServer.host}
-              onChangeText={(text: string) => handleInputChange('host', text)}
-              autoCapitalize="none"
-            />
-          </View>
-          
-          <View style={styles.inputContainer}>
-            <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>Username <Text style={styles.requiredStar}>*</Text></Text>
-            <TextInput
-              style={[styles.input, { 
-                backgroundColor: theme.colors.background.primary,
-                color: theme.colors.text.primary,
-                borderColor: theme.colors.border,
-              }]}
-              placeholder="admin"
-              placeholderTextColor={theme.colors.text.secondary}
-              value={newServer.username}
-              onChangeText={(text: string) => handleInputChange('username', text)}
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </View>
-          
-          <View style={styles.inputContainer}>
-            <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>Password <Text style={styles.requiredStar}>*</Text></Text>
-            <TextInput
-              style={[styles.input, { 
-                backgroundColor: theme.colors.background.primary,
-                color: theme.colors.text.primary,
-                borderColor: theme.colors.border,
-              }]}
-              placeholder="••••••••"
-              placeholderTextColor={theme.colors.text.secondary}
-              value={newServer.password}
-              onChangeText={(text: string) => handleInputChange('password', text)}
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </View>
-          
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity 
-              style={[styles.button, { backgroundColor: theme.colors.button.primary }]} 
-              onPress={testConnection}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator color={theme.colors.button.text} size="small" />
-              ) : (
-                <Text style={[styles.buttonText, { color: theme.colors.button.text }]}>Test Connection</Text>
-              )}
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={[styles.button, { backgroundColor: theme.colors.button.primary }]} 
-              onPress={saveServer}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator color={theme.colors.button.text} size="small" />
-              ) : (
-                <Text style={[styles.buttonText, { color: theme.colors.button.text }]}>Update Server</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
     </ScrollView>
   );
 };
@@ -573,6 +180,9 @@ const ServerConfigScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  scrollViewContent: {
+    flexGrow: 1,
   },
   header: {
     padding: 20,
@@ -596,6 +206,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
+    marginHorizontal: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
@@ -607,114 +218,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 16,
     color: '#333',
-  },
-  inputContainer: {
-    marginBottom: 16,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#555',
-    marginBottom: 6,
-  },
-  requiredStar: {
-    color: '#FF3B30',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#E1E1E1',
-    padding: 14,
-    borderRadius: 8,
-    backgroundColor: '#FAFAFA',
-    fontSize: 16,
-    color: '#333',
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
-  },
-  button: {
-    flex: 1,
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginHorizontal: 5,
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  serverItemContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  serverItem: {
-    flex: 1,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#E1E1E1',
-    borderRadius: 10,
-    backgroundColor: '#FAFAFA',
-  },
-  serverContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  serverInfo: {
-    flex: 1,
-  },
-  serverName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 2,
-  },
-  serverDetails: {
-    fontSize: 14,
-    color: '#666',
-  },
-  deleteButton: {
-    padding: 12,
-    backgroundColor: '#FF3B30',
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: 44,
-    width: 44,
-  },
-  deleteButtonText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    lineHeight: 20,
-    color: '#FFFFFF',
-  },
-  serverActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 10,
-  },
-  editButton: {
-    padding: 12,
-    marginRight: 10,
-    backgroundColor: '#FFF0F0',
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: 44,
-    width: 44,
-  },
-  editButtonText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    lineHeight: 20,
   },
   editHeader: {
     flexDirection: 'row',
@@ -738,6 +241,77 @@ const styles = StyleSheet.create({
   addServerButtonText: {
     fontSize: 18,
     fontWeight: '600',
+  },
+  serverItemContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  serverItem: {
+    flex: 1,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E1E1E1',
+    borderRadius: 10,
+    backgroundColor: '#FAFAFA',
+  },
+  selectedServerBorder: {
+    borderWidth: 2,
+  },
+  serverContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  serverInfo: {
+    flex: 1,
+  },
+  serverName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 2,
+  },
+  serverDetails: {
+    fontSize: 14,
+    color: '#666',
+  },
+  serverActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 10,
+  },
+  editButton: {
+    padding: 12,
+    marginRight: 10,
+    backgroundColor: '#FFF0F0',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 44,
+    width: 44,
+  },
+  editButtonText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  deleteButton: {
+    padding: 12,
+    backgroundColor: '#FF3B30',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 44,
+    width: 44,
+  },
+  deleteButtonText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    lineHeight: 20,
+    color: '#FFFFFF',
   },
 });
 

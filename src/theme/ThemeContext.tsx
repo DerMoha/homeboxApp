@@ -25,7 +25,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       try {
         const savedMode = await AsyncStorage.getItem('themeMode');
         const savedColors = await AsyncStorage.getItem('customColors');
-        
+
         if (savedMode) {
           setThemeMode(savedMode as ThemeMode);
         }
@@ -61,7 +61,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const getCurrentTheme = () => {
     let baseTheme: Theme;
-    
+
     switch (themeMode) {
       case 'light':
         baseTheme = lightTheme;
@@ -115,4 +115,4 @@ export const useTheme = () => {
     throw new Error('useTheme must be used within a ThemeProvider');
   }
   return context;
-}; 
+};

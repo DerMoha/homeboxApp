@@ -1,17 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Switch,
   ScrollView,
-  SafeAreaView,
   TouchableOpacity,
   Animated,
 } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS } from '../constants/storage';
+import { logger } from '../utils/logger';
 
 interface DisplayPreference {
   id: string;
@@ -39,26 +39,22 @@ const InventorySettingsScreen: React.FC = () => {
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const [draggedItem, setDraggedItem] = useState<number | null>(null);
 
-  useEffect(() => {
-    loadPreferences();
-  }, []);
-
-  const loadPreferences = async () => {
+  const loadPreferences = useCallback(async () => {
     try {
       const savedPreferences = await AsyncStorage.getItem(STORAGE_KEYS.INVENTORY_DISPLAY_PREFERENCES);
-      console.log('Loading preferences from storage:', savedPreferences);
-      
+      logger.log('Loading preferences from storage:', savedPreferences);
+
       if (savedPreferences) {
         const parsedPreferences = JSON.parse(savedPreferences);
         // Ensure core preferences are in the correct order
         const corePreferences = defaultPreferences.filter(p => p.isCore);
         const nonCorePreferences = parsedPreferences.filter((p: DisplayPreference) => !p.isCore);
         const mergedPreferences = [...corePreferences, ...nonCorePreferences];
-        console.log('Loaded preferences:', mergedPreferences);
+        logger.log('Loaded preferences:', mergedPreferences);
         setPreferences(mergedPreferences);
         setIsFirstLoad(false);
       } else {
-        console.log('No saved preferences, using defaults:', defaultPreferences);
+        logger.log('No saved preferences, using defaults:', defaultPreferences);
         setPreferences(defaultPreferences);
         if (isFirstLoad) {
           await AsyncStorage.setItem(STORAGE_KEYS.INVENTORY_DISPLAY_PREFERENCES, JSON.stringify(defaultPreferences));
@@ -66,54 +62,38 @@ const InventorySettingsScreen: React.FC = () => {
         }
       }
     } catch (error) {
-      console.error('Error loading preferences:', error);
+      logger.error('Error loading preferences:', error);
     }
-  };
+  }, [isFirstLoad]);
+
+  useEffect(() => {
+    loadPreferences();
+  }, [loadPreferences]);
 
   const savePreferences = async (newPreferences: DisplayPreference[]) => {
     try {
-      console.log('Saving preferences:', newPreferences);
+      logger.log('Saving preferences:', newPreferences);
       await AsyncStorage.setItem(STORAGE_KEYS.INVENTORY_DISPLAY_PREFERENCES, JSON.stringify(newPreferences));
       setPreferences(newPreferences);
     } catch (error) {
-      console.error('Error saving preferences:', error);
+      logger.error('Error saving preferences:', error);
     }
   };
 
   const resetToDefaults = async () => {
     try {
-      console.log('Resetting to default preferences');
+      logger.log('Resetting to default preferences');
       await AsyncStorage.setItem(STORAGE_KEYS.INVENTORY_DISPLAY_PREFERENCES, JSON.stringify(defaultPreferences));
       setPreferences(defaultPreferences);
     } catch (error) {
-      console.error('Error resetting preferences:', error);
+      logger.error('Error resetting preferences:', error);
     }
   };
 
   const togglePreference = (id: string) => {
-    const newPreferences = preferences.map(pref => 
+    const newPreferences = preferences.map(pref =>
       pref.id === id ? { ...pref, enabled: !pref.enabled } : pref
     );
-    savePreferences(newPreferences);
-  };
-
-  const moveItem = (fromIndex: number, toIndex: number) => {
-    const corePreferences = preferences.filter(p => p.isCore);
-    const nonCorePreferences = preferences.filter(p => !p.isCore);
-    
-    // Adjust indices for non-core items
-    const adjustedFromIndex = fromIndex - corePreferences.length;
-    const adjustedToIndex = toIndex - corePreferences.length;
-    
-    if (adjustedFromIndex < 0 || adjustedToIndex < 0) {
-      return; // Don't move core items
-    }
-
-    const newNonCorePreferences = [...nonCorePreferences];
-    const [movedItem] = newNonCorePreferences.splice(adjustedFromIndex, 1);
-    newNonCorePreferences.splice(adjustedToIndex, 0, movedItem);
-
-    const newPreferences = [...corePreferences, ...newNonCorePreferences];
     savePreferences(newPreferences);
   };
 
@@ -128,7 +108,7 @@ const InventorySettingsScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { color: theme.colors.text.primary }]}>Inventory Display</Text>
         <Text style={[styles.headerSubtitle, { color: theme.colors.text.secondary }]}>
@@ -136,7 +116,7 @@ const InventorySettingsScreen: React.FC = () => {
         </Text>
       </View>
 
-      <ScrollView 
+      <ScrollView
         style={[styles.scrollView, { backgroundColor: theme.colors.background.primary }]}
         contentContainerStyle={styles.contentContainer}
       >
@@ -147,14 +127,14 @@ const InventorySettingsScreen: React.FC = () => {
           </Text>
           <View style={styles.preferencesContainer}>
             {preferences.filter(p => p.isCore).map((preference) => (
-              <View 
+              <View
                 key={preference.id}
                 style={[
                   styles.preferenceItem,
-                  { 
+                  {
                     backgroundColor: theme.colors.background.secondary,
                     borderColor: theme.colors.border,
-                  }
+                  },
                 ]}
               >
                 <Text style={[styles.preferenceLabel, { color: theme.colors.text.primary }]}>
@@ -171,7 +151,7 @@ const InventorySettingsScreen: React.FC = () => {
           </View>
         </View>
 
-        <View style={[styles.section, { marginTop: 24 }]}>
+        <View style={styles.additionalAttributesSection}>
           <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Additional Attributes</Text>
           <Text style={[styles.sectionSubtitle, { color: theme.colors.text.secondary }]}>
             Optional information that can be reordered
@@ -182,14 +162,14 @@ const InventorySettingsScreen: React.FC = () => {
                 key={preference.id}
                 style={[
                   styles.preferenceItem,
-                  { 
+                  {
                     backgroundColor: theme.colors.background.secondary,
                     borderColor: theme.colors.border,
                     opacity: draggedItem === index ? 0.5 : 1,
                     transform: [
-                      { translateY: draggedItem === index ? 10 : 0 }
-                    ]
-                  }
+                      { translateY: draggedItem === index ? 10 : 0 },
+                    ],
+                  },
                 ]}
               >
                 <TouchableOpacity
@@ -223,7 +203,7 @@ const InventorySettingsScreen: React.FC = () => {
           </Text>
         </TouchableOpacity>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -253,6 +233,10 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   section: {
+    marginBottom: 16,
+  },
+  additionalAttributesSection: {
+    marginTop: 24,
     marginBottom: 16,
   },
   sectionTitle: {
@@ -303,4 +287,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default InventorySettingsScreen; 
+export default InventorySettingsScreen;
