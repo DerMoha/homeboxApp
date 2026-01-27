@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, Switch, StyleSheet, Alert } from 'react-native';
+import React, {useState, useEffect} from 'react';
+import {View, Text, Switch, StyleSheet, Alert, ScrollView} from 'react-native';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Slider from '@react-native-community/slider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useTheme } from '../theme/ThemeContext';
-import { logger } from '../utils/logger';
+import {useTheme} from '../theme/ThemeContext';
+import {Button} from '../components/common/Button';
+import {logger} from '../utils/logger';
 
 const STORAGE_KEY = '@add_item_fields';
 const IMAGE_QUALITY_KEY = '@image_quality';
-const DEFAULT_IMAGE_QUALITY = 0.8; // 80% quality by default
+const DEFAULT_IMAGE_QUALITY = 0.8;
 
 interface FieldConfig {
   id: string;
@@ -16,16 +18,40 @@ interface FieldConfig {
 }
 
 const DEFAULT_FIELDS: FieldConfig[] = [
-  { id: 'description', label: 'Description', enabled: true },
-  { id: 'purchasePrice', label: 'Purchase Price', enabled: false },
-  { id: 'insured', label: 'Insured', enabled: false },
-  { id: 'labels', label: 'Labels', enabled: true },
+  {id: 'description', label: 'Description', enabled: true},
+  {id: 'purchasePrice', label: 'Purchase Price', enabled: false},
+  {id: 'insured', label: 'Insured', enabled: false},
+  {id: 'labels', label: 'Labels', enabled: true},
 ];
 
+const FIELD_ICONS: Record<string, string> = {
+  description: 'notes',
+  purchasePrice: 'attach-money',
+  insured: 'verified',
+  labels: 'label',
+};
+
 const AddItemSettingsScreen: React.FC = () => {
-  const { theme } = useTheme();
+  const {theme} = useTheme();
   const [fields, setFields] = useState(DEFAULT_FIELDS);
   const [imageQuality, setImageQuality] = useState(DEFAULT_IMAGE_QUALITY);
+  const qualityPercent = Math.round(imageQuality * 100);
+
+  const cardStyle = [
+    styles.card,
+    {
+      backgroundColor: theme.colors.card.background,
+      borderColor: theme.colors.card.border,
+      borderRadius: theme.borderRadius.lg,
+    },
+    theme.shadows.sm,
+  ];
+
+  const cardStyleWithMargin = [...cardStyle, {marginTop: theme.spacing.lg}];
+  const headerIconStyle = [
+    styles.headerIcon,
+    {backgroundColor: theme.colors.accent.muted},
+  ];
 
   useEffect(() => {
     loadSettings();
@@ -38,9 +64,10 @@ const AddItemSettingsScreen: React.FC = () => {
 
       if (savedFields) {
         const parsedFields: FieldConfig[] = JSON.parse(savedFields);
-        // Ensure all default fields are present
         const updatedFields = DEFAULT_FIELDS.map(defaultField => {
-          const savedField = parsedFields.find((f: FieldConfig) => f.id === defaultField.id);
+          const savedField = parsedFields.find(
+            (field: FieldConfig) => field.id === defaultField.id,
+          );
           return savedField || defaultField;
         });
         setFields(updatedFields);
@@ -51,14 +78,17 @@ const AddItemSettingsScreen: React.FC = () => {
       }
     } catch (error) {
       logger.error('Error loading settings:', error);
-      // If there's an error, use default values
       setFields(DEFAULT_FIELDS);
       setImageQuality(DEFAULT_IMAGE_QUALITY);
     }
   };
 
   const handleToggle = (id: string) => {
-    setFields(f => f.map(field => field.id === id ? { ...field, enabled: !field.enabled } : field));
+    setFields(current =>
+      current.map(field =>
+        field.id === id ? {...field, enabled: !field.enabled} : field,
+      ),
+    );
   };
 
   const handleQualityChange = (value: number) => {
@@ -77,68 +107,236 @@ const AddItemSettingsScreen: React.FC = () => {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
-      <Text style={[styles.header, { color: theme.colors.text.primary }]}>Customize Optional Fields</Text>
-      {fields.map(field => (
-        <View style={styles.fieldRow} key={field.id}>
-          <Text style={[styles.fieldLabel, { color: theme.colors.text.primary }]}>{field.label}</Text>
-          <View style={styles.switchContainer}>
-            <Text style={[styles.switchLabel, { color: theme.colors.text.secondary }]}>Visible</Text>
+    <ScrollView
+      style={[
+        styles.container,
+        {backgroundColor: theme.colors.background.primary},
+      ]}
+      contentContainerStyle={[
+        styles.content,
+        {paddingHorizontal: theme.spacing.md, paddingBottom: theme.spacing.xl},
+      ]}
+      showsVerticalScrollIndicator={false}>
+      <View style={styles.header}>
+        <View style={headerIconStyle}>
+          <MaterialIcons
+            name="tune"
+            size={20}
+            color={theme.colors.accent.primary}
+          />
+        </View>
+        <Text
+          style={[
+            styles.title,
+            {
+              color: theme.colors.text.primary,
+              fontSize: theme.typography.sizes.xl,
+              fontWeight: theme.typography.weights.semibold,
+            },
+          ]}>
+          Item Settings
+        </Text>
+        <Text style={[styles.subtitle, {color: theme.colors.text.secondary}]}>
+          Choose which optional fields appear when creating items.
+        </Text>
+      </View>
+
+      <View style={cardStyle}>
+        <View style={styles.cardHeader}>
+          <MaterialIcons
+            name="view-list"
+            size={16}
+            color={theme.colors.accent.primary}
+          />
+          <Text
+            style={[
+              styles.cardTitle,
+              {
+                color: theme.colors.text.primary,
+                fontSize: theme.typography.sizes.sm,
+                fontWeight: theme.typography.weights.semibold,
+                letterSpacing: theme.typography.letterSpacing.wide,
+              },
+            ]}>
+            OPTIONAL FIELDS
+          </Text>
+        </View>
+        {fields.map((field, index) => (
+          <View
+            key={field.id}
+            style={[
+              styles.fieldRow,
+              {borderBottomColor: theme.colors.borderSubtle},
+              index === fields.length - 1 && styles.fieldRowLast,
+            ]}>
+            <View style={styles.fieldLabelRow}>
+              <View
+                style={[
+                  styles.fieldIcon,
+                  {
+                    backgroundColor: theme.colors.background.tertiary,
+                    borderRadius: theme.borderRadius.sm,
+                  },
+                ]}>
+                <MaterialIcons
+                  name={FIELD_ICONS[field.id] ?? 'tune'}
+                  size={16}
+                  color={theme.colors.text.secondary}
+                />
+              </View>
+              <Text
+                style={[
+                  styles.fieldLabel,
+                  {
+                    color: theme.colors.text.primary,
+                    fontSize: theme.typography.sizes.md,
+                  },
+                ]}>
+                {field.label}
+              </Text>
+            </View>
             <Switch
               value={field.enabled}
               onValueChange={() => handleToggle(field.id)}
-              trackColor={{ false: theme.colors.border, true: theme.colors.button.primary }}
-              thumbColor={field.enabled ? theme.colors.button.primary : theme.colors.border}
+              trackColor={{
+                false: theme.colors.border,
+                true: theme.colors.accent.primary,
+              }}
+              thumbColor={
+                field.enabled
+                  ? theme.colors.accent.primary
+                  : theme.colors.border
+              }
             />
           </View>
-        </View>
-      ))}
+        ))}
+      </View>
 
-      {/* Image Quality Section */}
-      <View style={styles.qualitySection}>
-        <Text style={[styles.qualityHeader, { color: theme.colors.text.primary }]}>Image Quality</Text>
-        <Text style={[styles.qualityDescription, { color: theme.colors.text.secondary }]}>
-          Adjust the quality of uploaded images to save storage space
-        </Text>
-        <View style={styles.sliderContainer}>
-          <Slider
-            style={styles.slider}
-            minimumValue={0.1}
-            maximumValue={1}
-            step={0.1}
-            value={imageQuality}
-            onValueChange={handleQualityChange}
-            minimumTrackTintColor={theme.colors.button.primary}
-            maximumTrackTintColor={theme.colors.border}
-            thumbTintColor={theme.colors.button.primary}
-          />
-          <Text style={[styles.qualityValue, { color: theme.colors.text.primary }]}>
-            {Math.round(imageQuality * 100)}%
+      <View style={cardStyleWithMargin}>
+        <View style={styles.qualityHeader}>
+          <View style={styles.qualityTitleRow}>
+            <MaterialIcons
+              name="photo"
+              size={16}
+              color={theme.colors.accent.primary}
+            />
+            <View>
+              <Text
+                style={[
+                  styles.cardTitle,
+                  {
+                    color: theme.colors.text.primary,
+                    fontSize: theme.typography.sizes.sm,
+                    fontWeight: theme.typography.weights.semibold,
+                  },
+                ]}>
+                Image Quality
+              </Text>
+              <Text
+                style={[
+                  styles.qualitySubtitle,
+                  {color: theme.colors.text.secondary},
+                ]}>
+                Balance clarity and storage size.
+              </Text>
+            </View>
+          </View>
+          <View
+            style={[
+              styles.qualityBadge,
+              {
+                backgroundColor: theme.colors.accent.muted,
+                borderRadius: theme.borderRadius.full,
+              },
+            ]}>
+            <Text
+              style={[
+                styles.qualityBadgeText,
+                {color: theme.colors.accent.primary},
+              ]}>
+              {qualityPercent}%
+            </Text>
+          </View>
+        </View>
+
+        <Slider
+          style={styles.slider}
+          minimumValue={0.1}
+          maximumValue={1}
+          step={0.1}
+          value={imageQuality}
+          onValueChange={handleQualityChange}
+          minimumTrackTintColor={theme.colors.accent.primary}
+          maximumTrackTintColor={theme.colors.border}
+          thumbTintColor={theme.colors.accent.primary}
+        />
+        <View style={styles.qualityRange}>
+          <Text
+            style={[
+              styles.qualityRangeText,
+              {color: theme.colors.text.tertiary},
+            ]}>
+            Smaller
+          </Text>
+          <Text
+            style={[
+              styles.qualityRangeText,
+              {color: theme.colors.text.tertiary},
+            ]}>
+            Higher quality
           </Text>
         </View>
       </View>
 
-      <View style={styles.buttonContainer}>
-        <Text
-          style={[styles.saveButton, { color: theme.colors.button.primary }]}
+      <View style={[styles.actions, {marginTop: theme.spacing.xl}]}>
+        <Button
+          title="Save Settings"
+          icon="save"
           onPress={saveSettings}
-        >
-          Save Settings
-        </Text>
+          fullWidth
+        />
       </View>
-    </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+  },
+  content: {
+    paddingTop: 12,
   },
   header: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    marginTop: 8,
     marginBottom: 20,
+  },
+  headerIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  title: {
+    marginBottom: 6,
+  },
+  subtitle: {
+    fontSize: 14,
+  },
+  card: {
+    borderWidth: 1,
+    padding: 16,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  cardTitle: {
+    textTransform: 'uppercase',
   },
   fieldRow: {
     flexDirection: 'row',
@@ -146,58 +344,59 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
+  },
+  fieldRowLast: {
+    borderBottomWidth: 0,
+  },
+  fieldLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  fieldIcon: {
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   fieldLabel: {
-    fontSize: 16,
     fontWeight: '500',
-  },
-  switchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  switchLabel: {
-    fontSize: 14,
-  },
-  qualitySection: {
-    marginTop: 24,
-    paddingVertical: 16,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.1)',
   },
   qualityHeader: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  qualityDescription: {
-    fontSize: 14,
-    marginBottom: 16,
-  },
-  sliderContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  qualityTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  qualitySubtitle: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  qualityBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  qualityBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   slider: {
-    flex: 1,
     height: 40,
   },
-  qualityValue: {
-    fontSize: 16,
-    fontWeight: '500',
-    minWidth: 48,
-    textAlign: 'right',
+  qualityRange: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
-  buttonContainer: {
-    marginTop: 24,
-    alignItems: 'center',
+  qualityRangeText: {
+    fontSize: 12,
   },
-  saveButton: {
-    fontSize: 16,
-    fontWeight: '600',
-    padding: 12,
+  actions: {
+    paddingBottom: 16,
   },
 });
 

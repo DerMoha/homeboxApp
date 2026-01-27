@@ -1,8 +1,14 @@
-import React, { useRef, useEffect } from 'react';
-import { View, Text, Modal, TouchableOpacity, StyleSheet, Animated } from 'react-native';
+import React, {useRef, useEffect} from 'react';
+import {
+  Text,
+  Modal,
+  TouchableOpacity,
+  StyleSheet,
+  Animated,
+} from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import { useTheme } from '../../theme/ThemeContext';
-import { SortOption } from '../../hooks/useInventoryData';
+import {useTheme} from '../../theme/ThemeContext';
+import {SortOption} from '../../hooks/useInventoryData';
 
 interface SortModalProps {
   visible: boolean;
@@ -17,11 +23,11 @@ interface SortOptionConfig {
 }
 
 const SORT_OPTIONS: SortOptionConfig[] = [
-  { value: 'name', label: 'Name' },
-  { value: 'quantity', label: 'Quantity' },
-  { value: 'createdAt', label: 'Created Date' },
-  { value: 'updatedAt', label: 'Updated Date' },
-  { value: 'location', label: 'Location' },
+  {value: 'name', label: 'Name'},
+  {value: 'quantity', label: 'Quantity'},
+  {value: 'createdAt', label: 'Created Date'},
+  {value: 'updatedAt', label: 'Updated Date'},
+  {value: 'location', label: 'Location'},
 ];
 
 export const SortModal: React.FC<SortModalProps> = ({
@@ -30,7 +36,7 @@ export const SortModal: React.FC<SortModalProps> = ({
   onClose,
   onSelectSort,
 }) => {
-  const { theme } = useTheme();
+  const {theme} = useTheme();
   const slideAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -85,10 +91,13 @@ export const SortModal: React.FC<SortModalProps> = ({
       animationType="none"
       transparent={true}
       visible={visible}
-      onRequestClose={onClose}
-    >
-      <Animated.View style={[styles.modalOverlay, { opacity: fadeAnim }]}>
-        <TouchableOpacity style={styles.backdropTouchable} onPress={onClose} activeOpacity={1} />
+      onRequestClose={onClose}>
+      <Animated.View style={[styles.modalOverlay, {opacity: fadeAnim}]}>
+        <TouchableOpacity
+          style={styles.backdropTouchable}
+          onPress={onClose}
+          activeOpacity={1}
+        />
         <Animated.View
           style={[
             styles.modalContent,
@@ -96,12 +105,11 @@ export const SortModal: React.FC<SortModalProps> = ({
               backgroundColor: theme.colors.card.background,
               borderRadius: theme.borderRadius.xl,
               padding: theme.spacing.lg,
-              transform: [{ translateY }, { scale }],
+              transform: [{translateY}, {scale}],
               opacity: slideAnim,
             },
             theme.shadows.lg,
-          ]}
-        >
+          ]}>
           <Text
             style={[
               styles.modalTitle,
@@ -111,8 +119,7 @@ export const SortModal: React.FC<SortModalProps> = ({
                 fontWeight: theme.typography.weights.semibold,
                 marginBottom: theme.spacing.md,
               },
-            ]}
-          >
+            ]}>
             Sort By
           </Text>
 
@@ -124,31 +131,42 @@ export const SortModal: React.FC<SortModalProps> = ({
                 style={[
                   styles.sortOption,
                   {
-                    backgroundColor: isSelected ? theme.colors.accent.muted : 'transparent',
+                    backgroundColor: isSelected
+                      ? theme.colors.accent.muted
+                      : 'transparent',
                     borderRadius: theme.borderRadius.md,
                     borderWidth: 1,
-                    borderColor: isSelected ? theme.colors.accent.primary : theme.colors.border,
+                    borderColor: isSelected
+                      ? theme.colors.accent.primary
+                      : theme.colors.border,
                     padding: theme.spacing.md,
-                    marginBottom: index === SORT_OPTIONS.length - 1 ? 0 : theme.spacing.sm,
+                    marginBottom:
+                      index === SORT_OPTIONS.length - 1 ? 0 : theme.spacing.sm,
                   },
                 ]}
                 onPress={() => handleSelectSort(option.value)}
-                activeOpacity={0.7}
-              >
+                activeOpacity={0.7}>
                 <Text
                   style={[
                     styles.sortOptionText,
                     {
-                      color: isSelected ? theme.colors.accent.primary : theme.colors.text.primary,
+                      color: isSelected
+                        ? theme.colors.accent.primary
+                        : theme.colors.text.primary,
                       fontSize: theme.typography.sizes.lg,
-                      fontWeight: isSelected ? theme.typography.weights.semibold : theme.typography.weights.regular,
+                      fontWeight: isSelected
+                        ? theme.typography.weights.semibold
+                        : theme.typography.weights.regular,
                     },
-                  ]}
-                >
+                  ]}>
                   {option.label}
                 </Text>
                 {isSelected && (
-                  <MaterialIcons name="check" size={22} color={theme.colors.accent.primary} />
+                  <MaterialIcons
+                    name="check"
+                    size={22}
+                    color={theme.colors.accent.primary}
+                  />
                 )}
               </TouchableOpacity>
             );
@@ -167,8 +185,7 @@ export const SortModal: React.FC<SortModalProps> = ({
               },
             ]}
             onPress={onClose}
-            activeOpacity={0.7}
-          >
+            activeOpacity={0.7}>
             <Text
               style={[
                 styles.modalCloseButtonText,
@@ -177,8 +194,7 @@ export const SortModal: React.FC<SortModalProps> = ({
                   fontSize: theme.typography.sizes.lg,
                   fontWeight: theme.typography.weights.medium,
                 },
-              ]}
-            >
+              ]}>
               Close
             </Text>
           </TouchableOpacity>

@@ -1,7 +1,7 @@
-import React, { useCallback, useRef } from 'react';
-import { View, TouchableOpacity, StyleSheet, Animated } from 'react-native';
+import React, {useCallback, useRef} from 'react';
+import {View, TouchableOpacity, StyleSheet, Animated} from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import { useTheme } from '../../theme/ThemeContext';
+import {useTheme} from '../../theme/ThemeContext';
 
 export type ViewMode = 'list' | 'grid';
 
@@ -35,9 +35,14 @@ export const InventoryHeader: React.FC<InventoryHeaderProps> = ({
   onDecreaseZoom,
   onOpenSort,
 }) => {
-  const { theme } = useTheme();
+  const {theme} = useTheme();
 
-  const AnimatedButton: React.FC<AnimatedButtonProps> = ({ onPress, disabled = false, isActive = false, icon }) => {
+  const AnimatedButton: React.FC<AnimatedButtonProps> = ({
+    onPress,
+    disabled = false,
+    isActive = false,
+    icon,
+  }) => {
     const scaleAnim = useRef(new Animated.Value(1)).current;
 
     const handlePressIn = useCallback(() => {
@@ -47,7 +52,7 @@ export const InventoryHeader: React.FC<InventoryHeaderProps> = ({
         tension: 100,
         friction: 10,
       }).start();
-    }, []);
+    }, [scaleAnim]);
 
     const handlePressOut = useCallback(() => {
       Animated.spring(scaleAnim, {
@@ -56,18 +61,22 @@ export const InventoryHeader: React.FC<InventoryHeaderProps> = ({
         tension: 100,
         friction: 10,
       }).start();
-    }, []);
+    }, [scaleAnim]);
 
     return (
-      <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+      <Animated.View style={{transform: [{scale: scaleAnim}]}}>
         <TouchableOpacity
           style={[
             styles.headerButton,
             {
-              backgroundColor: isActive ? theme.colors.accent.primary : theme.colors.background.elevated,
+              backgroundColor: isActive
+                ? theme.colors.accent.primary
+                : theme.colors.background.elevated,
               borderRadius: theme.borderRadius.md,
               borderWidth: 1,
-              borderColor: isActive ? theme.colors.accent.primary : theme.colors.border,
+              borderColor: isActive
+                ? theme.colors.accent.primary
+                : theme.colors.border,
               opacity: disabled ? 0.4 : 1,
             },
           ]}
@@ -75,12 +84,13 @@ export const InventoryHeader: React.FC<InventoryHeaderProps> = ({
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
           disabled={disabled}
-          activeOpacity={1}
-        >
+          activeOpacity={1}>
           <MaterialIcons
             name={icon}
             size={20}
-            color={isActive ? theme.colors.text.inverse : theme.colors.text.primary}
+            color={
+              isActive ? theme.colors.text.inverse : theme.colors.text.primary
+            }
           />
         </TouchableOpacity>
       </Animated.View>
@@ -88,7 +98,7 @@ export const InventoryHeader: React.FC<InventoryHeaderProps> = ({
   };
 
   return (
-    <View style={[styles.headerControls, { gap: theme.spacing.sm }]}>
+    <View style={[styles.headerControls, {gap: theme.spacing.sm}]}>
       {viewMode === 'grid' ? (
         <>
           <AnimatedButton
@@ -121,11 +131,7 @@ export const InventoryHeader: React.FC<InventoryHeaderProps> = ({
         icon={viewMode === 'list' ? 'grid-view' : 'view-list'}
         isActive={false}
       />
-      <AnimatedButton
-        onPress={onOpenSort}
-        icon="sort"
-        isActive={false}
-      />
+      <AnimatedButton onPress={onOpenSort} icon="sort" isActive={false} />
     </View>
   );
 };

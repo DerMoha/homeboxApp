@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, {useRef} from 'react';
 import {
   Pressable,
   Text,
@@ -8,7 +8,7 @@ import {
   Animated,
 } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import { useTheme } from '../../theme/ThemeContext';
+import {useTheme} from '../../theme/ThemeContext';
 
 type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
 type ButtonSize = 'small' | 'medium' | 'large';
@@ -36,40 +36,25 @@ export const Button: React.FC<ButtonProps> = ({
   fullWidth = false,
   style,
 }) => {
-  const { theme } = useTheme();
+  const {theme} = useTheme();
   const scaleAnim = useRef(new Animated.Value(1)).current;
-  const borderOpacity = useRef(new Animated.Value(0)).current;
 
   const handlePressIn = () => {
-    Animated.parallel([
-      Animated.spring(scaleAnim, {
-        toValue: 0.97,
-        useNativeDriver: true,
-        speed: 50,
-        bounciness: 4,
-      }),
-      Animated.timing(borderOpacity, {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: false,
-      }),
-    ]).start();
+    Animated.spring(scaleAnim, {
+      toValue: 0.97,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 4,
+    }).start();
   };
 
   const handlePressOut = () => {
-    Animated.parallel([
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        useNativeDriver: true,
-        speed: 50,
-        bounciness: 4,
-      }),
-      Animated.timing(borderOpacity, {
-        toValue: 0,
-        duration: 150,
-        useNativeDriver: false,
-      }),
-    ]).start();
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 4,
+    }).start();
   };
 
   const getBackgroundColor = (): string => {
@@ -170,31 +155,26 @@ export const Button: React.FC<ButtonProps> = ({
     }
   };
 
-  const ghostBorderColor = borderOpacity.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['transparent', theme.colors.border],
-  });
-
   return (
     <Animated.View
       style={[
-        { transform: [{ scale: scaleAnim }] },
+        {transform: [{scale: scaleAnim}]},
         fullWidth && styles.fullWidth,
-      ]}
-    >
+      ]}>
       <Pressable
         onPress={onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         disabled={disabled || loading}
-        style={({ pressed }) => [
+        style={({pressed}) => [
           styles.button,
           {
             backgroundColor: getBackgroundColor(),
             height: getHeight(),
             paddingHorizontal: getPaddingHorizontal(),
             borderRadius: getBorderRadius(),
-            borderWidth: variant === 'ghost' || variant === 'secondary' ? 1.5 : 0,
+            borderWidth:
+              variant === 'ghost' || variant === 'secondary' ? 1.5 : 0,
             borderColor:
               variant === 'ghost'
                 ? pressed
@@ -205,8 +185,7 @@ export const Button: React.FC<ButtonProps> = ({
             ...(variant === 'primary' && !disabled ? theme.shadows.sm : {}),
           },
           style,
-        ]}
-      >
+        ]}>
         {loading ? (
           <ActivityIndicator color={getTextColor()} size="small" />
         ) : (
@@ -228,8 +207,7 @@ export const Button: React.FC<ButtonProps> = ({
                   fontWeight: theme.typography.weights.semibold as any,
                   letterSpacing: theme.typography.letterSpacing.wide,
                 },
-              ]}
-            >
+              ]}>
               {title.toUpperCase()}
             </Text>
           </>

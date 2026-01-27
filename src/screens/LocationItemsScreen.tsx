@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, {useEffect, useCallback} from 'react';
 import {
   View,
   Text,
@@ -8,40 +8,38 @@ import {
   RefreshControl,
   Image,
 } from 'react-native';
-import { useTheme } from '../theme/ThemeContext';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import {useTheme} from '../theme/ThemeContext';
+import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import ServerService from '../services/serverService';
-import { logger } from '../utils/logger';
-import { getImageSource } from '../utils/imageUtils';
-import { useAsyncState } from '../hooks/useAsyncState';
-import { LoadingState, ErrorState, EmptyState } from '../components/common';
+import ServerService, {InventoryItem} from '../services/serverService';
+import {logger} from '../utils/logger';
+import {getImageSource} from '../utils/imageUtils';
+import {useAsyncState} from '../hooks/useAsyncState';
+import {LoadingState} from '../components/common/LoadingState';
+import {ErrorState} from '../components/common/ErrorState';
+import {EmptyState} from '../components/common/EmptyState';
+import {LocationsStackParamList} from '../types/navigation';
 
-type RootStackParamList = {
-  LocationItems: { locationId: string; locationName: string };
+type LocationItemsRouteProp = RouteProp<
+  LocationsStackParamList,
+  'LocationItems'
+>;
+
+type LocationItem = Pick<
+  InventoryItem,
+  'id' | 'name' | 'quantity' | 'insured' | 'purchasePrice' | 'archived'
+> & {
+  description?: string | null;
+  imageId?: string | null;
 };
 
-type LocationItemsRouteProp = RouteProp<RootStackParamList, 'LocationItems'>;
-
-interface InventoryItem {
-  id: string;
-  name: string;
-  description: string;
-  quantity: number;
-  imageId: string | null;
-  insured: boolean;
-  purchasePrice: number;
-  archived: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
 const LocationItemsScreen: React.FC = () => {
-  const { theme } = useTheme();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const {theme} = useTheme();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<LocationsStackParamList>>();
   const route = useRoute<LocationItemsRouteProp>();
-  const { locationId, locationName } = route.params;
+  const {locationId, locationName} = route.params;
 
   const {
     data: items,
@@ -49,96 +47,167 @@ const LocationItemsScreen: React.FC = () => {
     refreshing,
     error,
     execute,
-  } = useAsyncState<InventoryItem[]>([]);
+  } = useAsyncState<LocationItem[]>([]);
 
-  const loadItems = useCallback(async (): Promise<void> => {
-    await execute(async () => {
-      const service = ServerService.getInstance();
-      const result = await service.getLocationItems(locationId);
-      if (result.success && result.data) {
-        return result.data.items;
+  const InfoChip: React.FC<{
+    icon: string;
+    label: string;
+    tint?: string;
+    background?: string;
+  }> = ({icon, label, tint, background}) => (
+    <View
+      style={[
+        styles.infoChip,
+        {
+          backgroundColor: background ?? theme.colors.background.tertiary,
+          borderColor: theme.colors.borderSubtle,
+          borderRadius: theme.borderRadius.full,
+        },
+      ]}>
+      <MaterialIcons
+        name={icon}
+        size={14}
+        color={tint ?? theme.colors.text.secondary}
+      />
+      <Text
+        style={[
+          styles.infoChipText,
+          {color: tint ?? theme.colors.text.secondary},
+        ]}>
+        {label}
+      </Text>
+    </View>
+  );
+
+  const loadItems = useCallback(async () => {
+    try {
+      const serverService = ServerService.getInstance();
+      const response = await serverService.getLocationItems(locationId);
+      if (response.success && response.data) {
+        return response.data.items;
       } else {
-        throw new Error(result.error || 'Failed to load items');
+        throw new Error(response.error || 'Failed to load items');
       }
-    }, {
-      onError: (err) => {
-        logger.error('Error loading items:', err);
-      },
-    });
-  }, [locationId, execute]);
+    } catch (err) {
+      logger.error('Error loading location items:', err);
+      throw err;
+    }
+  }, [locationId]);
 
-  const onRefresh = (): void => {
-    execute(async () => {
-      const service = ServerService.getInstance();
-      const result = await service.getLocationItems(locationId);
-      if (result.success && result.data) {
-        return result.data.items;
-      } else {
-        throw new Error(result.error || 'Failed to load items');
-      }
-    }, { isRefresh: true });
-  };
+  const onRefresh = useCallback(() => {
+    execute(loadItems, {isRefresh: true});
+  }, [execute, loadItems]);
 
-  const renderItem = ({ item }: { item: InventoryItem }): React.ReactElement => {
+  const renderItem = ({item}: {item: LocationItem}): React.ReactElement => {
     return (
       <TouchableOpacity
-        style={[styles.itemContainer, { backgroundColor: theme.colors.background.secondary }]}
-      >
-        <View style={styles.itemContent}>
-          <View style={styles.itemHeader}>
-            <Text style={[styles.itemName, { color: theme.colors.text.primary }]}>
+        style={[
+          styles.itemContainer,
+          {
+            backgroundColor: theme.colors.card.background,
+            borderColor: theme.colors.card.border,
+            borderRadius: theme.borderRadius.lg,
+          },
+          theme.shadows.sm,
+        ]}
+        activeOpacity={0.75}>
+        <View
+          style={[
+            styles.accentStripe,
+            {backgroundColor: theme.colors.accent.primary},
+          ]}
+        />
+        <View style={[styles.itemContent, {padding: theme.spacing.md}]}>
+          <View style={[styles.itemHeader, {gap: theme.spacing.sm}]}>
+            <Text
+              style={[
+                styles.itemName,
+                {
+                  color: theme.colors.text.primary,
+                  fontSize: theme.typography.sizes.lg,
+                },
+              ]}>
               {item.name}
             </Text>
-            <View style={[styles.quantityBadge, { backgroundColor: theme.colors.button.primary }]}>
-              <Text style={[styles.quantityText, { color: theme.colors.button.text }]}>
+            <View
+              style={[
+                styles.quantityBadge,
+                {backgroundColor: theme.colors.accent.primary},
+              ]}>
+              <Text
+                style={[
+                  styles.quantityText,
+                  {
+                    color: theme.colors.text.inverse,
+                    fontSize: theme.typography.sizes.sm,
+                  },
+                ]}>
                 {item.quantity}
               </Text>
             </View>
           </View>
 
-          {item.description && (
-            <Text style={[styles.itemDescription, { color: theme.colors.text.secondary }]}>
+          {!!item.description && (
+            <Text
+              style={[
+                styles.itemDescription,
+                {
+                  color: theme.colors.text.secondary,
+                  fontSize: theme.typography.sizes.sm,
+                },
+              ]}>
               {item.description}
             </Text>
           )}
 
           {item.imageId && (
-            <View style={styles.imageContainer}>
+            <View
+              style={[
+                styles.imageContainer,
+                {
+                  backgroundColor: theme.colors.background.tertiary,
+                  borderRadius: theme.borderRadius.md,
+                  borderColor: theme.colors.borderSubtle,
+                },
+              ]}>
               <Image
                 source={getImageSource(item.id, item.imageId)}
-                style={styles.itemImage}
+                style={[
+                  styles.itemImage,
+                  {borderRadius: theme.borderRadius.md},
+                ]}
                 resizeMode="cover"
               />
             </View>
           )}
 
-          <View style={styles.itemFooter}>
+          <View style={[styles.itemFooter, {gap: theme.spacing.xs}]}>
             {item.purchasePrice > 0 && (
-              <View style={styles.footerItem}>
-                <MaterialIcons name="attach-money" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
-                <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
-                  ${item.purchasePrice.toFixed(2)}
-                </Text>
-              </View>
-            )}
-            <View style={styles.footerItem}>
-              <MaterialIcons
-                name={item.insured ? 'verified' : 'error-outline'}
-                size={16}
-                color={theme.colors.text.secondary}
-                style={styles.footerIcon}
+              <InfoChip
+                icon="attach-money"
+                label={`$${item.purchasePrice.toFixed(2)}`}
               />
-              <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
-                {item.insured ? 'Insured' : 'Uninsured'}
-              </Text>
-            </View>
+            )}
+            <InfoChip
+              icon={item.insured ? 'verified' : 'error-outline'}
+              label={item.insured ? 'Insured' : 'Uninsured'}
+              tint={
+                item.insured
+                  ? theme.colors.success
+                  : theme.colors.text.secondary
+              }
+              background={
+                item.insured
+                  ? theme.colors.accent.muted
+                  : theme.colors.background.tertiary
+              }
+            />
             {item.archived && (
-              <View style={styles.footerItem}>
-                <MaterialIcons name="archive" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
-                <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
-                  Archived
-                </Text>
-              </View>
+              <InfoChip
+                icon="archive"
+                label="Archived"
+                tint={theme.colors.text.tertiary}
+              />
             )}
           </View>
         </View>
@@ -147,29 +216,30 @@ const LocationItemsScreen: React.FC = () => {
   };
 
   useEffect(() => {
-    loadItems();
-  }, [loadItems]);
+    execute(loadItems);
+  }, [execute, loadItems]);
 
   useEffect(() => {
-    navigation.setOptions({
-      title: locationName,
-    });
+    navigation.setOptions({title: locationName});
   }, [locationName, navigation]);
 
   if (isLoading) {
-    return <LoadingState message={`Loading items from ${locationName}...`} />;
+    return <LoadingState message="Loading items..." />;
   }
 
   if (error) {
-    return <ErrorState error={error} onRetry={loadItems} />;
+    return <ErrorState error={error} onRetry={() => execute(loadItems)} />;
   }
 
   return (
     <FlatList
       data={items}
       renderItem={renderItem}
-      keyExtractor={(item) => item.id}
-      contentContainerStyle={styles.listContent}
+      keyExtractor={item => item.id}
+      contentContainerStyle={[
+        styles.listContent,
+        {paddingHorizontal: theme.spacing.md, paddingBottom: theme.spacing.lg},
+      ]}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
@@ -180,8 +250,8 @@ const LocationItemsScreen: React.FC = () => {
       ListEmptyComponent={
         <EmptyState
           message="No items in this location"
-          subtitle="Items you add to this location will appear here"
-          icon="inventory-2"
+          subtitle="Items you add here will show up in this list."
+          icon="inventory"
         />
       }
     />
@@ -189,28 +259,28 @@ const LocationItemsScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   listContent: {
-    padding: 16,
+    paddingTop: 12,
   },
   itemContainer: {
-    borderRadius: 12,
     marginBottom: 12,
     overflow: 'hidden',
+    flexDirection: 'row',
+    borderWidth: 1,
+  },
+  accentStripe: {
+    width: 4,
   },
   itemContent: {
-    padding: 16,
+    flex: 1,
   },
   itemHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   itemName: {
-    fontSize: 18,
     fontWeight: '600',
     flex: 1,
   },
@@ -222,65 +292,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   quantityText: {
-    color: '#FFFFFF',
     fontWeight: '600',
   },
   itemDescription: {
-    fontSize: 14,
     marginBottom: 12,
   },
   imageContainer: {
     marginVertical: 8,
-    borderRadius: 8,
     overflow: 'hidden',
-    backgroundColor: '#f0f0f0',
+    borderWidth: 1,
   },
   itemImage: {
     width: '100%',
     height: 200,
-    borderRadius: 8,
   },
   itemFooter: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
     marginTop: 8,
   },
-  footerItem: {
+  infoChip: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderWidth: 1,
   },
-  footerIcon: {
-    marginRight: 8,
-  },
-  footerLabel: {
+  infoChipText: {
     fontSize: 12,
-  },
-  errorText: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  retryButton: {
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    alignSelf: 'center',
-    minWidth: 120,
-  },
-  retryButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  emptyText: {
-    fontSize: 16,
-    textAlign: 'center',
+    fontWeight: '500',
   },
 });
 
