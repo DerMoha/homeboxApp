@@ -1,4 +1,4 @@
-import React, {useCallback, useRef} from 'react';
+import React, {useCallback, useMemo, useRef} from 'react';
 import {View, TouchableOpacity, StyleSheet, Animated} from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useTheme} from '../../theme/ThemeContext';
@@ -22,7 +22,84 @@ interface AnimatedButtonProps {
   disabled?: boolean;
   isActive?: boolean;
   icon: string;
+  theme: ReturnType<typeof useTheme>['theme'];
 }
+
+const AnimatedHeaderButton: React.FC<AnimatedButtonProps> = ({
+  onPress,
+  disabled = false,
+  isActive = false,
+  icon,
+  theme,
+}) => {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = useCallback(() => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.9,
+      useNativeDriver: true,
+      tension: 100,
+      friction: 10,
+    }).start();
+  }, [scaleAnim]);
+
+  const handlePressOut = useCallback(() => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      tension: 100,
+      friction: 10,
+    }).start();
+  }, [scaleAnim]);
+
+  const animatedStyle = useMemo(
+    () => ({transform: [{scale: scaleAnim}]}),
+    [scaleAnim],
+  );
+
+  const buttonStyle = useMemo(
+    () => [
+      styles.headerButton,
+      {
+        backgroundColor: isActive
+          ? theme.colors.accent.primary
+          : theme.colors.background.elevated,
+        borderRadius: theme.borderRadius.md,
+        borderWidth: 1,
+        borderColor: isActive
+          ? theme.colors.accent.primary
+          : theme.colors.border,
+        opacity: disabled ? 0.4 : 1,
+      },
+    ],
+    [
+      disabled,
+      isActive,
+      theme.borderRadius.md,
+      theme.colors.accent.primary,
+      theme.colors.background.elevated,
+      theme.colors.border,
+    ],
+  );
+
+  const iconColor = isActive
+    ? theme.colors.text.inverse
+    : theme.colors.text.primary;
+
+  return (
+    <Animated.View style={animatedStyle}>
+      <TouchableOpacity
+        style={buttonStyle}
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        disabled={disabled}
+        activeOpacity={1}>
+        <MaterialIcons name={icon} size={20} color={iconColor} />
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
 
 export const InventoryHeader: React.FC<InventoryHeaderProps> = ({
   viewMode,
@@ -37,101 +114,56 @@ export const InventoryHeader: React.FC<InventoryHeaderProps> = ({
 }) => {
   const {theme} = useTheme();
 
-  const AnimatedButton: React.FC<AnimatedButtonProps> = ({
-    onPress,
-    disabled = false,
-    isActive = false,
-    icon,
-  }) => {
-    const scaleAnim = useRef(new Animated.Value(1)).current;
-
-    const handlePressIn = useCallback(() => {
-      Animated.spring(scaleAnim, {
-        toValue: 0.9,
-        useNativeDriver: true,
-        tension: 100,
-        friction: 10,
-      }).start();
-    }, [scaleAnim]);
-
-    const handlePressOut = useCallback(() => {
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        useNativeDriver: true,
-        tension: 100,
-        friction: 10,
-      }).start();
-    }, [scaleAnim]);
-
-    return (
-      <Animated.View style={{transform: [{scale: scaleAnim}]}}>
-        <TouchableOpacity
-          style={[
-            styles.headerButton,
-            {
-              backgroundColor: isActive
-                ? theme.colors.accent.primary
-                : theme.colors.background.elevated,
-              borderRadius: theme.borderRadius.md,
-              borderWidth: 1,
-              borderColor: isActive
-                ? theme.colors.accent.primary
-                : theme.colors.border,
-              opacity: disabled ? 0.4 : 1,
-            },
-          ]}
-          onPress={onPress}
-          onPressIn={handlePressIn}
-          onPressOut={handlePressOut}
-          disabled={disabled}
-          activeOpacity={1}>
-          <MaterialIcons
-            name={icon}
-            size={20}
-            color={
-              isActive ? theme.colors.text.inverse : theme.colors.text.primary
-            }
-          />
-        </TouchableOpacity>
-      </Animated.View>
-    );
-  };
+  const headerControlsStyle = useMemo(
+    () => [styles.headerControls, {gap: theme.spacing.sm}],
+    [theme.spacing.sm],
+  );
 
   return (
-    <View style={[styles.headerControls, {gap: theme.spacing.sm}]}>
+    <View style={headerControlsStyle}>
       {viewMode === 'grid' ? (
         <>
-          <AnimatedButton
+          <AnimatedHeaderButton
             onPress={onDecreaseItemsPerRow}
             disabled={itemsPerRow <= 1}
             icon="remove"
+            theme={theme}
           />
-          <AnimatedButton
+          <AnimatedHeaderButton
             onPress={onIncreaseItemsPerRow}
             disabled={itemsPerRow >= 5}
             icon="add"
+            theme={theme}
           />
         </>
       ) : (
         <>
-          <AnimatedButton
+          <AnimatedHeaderButton
             onPress={onIncreaseZoom}
             disabled={listZoom >= 2}
             icon="zoom-in"
+            theme={theme}
           />
-          <AnimatedButton
+          <AnimatedHeaderButton
             onPress={onDecreaseZoom}
             disabled={listZoom <= 0}
             icon="zoom-out"
+            theme={theme}
           />
         </>
       )}
-      <AnimatedButton
+      <AnimatedHeaderButton
         onPress={onToggleView}
         icon={viewMode === 'list' ? 'grid-view' : 'view-list'}
         isActive={false}
+        theme={theme}
       />
-      <AnimatedButton onPress={onOpenSort} icon="sort" isActive={false} />
+      <AnimatedHeaderButton
+        onPress={onOpenSort}
+        icon="sort"
+        isActive={false}
+        theme={theme}
+      />
     </View>
   );
 };

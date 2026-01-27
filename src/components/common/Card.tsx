@@ -1,6 +1,13 @@
-import React, { ReactNode, useRef } from 'react';
-import { View, Text, StyleSheet, ViewStyle, Animated, Pressable } from 'react-native';
-import { useTheme } from '../../theme/ThemeContext';
+import React, {ReactNode, useMemo, useRef} from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ViewStyle,
+  Animated,
+  Pressable,
+} from 'react-native';
+import {useTheme} from '../../theme/ThemeContext';
 
 interface CardProps {
   title?: string;
@@ -17,11 +24,13 @@ export const Card: React.FC<CardProps> = ({
   accentStripe = false,
   onPress,
 }) => {
-  const { theme } = useTheme();
+  const {theme} = useTheme();
   const pressAnim = useRef(new Animated.Value(0)).current;
 
   const handlePressIn = () => {
-    if (!onPress) return;
+    if (!onPress) {
+      return;
+    }
     Animated.timing(pressAnim, {
       toValue: 1,
       duration: 150,
@@ -30,7 +39,9 @@ export const Card: React.FC<CardProps> = ({
   };
 
   const handlePressOut = () => {
-    if (!onPress) return;
+    if (!onPress) {
+      return;
+    }
     Animated.timing(pressAnim, {
       toValue: 0,
       duration: 200,
@@ -43,63 +54,82 @@ export const Card: React.FC<CardProps> = ({
     outputRange: [0, 0.04],
   });
 
+  const cardStyle = useMemo(
+    () => [
+      styles.card,
+      {
+        backgroundColor: theme.colors.card.background,
+        borderColor: theme.colors.card.border,
+        borderRadius: theme.borderRadius.lg,
+      },
+      theme.shadows.md,
+      style,
+    ],
+    [
+      style,
+      theme.borderRadius.lg,
+      theme.colors.card.background,
+      theme.colors.card.border,
+      theme.shadows.md,
+    ],
+  );
+
+  const accentStripeStyle = useMemo(
+    () => [
+      styles.accentStripe,
+      {
+        backgroundColor: theme.colors.accent.primary,
+        borderTopLeftRadius: theme.borderRadius.lg,
+        borderBottomLeftRadius: theme.borderRadius.lg,
+      },
+    ],
+    [theme.borderRadius.lg, theme.colors.accent.primary],
+  );
+
+  const titleStyle = useMemo(
+    () => [
+      styles.title,
+      {
+        color: theme.colors.text.primary,
+        fontSize: theme.typography.sizes.lg,
+        fontWeight: theme.typography.weights.bold as any,
+        letterSpacing: theme.typography.letterSpacing.tight,
+      },
+    ],
+    [
+      theme.colors.text.primary,
+      theme.typography.letterSpacing.tight,
+      theme.typography.sizes.lg,
+      theme.typography.weights.bold,
+    ],
+  );
+
+  const overlayStyle = useMemo(
+    () => [
+      StyleSheet.absoluteFill,
+      styles.overlay,
+      {
+        backgroundColor: theme.colors.text.primary,
+        opacity: overlayOpacity,
+        borderRadius: theme.borderRadius.lg,
+      },
+    ],
+    [overlayOpacity, theme.borderRadius.lg, theme.colors.text.primary],
+  );
+
+  const contentStyle = useMemo(
+    () => [styles.content, accentStripe ? styles.contentWithStripe : null],
+    [accentStripe],
+  );
+
   const cardContent = (
-    <View
-      style={[
-        styles.card,
-        {
-          backgroundColor: theme.colors.card.background,
-          borderColor: theme.colors.card.border,
-          borderRadius: theme.borderRadius.lg,
-          ...theme.shadows.md,
-        },
-        style,
-      ]}
-    >
-      {accentStripe && (
-        <View
-          style={[
-            styles.accentStripe,
-            {
-              backgroundColor: theme.colors.accent.primary,
-              borderTopLeftRadius: theme.borderRadius.lg,
-              borderBottomLeftRadius: theme.borderRadius.lg,
-            },
-          ]}
-        />
-      )}
-      <View style={[styles.content, accentStripe && styles.contentWithStripe]}>
-        {title && (
-          <Text
-            style={[
-              styles.title,
-              {
-                color: theme.colors.text.primary,
-                fontSize: theme.typography.sizes.lg,
-                fontWeight: theme.typography.weights.bold as any,
-                letterSpacing: theme.typography.letterSpacing.tight,
-              },
-            ]}
-          >
-            {title}
-          </Text>
-        )}
+    <View style={cardStyle}>
+      {accentStripe && <View style={accentStripeStyle} />}
+      <View style={contentStyle}>
+        {title && <Text style={titleStyle}>{title}</Text>}
         {children}
       </View>
-      {onPress && (
-        <Animated.View
-          style={[
-            StyleSheet.absoluteFill,
-            styles.overlay,
-            {
-              backgroundColor: theme.colors.text.primary,
-              opacity: overlayOpacity,
-              borderRadius: theme.borderRadius.lg,
-            },
-          ]}
-          pointerEvents="none"
-        />
-      )}
+      {onPress && <Animated.View style={overlayStyle} pointerEvents="none" />}
     </View>
   );
 
@@ -108,8 +138,7 @@ export const Card: React.FC<CardProps> = ({
       <Pressable
         onPress={onPress}
         onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-      >
+        onPressOut={handlePressOut}>
         {cardContent}
       </Pressable>
     );

@@ -1,4 +1,4 @@
-import React, {useRef} from 'react';
+import React, {useMemo, useRef} from 'react';
 import {
   Pressable,
   Text,
@@ -57,8 +57,10 @@ export const Button: React.FC<ButtonProps> = ({
     }).start();
   };
 
-  const getBackgroundColor = (): string => {
-    if (disabled) return theme.colors.text.tertiary;
+  const backgroundColor = useMemo((): string => {
+    if (disabled) {
+      return theme.colors.text.tertiary;
+    }
 
     switch (variant) {
       case 'primary':
@@ -72,10 +74,19 @@ export const Button: React.FC<ButtonProps> = ({
       default:
         return theme.colors.accent.primary;
     }
-  };
+  }, [
+    disabled,
+    theme.colors.accent.primary,
+    theme.colors.button.secondary,
+    theme.colors.error,
+    theme.colors.text.tertiary,
+    variant,
+  ]);
 
-  const getTextColor = (): string => {
-    if (disabled) return theme.colors.text.tertiary;
+  const textColor = useMemo((): string => {
+    if (disabled) {
+      return theme.colors.text.tertiary;
+    }
 
     switch (variant) {
       case 'primary':
@@ -88,9 +99,16 @@ export const Button: React.FC<ButtonProps> = ({
       default:
         return theme.colors.text.inverse;
     }
-  };
+  }, [
+    disabled,
+    theme.colors.button.text,
+    theme.colors.text.inverse,
+    theme.colors.text.primary,
+    theme.colors.text.tertiary,
+    variant,
+  ]);
 
-  const getHeight = (): number => {
+  const buttonHeight = useMemo((): number => {
     switch (size) {
       case 'small':
         return 40;
@@ -101,9 +119,9 @@ export const Button: React.FC<ButtonProps> = ({
       default:
         return 48;
     }
-  };
+  }, [size]);
 
-  const getPaddingHorizontal = (): number => {
+  const buttonPaddingHorizontal = useMemo((): number => {
     switch (size) {
       case 'small':
         return 16;
@@ -114,9 +132,9 @@ export const Button: React.FC<ButtonProps> = ({
       default:
         return 24;
     }
-  };
+  }, [size]);
 
-  const getFontSize = (): number => {
+  const buttonFontSize = useMemo((): number => {
     switch (size) {
       case 'small':
         return theme.typography.sizes.sm;
@@ -127,9 +145,14 @@ export const Button: React.FC<ButtonProps> = ({
       default:
         return theme.typography.sizes.md;
     }
-  };
+  }, [
+    size,
+    theme.typography.sizes.lg,
+    theme.typography.sizes.md,
+    theme.typography.sizes.sm,
+  ]);
 
-  const getIconSize = (): number => {
+  const iconSize = useMemo((): number => {
     switch (size) {
       case 'small':
         return 18;
@@ -140,9 +163,9 @@ export const Button: React.FC<ButtonProps> = ({
       default:
         return 20;
     }
-  };
+  }, [size]);
 
-  const getBorderRadius = (): number => {
+  const buttonBorderRadius = useMemo((): number => {
     switch (size) {
       case 'small':
         return theme.borderRadius.sm;
@@ -153,14 +176,77 @@ export const Button: React.FC<ButtonProps> = ({
       default:
         return theme.borderRadius.md;
     }
-  };
+  }, [
+    size,
+    theme.borderRadius.lg,
+    theme.borderRadius.md,
+    theme.borderRadius.sm,
+  ]);
+
+  const animatedContainerStyle = useMemo(
+    () => [
+      {transform: [{scale: scaleAnim}]},
+      fullWidth ? styles.fullWidth : null,
+    ],
+    [fullWidth, scaleAnim],
+  );
+
+  const baseButtonStyle = useMemo(
+    () => ({
+      backgroundColor,
+      height: buttonHeight,
+      paddingHorizontal: buttonPaddingHorizontal,
+      borderRadius: buttonBorderRadius,
+      borderWidth: variant === 'ghost' || variant === 'secondary' ? 1.5 : 0,
+      borderColor: theme.colors.border,
+      opacity: disabled ? 0.5 : 1,
+    }),
+    [
+      backgroundColor,
+      buttonBorderRadius,
+      buttonHeight,
+      buttonPaddingHorizontal,
+      disabled,
+      theme.colors.border,
+      variant,
+    ],
+  );
+
+  const ghostBorderStyle = useMemo(
+    () => ({borderColor: theme.colors.borderSubtle}),
+    [theme.colors.borderSubtle],
+  );
+
+  const ghostPressedBorderStyle = useMemo(
+    () => ({borderColor: theme.colors.border}),
+    [theme.colors.border],
+  );
+
+  const shadowStyle = useMemo(
+    () => (variant === 'primary' && !disabled ? theme.shadows.sm : null),
+    [disabled, theme.shadows.sm, variant],
+  );
+
+  const textStyle = useMemo(
+    () => [
+      styles.text,
+      {
+        color: textColor,
+        fontSize: buttonFontSize,
+        fontWeight: theme.typography.weights.semibold as any,
+        letterSpacing: theme.typography.letterSpacing.wide,
+      },
+    ],
+    [
+      buttonFontSize,
+      textColor,
+      theme.typography.letterSpacing.wide,
+      theme.typography.weights.semibold,
+    ],
+  );
 
   return (
-    <Animated.View
-      style={[
-        {transform: [{scale: scaleAnim}]},
-        fullWidth && styles.fullWidth,
-      ]}>
+    <Animated.View style={animatedContainerStyle}>
       <Pressable
         onPress={onPress}
         onPressIn={handlePressIn}
@@ -168,48 +254,28 @@ export const Button: React.FC<ButtonProps> = ({
         disabled={disabled || loading}
         style={({pressed}) => [
           styles.button,
-          {
-            backgroundColor: getBackgroundColor(),
-            height: getHeight(),
-            paddingHorizontal: getPaddingHorizontal(),
-            borderRadius: getBorderRadius(),
-            borderWidth:
-              variant === 'ghost' || variant === 'secondary' ? 1.5 : 0,
-            borderColor:
-              variant === 'ghost'
-                ? pressed
-                  ? theme.colors.border
-                  : theme.colors.borderSubtle
-                : theme.colors.border,
-            opacity: disabled ? 0.5 : 1,
-            ...(variant === 'primary' && !disabled ? theme.shadows.sm : {}),
-          },
+          baseButtonStyle,
+          variant === 'ghost'
+            ? pressed
+              ? ghostPressedBorderStyle
+              : ghostBorderStyle
+            : null,
+          shadowStyle,
           style,
         ]}>
         {loading ? (
-          <ActivityIndicator color={getTextColor()} size="small" />
+          <ActivityIndicator color={textColor} size="small" />
         ) : (
           <>
             {icon && (
               <MaterialIcons
                 name={icon as any}
-                size={getIconSize()}
-                color={getTextColor()}
+                size={iconSize}
+                color={textColor}
                 style={styles.icon}
               />
             )}
-            <Text
-              style={[
-                styles.text,
-                {
-                  color: getTextColor(),
-                  fontSize: getFontSize(),
-                  fontWeight: theme.typography.weights.semibold as any,
-                  letterSpacing: theme.typography.letterSpacing.wide,
-                },
-              ]}>
-              {title.toUpperCase()}
-            </Text>
+            <Text style={textStyle}>{title.toUpperCase()}</Text>
           </>
         )}
       </Pressable>

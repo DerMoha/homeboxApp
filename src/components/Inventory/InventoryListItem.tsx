@@ -1,11 +1,11 @@
-import React, { useMemo, useCallback } from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import React, {useMemo, useCallback} from 'react';
+import {View, Text, TouchableOpacity, Image, StyleSheet} from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import { useTheme } from '../../theme/ThemeContext';
-import type { Theme } from '../../theme/theme';
-import { InventoryItem } from '../../hooks/useInventoryData';
-import { DisplayPreference } from '../../hooks/useDisplayPreferences';
-import { getImageSource, formatDate } from '../../utils/imageUtils';
+import {useTheme} from '../../theme/ThemeContext';
+import type {Theme} from '../../theme/theme';
+import {InventoryItem} from '../../hooks/useInventoryData';
+import {DisplayPreference} from '../../hooks/useDisplayPreferences';
+import {getImageSource, formatDate} from '../../utils/imageUtils';
 
 interface InventoryListItemProps {
   item: InventoryItem;
@@ -20,19 +20,27 @@ interface MetaItemProps {
   theme: Theme;
 }
 
-const MetaItem: React.FC<MetaItemProps> = ({ icon, text, theme }) => (
-  <View style={styles.metaItem}>
-    <MaterialIcons
-      name={icon}
-      size={14}
-      color={theme.colors.text.tertiary}
-      style={styles.metaIcon}
-    />
-    <Text style={[styles.metaText, { color: theme.colors.text.tertiary, fontSize: theme.typography.sizes.sm }]}>
-      {text}
-    </Text>
-  </View>
-);
+const MetaItem: React.FC<MetaItemProps> = ({icon, text, theme}) => {
+  const textStyle = useMemo(
+    () => [
+      styles.metaText,
+      {color: theme.colors.text.tertiary, fontSize: theme.typography.sizes.sm},
+    ],
+    [theme.colors.text.tertiary, theme.typography.sizes.sm],
+  );
+
+  return (
+    <View style={styles.metaItem}>
+      <MaterialIcons
+        name={icon}
+        size={14}
+        color={theme.colors.text.tertiary}
+        style={styles.metaIcon}
+      />
+      <Text style={textStyle}>{text}</Text>
+    </View>
+  );
+};
 
 interface QuantityBadgeProps {
   quantity: number;
@@ -40,30 +48,87 @@ interface QuantityBadgeProps {
   style?: object;
 }
 
-const QuantityBadge: React.FC<QuantityBadgeProps> = ({ quantity, theme, style }) => (
-  <View
-    style={[
+const QuantityBadge: React.FC<QuantityBadgeProps> = ({
+  quantity,
+  theme,
+  style,
+}) => {
+  const badgeStyle = useMemo(
+    () => [
       styles.quantityBadge,
       {
-        backgroundColor: quantity > 0 ? theme.colors.accent.primary : theme.colors.error,
+        backgroundColor:
+          quantity > 0 ? theme.colors.accent.primary : theme.colors.error,
         borderRadius: theme.borderRadius.full,
         paddingHorizontal: theme.spacing.sm,
         paddingVertical: theme.spacing.xs,
       },
       style,
-    ]}
-  >
-    <Text
-      style={{
+    ],
+    [
+      quantity,
+      style,
+      theme.borderRadius.full,
+      theme.colors.accent.primary,
+      theme.colors.error,
+      theme.spacing.sm,
+      theme.spacing.xs,
+    ],
+  );
+
+  const textStyle = useMemo(
+    () => [
+      styles.quantityText,
+      {
         color: theme.colors.text.inverse,
         fontSize: theme.typography.sizes.sm,
         fontWeight: theme.typography.weights.bold,
-      }}
-    >
-      {quantity}
+      },
+    ],
+    [
+      theme.colors.text.inverse,
+      theme.typography.sizes.sm,
+      theme.typography.weights.bold,
+    ],
+  );
+
+  return (
+    <View style={badgeStyle}>
+      <Text style={textStyle}>{quantity}</Text>
+    </View>
+  );
+};
+
+interface ItemNameProps {
+  name: string;
+  size?: 'md' | 'lg' | 'xl';
+  theme: Theme;
+}
+
+const ItemNameText: React.FC<ItemNameProps> = ({name, size = 'lg', theme}) => {
+  const nameStyle = useMemo(
+    () => [
+      styles.itemName,
+      {
+        color: theme.colors.text.primary,
+        fontSize: theme.typography.sizes[size],
+        fontWeight: theme.typography.weights.semibold,
+      },
+    ],
+    [
+      size,
+      theme.colors.text.primary,
+      theme.typography.sizes,
+      theme.typography.weights.semibold,
+    ],
+  );
+
+  return (
+    <Text style={nameStyle} numberOfLines={1}>
+      {name}
     </Text>
-  </View>
-);
+  );
+};
 
 const InventoryListItemComponent: React.FC<InventoryListItemProps> = ({
   item,
@@ -71,98 +136,207 @@ const InventoryListItemComponent: React.FC<InventoryListItemProps> = ({
   listZoom,
   onPress,
 }) => {
-  const { theme } = useTheme();
+  const {theme} = useTheme();
 
   const getPreference = useCallback(
-    (id: string): boolean => displayPreferences.find((p) => p.id === id)?.enabled ?? false,
-    [displayPreferences]
+    (id: string): boolean =>
+      displayPreferences.find(p => p.id === id)?.enabled ?? false,
+    [displayPreferences],
   );
 
   const hasDescription = useMemo(
     () => getPreference('description') && item.description,
-    [getPreference, item.description]
+    [getPreference, item.description],
   );
 
   const hasImage = useMemo(
     () => getPreference('image') && item.imageId,
-    [getPreference, item.imageId]
+    [getPreference, item.imageId],
   );
 
   const hasFooterContent = useMemo(
     () =>
       (getPreference('location') && item.location) ||
       (getPreference('labels') && item.labels.length > 0) ||
-      (getPreference('purchasePrice') && item.purchasePrice && item.purchasePrice > 0) ||
+      (getPreference('purchasePrice') &&
+        item.purchasePrice &&
+        item.purchasePrice > 0) ||
       getPreference('insured') ||
       getPreference('createdAt') ||
       getPreference('updatedAt'),
-    [getPreference, item.location, item.labels.length, item.purchasePrice]
+    [getPreference, item.location, item.labels.length, item.purchasePrice],
   );
 
   const handlePress = useCallback(() => onPress(item.id), [onPress, item.id]);
 
-  const containerStyle = [
-    styles.container,
-    {
-      backgroundColor: theme.colors.card.background,
-      borderRadius: theme.borderRadius.lg,
-      marginHorizontal: theme.spacing.sm,
-      marginVertical: theme.spacing.xs,
-      borderWidth: 1,
-      borderColor: theme.colors.card.border,
-    },
-    theme.shadows.sm,
-  ];
-
-  const AccentStripe = (
-    <View
-      style={[
-        styles.accentStripe,
-        {
-          backgroundColor: theme.colors.accent.primary,
-          borderTopLeftRadius: theme.borderRadius.lg,
-          borderBottomLeftRadius: theme.borderRadius.lg,
-        },
-      ]}
-    />
+  const containerStyle = useMemo(
+    () => [
+      styles.container,
+      {
+        backgroundColor: theme.colors.card.background,
+        borderRadius: theme.borderRadius.lg,
+        marginHorizontal: theme.spacing.sm,
+        marginVertical: theme.spacing.xs,
+        borderWidth: 1,
+        borderColor: theme.colors.card.border,
+      },
+      theme.shadows.sm,
+    ],
+    [
+      theme.borderRadius.lg,
+      theme.colors.card.background,
+      theme.colors.card.border,
+      theme.spacing.sm,
+      theme.spacing.xs,
+      theme.shadows.sm,
+    ],
   );
 
-  const ItemName: React.FC<{ size?: 'md' | 'lg' | 'xl' }> = ({ size = 'lg' }) => (
-    <Text
-      style={[
-        styles.itemName,
-        {
-          color: theme.colors.text.primary,
-          fontSize: theme.typography.sizes[size],
-          fontWeight: theme.typography.weights.semibold,
-        },
-      ]}
-      numberOfLines={1}
-    >
-      {item.name}
-    </Text>
+  const accentStripeStyle = useMemo(
+    () => [
+      styles.accentStripe,
+      {
+        backgroundColor: theme.colors.accent.primary,
+        borderTopLeftRadius: theme.borderRadius.lg,
+        borderBottomLeftRadius: theme.borderRadius.lg,
+      },
+    ],
+    [theme.borderRadius.lg, theme.colors.accent.primary],
+  );
+
+  const compactContentStyle = useMemo(
+    () => [
+      styles.content,
+      {
+        paddingLeft: theme.spacing.md,
+        paddingVertical: theme.spacing.sm,
+        paddingRight: theme.spacing.sm,
+      },
+    ],
+    [theme.spacing.md, theme.spacing.sm],
+  );
+
+  const compactMetaRowStyle = useMemo(
+    () => [
+      styles.metaRow,
+      {gap: theme.spacing.sm, marginTop: theme.spacing.xs},
+    ],
+    [theme.spacing.sm, theme.spacing.xs],
+  );
+
+  const standardRowStyle = useMemo(
+    () => [styles.standardRow, {gap: theme.spacing.md}],
+    [theme.spacing.md],
+  );
+
+  const standardMetaRowStyle = useMemo(
+    () => [styles.metaRow, {marginTop: theme.spacing.xs}],
+    [theme.spacing.xs],
+  );
+
+  const thumbnailStyle = useMemo(
+    () => [
+      styles.thumbnail,
+      {
+        borderRadius: theme.borderRadius.md,
+        backgroundColor: theme.colors.background.tertiary,
+      },
+    ],
+    [theme.borderRadius.md, theme.colors.background.tertiary],
+  );
+
+  const thumbnailImageStyle = useMemo(
+    () => [styles.thumbnailImage, {borderRadius: theme.borderRadius.md}],
+    [theme.borderRadius.md],
+  );
+
+  const detailedContentStyle = useMemo(
+    () => [
+      styles.content,
+      {
+        padding: theme.spacing.md,
+        paddingLeft: theme.spacing.md + 4,
+      },
+    ],
+    [theme.spacing.md],
+  );
+
+  const imageContainerStyle = useMemo(
+    () => [
+      styles.imageContainer,
+      {
+        marginVertical: theme.spacing.sm,
+        borderRadius: theme.borderRadius.md,
+      },
+    ],
+    [theme.borderRadius.md, theme.spacing.sm],
+  );
+
+  const fullImageStyle = useMemo(
+    () => [styles.fullImage, {borderRadius: theme.borderRadius.md}],
+    [theme.borderRadius.md],
+  );
+
+  const descriptionStyle = useMemo(
+    () => [
+      styles.description,
+      {
+        color: theme.colors.text.secondary,
+        fontSize: theme.typography.sizes.md,
+        marginBottom: theme.spacing.sm,
+      },
+    ],
+    [theme.colors.text.secondary, theme.spacing.sm, theme.typography.sizes.md],
+  );
+
+  const detailedMetaRowStyle = useMemo(
+    () => [
+      styles.metaRow,
+      styles.metaRowWrap,
+      {gap: theme.spacing.xs, marginTop: theme.spacing.xs},
+    ],
+    [theme.spacing.xs],
   );
 
   // Compact View (listZoom === 0)
   if (listZoom === 0) {
     return (
-      <TouchableOpacity style={containerStyle} onPress={handlePress} activeOpacity={0.7}>
-        {AccentStripe}
-        <View style={[styles.content, { paddingLeft: theme.spacing.md, paddingVertical: theme.spacing.sm, paddingRight: theme.spacing.sm }]}>
+      <TouchableOpacity
+        style={containerStyle}
+        onPress={handlePress}
+        activeOpacity={0.7}>
+        <View style={accentStripeStyle} />
+        <View style={compactContentStyle}>
           <View style={styles.headerRow}>
             <View style={styles.titleContainer}>
-              <ItemName />
+              <ItemNameText name={item.name} theme={theme} />
             </View>
-            {getPreference('quantity') && <QuantityBadge quantity={item.quantity} theme={theme} />}
+            {getPreference('quantity') && (
+              <QuantityBadge quantity={item.quantity} theme={theme} />
+            )}
           </View>
-          <View style={[styles.metaRow, { gap: theme.spacing.sm, marginTop: theme.spacing.xs }]}>
+          <View style={compactMetaRowStyle}>
             {getPreference('location') && item.location && (
-              <MetaItem icon="location-on" text={item.location.name} theme={theme} />
+              <MetaItem
+                icon="location-on"
+                text={item.location.name}
+                theme={theme}
+              />
             )}
             {getPreference('labels') && item.labels.length > 0 && (
-              <MetaItem icon="label" text={item.labels.map((l) => l.name).join(', ')} theme={theme} />
+              <MetaItem
+                icon="label"
+                text={item.labels.map(l => l.name).join(', ')}
+                theme={theme}
+              />
             )}
-            {hasImage && <MaterialIcons name="image" size={14} color={theme.colors.text.tertiary} />}
+            {hasImage && (
+              <MaterialIcons
+                name="image"
+                size={14}
+                color={theme.colors.text.tertiary}
+              />
+            )}
           </View>
         </View>
       </TouchableOpacity>
@@ -172,31 +346,44 @@ const InventoryListItemComponent: React.FC<InventoryListItemProps> = ({
   // Standard View (listZoom === 1)
   if (listZoom === 1) {
     return (
-      <TouchableOpacity style={containerStyle} onPress={handlePress} activeOpacity={0.7}>
-        {AccentStripe}
-        <View style={[styles.content, { paddingLeft: theme.spacing.md, paddingVertical: theme.spacing.sm, paddingRight: theme.spacing.sm }]}>
-          <View style={[styles.standardRow, { gap: theme.spacing.md }]}>
+      <TouchableOpacity
+        style={containerStyle}
+        onPress={handlePress}
+        activeOpacity={0.7}>
+        <View style={accentStripeStyle} />
+        <View style={compactContentStyle}>
+          <View style={standardRowStyle}>
             <View style={styles.textSection}>
-              <ItemName />
-              <View style={[styles.metaRow, { marginTop: theme.spacing.xs }]}>
+              <ItemNameText name={item.name} theme={theme} />
+              <View style={standardMetaRowStyle}>
                 {getPreference('location') && item.location && (
-                  <MetaItem icon="location-on" text={item.location.name} theme={theme} />
+                  <MetaItem
+                    icon="location-on"
+                    text={item.location.name}
+                    theme={theme}
+                  />
                 )}
                 {getPreference('labels') && item.labels.length > 0 && (
-                  <MetaItem icon="label" text={item.labels.map((l) => l.name).join(', ')} theme={theme} />
+                  <MetaItem
+                    icon="label"
+                    text={item.labels.map(l => l.name).join(', ')}
+                    theme={theme}
+                  />
                 )}
               </View>
             </View>
             {hasImage && (
-              <View style={[styles.thumbnail, { borderRadius: theme.borderRadius.md, backgroundColor: theme.colors.background.tertiary }]}>
+              <View style={thumbnailStyle}>
                 <Image
                   source={getImageSource(item.id, item.imageId!)}
-                  style={[styles.thumbnailImage, { borderRadius: theme.borderRadius.md }]}
+                  style={thumbnailImageStyle}
                   resizeMode="cover"
                 />
               </View>
             )}
-            {getPreference('quantity') && <QuantityBadge quantity={item.quantity} theme={theme} />}
+            {getPreference('quantity') && (
+              <QuantityBadge quantity={item.quantity} theme={theme} />
+            )}
           </View>
         </View>
       </TouchableOpacity>
@@ -205,44 +392,85 @@ const InventoryListItemComponent: React.FC<InventoryListItemProps> = ({
 
   // Detailed View (listZoom === 2)
   return (
-    <TouchableOpacity style={containerStyle} onPress={handlePress} activeOpacity={0.7}>
-      {AccentStripe}
-      <View style={[styles.content, { padding: theme.spacing.md, paddingLeft: theme.spacing.md + 4 }]}>
+    <TouchableOpacity
+      style={containerStyle}
+      onPress={handlePress}
+      activeOpacity={0.7}>
+      <View style={accentStripeStyle} />
+      <View style={detailedContentStyle}>
         <View style={styles.headerRow}>
           <View style={styles.titleContainer}>
-            <ItemName size="xl" />
+            <ItemNameText name={item.name} size="xl" theme={theme} />
           </View>
           {getPreference('quantity') && (
-            <QuantityBadge quantity={item.quantity} theme={theme} style={{ position: 'absolute', top: 0, right: 0 }} />
+            <QuantityBadge
+              quantity={item.quantity}
+              theme={theme}
+              style={styles.quantityBadgeFloating}
+            />
           )}
         </View>
 
         {hasImage && (
-          <View style={[styles.imageContainer, { marginVertical: theme.spacing.sm, borderRadius: theme.borderRadius.md }]}>
+          <View style={imageContainerStyle}>
             <Image
               source={getImageSource(item.id, item.imageId!)}
-              style={[styles.fullImage, { borderRadius: theme.borderRadius.md }]}
+              style={fullImageStyle}
               resizeMode="cover"
             />
           </View>
         )}
 
         {hasDescription && (
-          <Text style={{ color: theme.colors.text.secondary, fontSize: theme.typography.sizes.md, marginBottom: theme.spacing.sm }}>
-            {item.description}
-          </Text>
+          <Text style={descriptionStyle}>{item.description}</Text>
         )}
 
         {hasFooterContent && (
-          <View style={[styles.metaRow, { flexWrap: 'wrap', gap: theme.spacing.xs, marginTop: theme.spacing.xs }]}>
-            {getPreference('location') && item.location && <MetaItem icon="location-on" text={item.location.name} theme={theme} />}
-            {getPreference('labels') && item.labels.length > 0 && <MetaItem icon="label" text={item.labels.map((l) => l.name).join(', ')} theme={theme} />}
-            {getPreference('purchasePrice') && item.purchasePrice && item.purchasePrice > 0 && (
-              <MetaItem icon="attach-money" text={`$${item.purchasePrice.toFixed(2)}`} theme={theme} />
+          <View style={detailedMetaRowStyle}>
+            {getPreference('location') && item.location && (
+              <MetaItem
+                icon="location-on"
+                text={item.location.name}
+                theme={theme}
+              />
             )}
-            {getPreference('insured') && <MetaItem icon={item.insured ? 'verified' : 'error-outline'} text={item.insured ? 'Insured' : 'Uninsured'} theme={theme} />}
-            {getPreference('createdAt') && <MetaItem icon="schedule" text={`Created: ${formatDate(item.createdAt)}`} theme={theme} />}
-            {getPreference('updatedAt') && <MetaItem icon="update" text={`Updated: ${formatDate(item.updatedAt)}`} theme={theme} />}
+            {getPreference('labels') && item.labels.length > 0 && (
+              <MetaItem
+                icon="label"
+                text={item.labels.map(l => l.name).join(', ')}
+                theme={theme}
+              />
+            )}
+            {getPreference('purchasePrice') &&
+              item.purchasePrice &&
+              item.purchasePrice > 0 && (
+                <MetaItem
+                  icon="attach-money"
+                  text={`$${item.purchasePrice.toFixed(2)}`}
+                  theme={theme}
+                />
+              )}
+            {getPreference('insured') && (
+              <MetaItem
+                icon={item.insured ? 'verified' : 'error-outline'}
+                text={item.insured ? 'Insured' : 'Uninsured'}
+                theme={theme}
+              />
+            )}
+            {getPreference('createdAt') && (
+              <MetaItem
+                icon="schedule"
+                text={`Created: ${formatDate(item.createdAt)}`}
+                theme={theme}
+              />
+            )}
+            {getPreference('updatedAt') && (
+              <MetaItem
+                icon="update"
+                text={`Updated: ${formatDate(item.updatedAt)}`}
+                theme={theme}
+              />
+            )}
           </View>
         )}
       </View>
@@ -293,6 +521,9 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   metaText: {},
+  metaRowWrap: {
+    flexWrap: 'wrap',
+  },
   standardRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -317,4 +548,11 @@ const styles = StyleSheet.create({
     width: '100%',
     aspectRatio: 1,
   },
+  quantityBadgeFloating: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+  },
+  description: {},
+  quantityText: {},
 });

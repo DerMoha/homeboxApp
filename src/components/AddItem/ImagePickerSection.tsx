@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useMemo} from 'react';
 import {
   View,
   Text,
@@ -26,6 +26,52 @@ interface ImagePickerSectionProps {
   formatFileSize: (bytes: number) => string;
 }
 
+interface ActionButtonProps {
+  icon: string;
+  label: string;
+  tone?: 'default' | 'danger';
+  onPress: () => void;
+}
+
+const ActionButton: React.FC<ActionButtonProps> = ({
+  icon,
+  label,
+  tone = 'default',
+  onPress,
+}) => {
+  const {theme} = useTheme();
+  const isDanger = tone === 'danger';
+  const backgroundColor = isDanger
+    ? 'rgba(239, 68, 68, 0.12)'
+    : theme.colors.background.tertiary;
+  const borderColor = isDanger ? theme.colors.error : theme.colors.borderSubtle;
+  const foreground = isDanger ? theme.colors.error : theme.colors.text.primary;
+
+  const buttonStyle = useMemo(
+    () => [
+      styles.actionButton,
+      {
+        backgroundColor,
+        borderColor,
+        borderRadius: theme.borderRadius.md,
+      },
+    ],
+    [backgroundColor, borderColor, theme.borderRadius.md],
+  );
+
+  const buttonTextStyle = useMemo(
+    () => [styles.actionButtonText, {color: foreground}],
+    [foreground],
+  );
+
+  return (
+    <TouchableOpacity style={buttonStyle} onPress={onPress} activeOpacity={0.8}>
+      <MaterialIcons name={icon} size={18} color={foreground} />
+      <Text style={buttonTextStyle}>{label}</Text>
+    </TouchableOpacity>
+  );
+};
+
 export const ImagePickerSection: React.FC<ImagePickerSectionProps> = ({
   selectedImage,
   imageRotation,
@@ -42,42 +88,131 @@ export const ImagePickerSection: React.FC<ImagePickerSectionProps> = ({
 }) => {
   const {theme} = useTheme();
 
-  const ActionButton: React.FC<{
-    icon: string;
-    label: string;
-    tone?: 'default' | 'danger';
-    onPress: () => void;
-  }> = ({icon, label, tone = 'default', onPress}) => {
-    const isDanger = tone === 'danger';
-    const backgroundColor = isDanger
-      ? 'rgba(239, 68, 68, 0.12)'
-      : theme.colors.background.tertiary;
-    const borderColor = isDanger
-      ? theme.colors.error
-      : theme.colors.borderSubtle;
-    const foreground = isDanger
-      ? theme.colors.error
-      : theme.colors.text.primary;
+  const previewTransform = useMemo(
+    () => [{rotate: `${imageRotation}deg`}, {scaleX: imageFlip ? -1 : 1}],
+    [imageRotation, imageFlip],
+  );
 
-    return (
-      <TouchableOpacity
-        style={[
-          styles.actionButton,
-          {
-            backgroundColor,
-            borderColor,
-            borderRadius: theme.borderRadius.md,
-          },
-        ]}
-        onPress={onPress}
-        activeOpacity={0.8}>
-        <MaterialIcons name={icon} size={18} color={foreground} />
-        <Text style={[styles.actionButtonText, {color: foreground}]}>
-          {label}
-        </Text>
-      </TouchableOpacity>
-    );
-  };
+  const imagePreviewContainerStyle = useMemo(
+    () => [
+      styles.imagePreviewContainer,
+      {
+        borderRadius: theme.borderRadius.md,
+        borderColor: theme.colors.borderSubtle,
+        backgroundColor: theme.colors.background.tertiary,
+      },
+    ],
+    [
+      theme.borderRadius.md,
+      theme.colors.background.tertiary,
+      theme.colors.borderSubtle,
+    ],
+  );
+
+  const previewImageStyle = useMemo(
+    () => [
+      styles.imagePreview,
+      {
+        transform: previewTransform,
+        borderRadius: theme.borderRadius.md,
+      },
+    ],
+    [previewTransform, theme.borderRadius.md],
+  );
+
+  const previewBadgeStyle = useMemo(
+    () => [
+      styles.previewBadge,
+      {
+        backgroundColor: theme.colors.accent.muted,
+        borderRadius: theme.borderRadius.full,
+      },
+    ],
+    [theme.borderRadius.full, theme.colors.accent.muted],
+  );
+
+  const previewBadgeTextStyle = useMemo(
+    () => [styles.previewBadgeText, {color: theme.colors.accent.primary}],
+    [theme.colors.accent.primary],
+  );
+
+  const imageSizeInfoStyle = useMemo(
+    () => [
+      styles.imageSizeInfo,
+      {
+        backgroundColor: theme.colors.background.secondary,
+        borderColor: theme.colors.borderSubtle,
+        borderRadius: theme.borderRadius.md,
+      },
+    ],
+    [
+      theme.borderRadius.md,
+      theme.colors.background.secondary,
+      theme.colors.borderSubtle,
+    ],
+  );
+
+  const imageSizeLabelStyle = useMemo(
+    () => [styles.imageSizeLabel, {color: theme.colors.text.secondary}],
+    [theme.colors.text.secondary],
+  );
+
+  const imageSizeValueStyle = useMemo(
+    () => [styles.imageSizeValue, {color: theme.colors.text.primary}],
+    [theme.colors.text.primary],
+  );
+
+  const imageSizeValueSuccessStyle = useMemo(
+    () => [styles.imageSizeValue, {color: theme.colors.success}],
+    [theme.colors.success],
+  );
+
+  const imageControlsStyle = useMemo(
+    () => [styles.imageControls, {gap: theme.spacing.sm}],
+    [theme.spacing.sm],
+  );
+
+  const emptyStateStyle = useMemo(
+    () => [
+      styles.emptyState,
+      {
+        borderColor: theme.colors.borderSubtle,
+        borderRadius: theme.borderRadius.md,
+      },
+    ],
+    [theme.borderRadius.md, theme.colors.borderSubtle],
+  );
+
+  const emptyIconStyle = useMemo(
+    () => [
+      styles.emptyIcon,
+      {
+        backgroundColor: theme.colors.accent.muted,
+        borderRadius: theme.borderRadius.full,
+      },
+    ],
+    [theme.borderRadius.full, theme.colors.accent.muted],
+  );
+
+  const emptyTitleStyle = useMemo(
+    () => [styles.emptyTitle, {color: theme.colors.text.primary}],
+    [theme.colors.text.primary],
+  );
+
+  const emptySubtitleStyle = useMemo(
+    () => [styles.emptySubtitle, {color: theme.colors.text.secondary}],
+    [theme.colors.text.secondary],
+  );
+
+  const imagePickerButtonsStyle = useMemo(
+    () => [styles.imagePickerButtons, {gap: theme.spacing.sm}],
+    [theme.spacing.sm],
+  );
+
+  const fullImageStyle = useMemo(
+    () => [styles.fullImage, {transform: previewTransform}],
+    [previewTransform],
+  );
 
   return (
     <View style={styles.section}>
@@ -86,113 +221,46 @@ export const ImagePickerSection: React.FC<ImagePickerSectionProps> = ({
           <TouchableOpacity
             onPress={onTogglePreview}
             activeOpacity={0.9}
-            style={[
-              styles.imagePreviewContainer,
-              {
-                borderRadius: theme.borderRadius.md,
-                borderColor: theme.colors.borderSubtle,
-                backgroundColor: theme.colors.background.tertiary,
-              },
-            ]}>
+            style={imagePreviewContainerStyle}>
             <Image
               source={{uri: selectedImage}}
-              style={[
-                styles.imagePreview,
-                {
-                  transform: [
-                    {rotate: `${imageRotation}deg`},
-                    {scaleX: imageFlip ? -1 : 1},
-                  ],
-                },
-                {borderRadius: theme.borderRadius.md},
-              ]}
+              style={previewImageStyle}
               resizeMode="contain"
             />
-            <View
-              style={[
-                styles.previewBadge,
-                {
-                  backgroundColor: theme.colors.accent.muted,
-                  borderRadius: theme.borderRadius.full,
-                },
-              ]}>
+            <View style={previewBadgeStyle}>
               <MaterialIcons
                 name="open-in-full"
                 size={12}
                 color={theme.colors.accent.primary}
               />
-              <Text
-                style={[
-                  styles.previewBadgeText,
-                  {color: theme.colors.accent.primary},
-                ]}>
-                Preview
-              </Text>
+              <Text style={previewBadgeTextStyle}>Preview</Text>
             </View>
           </TouchableOpacity>
 
           {originalSize && compressedSize && (
-            <View
-              style={[
-                styles.imageSizeInfo,
-                {
-                  backgroundColor: theme.colors.background.secondary,
-                  borderColor: theme.colors.borderSubtle,
-                  borderRadius: theme.borderRadius.md,
-                },
-              ]}>
+            <View style={imageSizeInfoStyle}>
               <View style={styles.imageSizeRow}>
-                <Text
-                  style={[
-                    styles.imageSizeLabel,
-                    {color: theme.colors.text.secondary},
-                  ]}>
-                  Original
-                </Text>
-                <Text
-                  style={[
-                    styles.imageSizeValue,
-                    {color: theme.colors.text.primary},
-                  ]}>
+                <Text style={imageSizeLabelStyle}>Original</Text>
+                <Text style={imageSizeValueStyle}>
                   {formatFileSize(originalSize)}
                 </Text>
               </View>
               <View style={styles.imageSizeRow}>
-                <Text
-                  style={[
-                    styles.imageSizeLabel,
-                    {color: theme.colors.text.secondary},
-                  ]}>
-                  Compressed
-                </Text>
-                <Text
-                  style={[
-                    styles.imageSizeValue,
-                    {color: theme.colors.text.primary},
-                  ]}>
+                <Text style={imageSizeLabelStyle}>Compressed</Text>
+                <Text style={imageSizeValueStyle}>
                   {formatFileSize(compressedSize)}
                 </Text>
               </View>
               <View style={styles.imageSizeRow}>
-                <Text
-                  style={[
-                    styles.imageSizeLabel,
-                    {color: theme.colors.text.secondary},
-                  ]}>
-                  Saved
-                </Text>
-                <Text
-                  style={[
-                    styles.imageSizeValue,
-                    {color: theme.colors.success},
-                  ]}>
+                <Text style={imageSizeLabelStyle}>Saved</Text>
+                <Text style={imageSizeValueSuccessStyle}>
                   -{formatFileSize(originalSize - compressedSize)}
                 </Text>
               </View>
             </View>
           )}
 
-          <View style={[styles.imageControls, {gap: theme.spacing.sm}]}>
+          <View style={imageControlsStyle}>
             <ActionButton
               icon="rotate-right"
               label="Rotate"
@@ -208,39 +276,19 @@ export const ImagePickerSection: React.FC<ImagePickerSectionProps> = ({
           </View>
         </View>
       ) : (
-        <View
-          style={[
-            styles.emptyState,
-            {
-              borderColor: theme.colors.borderSubtle,
-              borderRadius: theme.borderRadius.md,
-            },
-          ]}>
-          <View
-            style={[
-              styles.emptyIcon,
-              {
-                backgroundColor: theme.colors.accent.muted,
-                borderRadius: theme.borderRadius.full,
-              },
-            ]}>
+        <View style={emptyStateStyle}>
+          <View style={emptyIconStyle}>
             <MaterialIcons
               name="photo-camera"
               size={20}
               color={theme.colors.accent.primary}
             />
           </View>
-          <Text style={[styles.emptyTitle, {color: theme.colors.text.primary}]}>
-            Add a photo
-          </Text>
-          <Text
-            style={[
-              styles.emptySubtitle,
-              {color: theme.colors.text.secondary},
-            ]}>
+          <Text style={emptyTitleStyle}>Add a photo</Text>
+          <Text style={emptySubtitleStyle}>
             Capture a new photo or choose one from your library.
           </Text>
-          <View style={[styles.imagePickerButtons, {gap: theme.spacing.sm}]}>
+          <View style={imagePickerButtonsStyle}>
             <ActionButton
               icon="camera-alt"
               label="Camera"
@@ -269,15 +317,7 @@ export const ImagePickerSection: React.FC<ImagePickerSectionProps> = ({
               {selectedImage && (
                 <Image
                   source={{uri: selectedImage}}
-                  style={[
-                    styles.fullImage,
-                    {
-                      transform: [
-                        {rotate: `${imageRotation}deg`},
-                        {scaleX: imageFlip ? -1 : 1},
-                      ],
-                    },
-                  ]}
+                  style={fullImageStyle}
                   resizeMode="contain"
                 />
               )}

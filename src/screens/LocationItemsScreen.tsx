@@ -1,4 +1,4 @@
-import React, {useEffect, useCallback} from 'react';
+import React, {useEffect, useCallback, useMemo} from 'react';
 import {
   View,
   Text,
@@ -34,6 +34,57 @@ type LocationItem = Pick<
   imageId?: string | null;
 };
 
+type ThemeType = ReturnType<typeof useTheme>['theme'];
+
+interface InfoChipProps {
+  icon: string;
+  label: string;
+  tint?: string;
+  background?: string;
+  theme: ThemeType;
+}
+
+const InfoChip: React.FC<InfoChipProps> = ({
+  icon,
+  label,
+  tint,
+  background,
+  theme,
+}) => {
+  const chipStyle = useMemo(
+    () => [
+      styles.infoChip,
+      {
+        backgroundColor: background ?? theme.colors.background.tertiary,
+        borderColor: theme.colors.borderSubtle,
+        borderRadius: theme.borderRadius.full,
+      },
+    ],
+    [
+      background,
+      theme.borderRadius.full,
+      theme.colors.background.tertiary,
+      theme.colors.borderSubtle,
+    ],
+  );
+
+  const textStyle = useMemo(
+    () => [styles.infoChipText, {color: tint ?? theme.colors.text.secondary}],
+    [tint, theme.colors.text.secondary],
+  );
+
+  return (
+    <View style={chipStyle}>
+      <MaterialIcons
+        name={icon}
+        size={14}
+        color={tint ?? theme.colors.text.secondary}
+      />
+      <Text style={textStyle}>{label}</Text>
+    </View>
+  );
+};
+
 const LocationItemsScreen: React.FC = () => {
   const {theme} = useTheme();
   const navigation =
@@ -49,34 +100,112 @@ const LocationItemsScreen: React.FC = () => {
     execute,
   } = useAsyncState<LocationItem[]>([]);
 
-  const InfoChip: React.FC<{
-    icon: string;
-    label: string;
-    tint?: string;
-    background?: string;
-  }> = ({icon, label, tint, background}) => (
-    <View
-      style={[
-        styles.infoChip,
-        {
-          backgroundColor: background ?? theme.colors.background.tertiary,
-          borderColor: theme.colors.borderSubtle,
-          borderRadius: theme.borderRadius.full,
-        },
-      ]}>
-      <MaterialIcons
-        name={icon}
-        size={14}
-        color={tint ?? theme.colors.text.secondary}
-      />
-      <Text
-        style={[
-          styles.infoChipText,
-          {color: tint ?? theme.colors.text.secondary},
-        ]}>
-        {label}
-      </Text>
-    </View>
+  const listContentStyle = useMemo(
+    () => [
+      styles.listContent,
+      {paddingHorizontal: theme.spacing.md, paddingBottom: theme.spacing.lg},
+    ],
+    [theme.spacing.lg, theme.spacing.md],
+  );
+
+  const itemContainerStyle = useMemo(
+    () => [
+      styles.itemContainer,
+      {
+        backgroundColor: theme.colors.card.background,
+        borderColor: theme.colors.card.border,
+        borderRadius: theme.borderRadius.lg,
+      },
+      theme.shadows.sm,
+    ],
+    [
+      theme.borderRadius.lg,
+      theme.colors.card.background,
+      theme.colors.card.border,
+      theme.shadows.sm,
+    ],
+  );
+
+  const accentStripeStyle = useMemo(
+    () => [styles.accentStripe, {backgroundColor: theme.colors.accent.primary}],
+    [theme.colors.accent.primary],
+  );
+
+  const itemContentStyle = useMemo(
+    () => [styles.itemContent, {padding: theme.spacing.md}],
+    [theme.spacing.md],
+  );
+
+  const itemHeaderStyle = useMemo(
+    () => [styles.itemHeader, {gap: theme.spacing.sm}],
+    [theme.spacing.sm],
+  );
+
+  const itemNameStyle = useMemo(
+    () => [
+      styles.itemName,
+      {
+        color: theme.colors.text.primary,
+        fontSize: theme.typography.sizes.lg,
+      },
+    ],
+    [theme.colors.text.primary, theme.typography.sizes.lg],
+  );
+
+  const quantityBadgeStyle = useMemo(
+    () => [
+      styles.quantityBadge,
+      {backgroundColor: theme.colors.accent.primary},
+    ],
+    [theme.colors.accent.primary],
+  );
+
+  const quantityTextStyle = useMemo(
+    () => [
+      styles.quantityText,
+      {
+        color: theme.colors.text.inverse,
+        fontSize: theme.typography.sizes.sm,
+      },
+    ],
+    [theme.colors.text.inverse, theme.typography.sizes.sm],
+  );
+
+  const itemDescriptionStyle = useMemo(
+    () => [
+      styles.itemDescription,
+      {
+        color: theme.colors.text.secondary,
+        fontSize: theme.typography.sizes.sm,
+      },
+    ],
+    [theme.colors.text.secondary, theme.typography.sizes.sm],
+  );
+
+  const imageContainerStyle = useMemo(
+    () => [
+      styles.imageContainer,
+      {
+        backgroundColor: theme.colors.background.tertiary,
+        borderRadius: theme.borderRadius.md,
+        borderColor: theme.colors.borderSubtle,
+      },
+    ],
+    [
+      theme.borderRadius.md,
+      theme.colors.background.tertiary,
+      theme.colors.borderSubtle,
+    ],
+  );
+
+  const imageStyle = useMemo(
+    () => [styles.itemImage, {borderRadius: theme.borderRadius.md}],
+    [theme.borderRadius.md],
+  );
+
+  const itemFooterStyle = useMemo(
+    () => [styles.itemFooter, {gap: theme.spacing.xs}],
+    [theme.spacing.xs],
   );
 
   const loadItems = useCallback(async () => {
@@ -100,92 +229,36 @@ const LocationItemsScreen: React.FC = () => {
 
   const renderItem = ({item}: {item: LocationItem}): React.ReactElement => {
     return (
-      <TouchableOpacity
-        style={[
-          styles.itemContainer,
-          {
-            backgroundColor: theme.colors.card.background,
-            borderColor: theme.colors.card.border,
-            borderRadius: theme.borderRadius.lg,
-          },
-          theme.shadows.sm,
-        ]}
-        activeOpacity={0.75}>
-        <View
-          style={[
-            styles.accentStripe,
-            {backgroundColor: theme.colors.accent.primary},
-          ]}
-        />
-        <View style={[styles.itemContent, {padding: theme.spacing.md}]}>
-          <View style={[styles.itemHeader, {gap: theme.spacing.sm}]}>
-            <Text
-              style={[
-                styles.itemName,
-                {
-                  color: theme.colors.text.primary,
-                  fontSize: theme.typography.sizes.lg,
-                },
-              ]}>
-              {item.name}
-            </Text>
-            <View
-              style={[
-                styles.quantityBadge,
-                {backgroundColor: theme.colors.accent.primary},
-              ]}>
-              <Text
-                style={[
-                  styles.quantityText,
-                  {
-                    color: theme.colors.text.inverse,
-                    fontSize: theme.typography.sizes.sm,
-                  },
-                ]}>
-                {item.quantity}
-              </Text>
+      <TouchableOpacity style={itemContainerStyle} activeOpacity={0.75}>
+        <View style={accentStripeStyle} />
+        <View style={itemContentStyle}>
+          <View style={itemHeaderStyle}>
+            <Text style={itemNameStyle}>{item.name}</Text>
+            <View style={quantityBadgeStyle}>
+              <Text style={quantityTextStyle}>{item.quantity}</Text>
             </View>
           </View>
 
           {!!item.description && (
-            <Text
-              style={[
-                styles.itemDescription,
-                {
-                  color: theme.colors.text.secondary,
-                  fontSize: theme.typography.sizes.sm,
-                },
-              ]}>
-              {item.description}
-            </Text>
+            <Text style={itemDescriptionStyle}>{item.description}</Text>
           )}
 
           {item.imageId && (
-            <View
-              style={[
-                styles.imageContainer,
-                {
-                  backgroundColor: theme.colors.background.tertiary,
-                  borderRadius: theme.borderRadius.md,
-                  borderColor: theme.colors.borderSubtle,
-                },
-              ]}>
+            <View style={imageContainerStyle}>
               <Image
                 source={getImageSource(item.id, item.imageId)}
-                style={[
-                  styles.itemImage,
-                  {borderRadius: theme.borderRadius.md},
-                ]}
+                style={imageStyle}
                 resizeMode="cover"
               />
             </View>
           )}
 
-          <View style={[styles.itemFooter, {gap: theme.spacing.xs}]}>
+          <View style={itemFooterStyle}>
             {item.purchasePrice > 0 && (
               <InfoChip
                 icon="attach-money"
                 label={`$${item.purchasePrice.toFixed(2)}`}
+                theme={theme}
               />
             )}
             <InfoChip
@@ -201,12 +274,14 @@ const LocationItemsScreen: React.FC = () => {
                   ? theme.colors.accent.muted
                   : theme.colors.background.tertiary
               }
+              theme={theme}
             />
             {item.archived && (
               <InfoChip
                 icon="archive"
                 label="Archived"
                 tint={theme.colors.text.tertiary}
+                theme={theme}
               />
             )}
           </View>
@@ -236,10 +311,7 @@ const LocationItemsScreen: React.FC = () => {
       data={items}
       renderItem={renderItem}
       keyExtractor={item => item.id}
-      contentContainerStyle={[
-        styles.listContent,
-        {paddingHorizontal: theme.spacing.md, paddingBottom: theme.spacing.lg},
-      ]}
+      contentContainerStyle={listContentStyle}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}

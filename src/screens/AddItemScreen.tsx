@@ -1,4 +1,4 @@
-import React, {useEffect} from 'react';
+import React, {useEffect, useMemo} from 'react';
 import {
   View,
   Text,
@@ -20,6 +20,65 @@ import {
   ItemFormFields,
 } from '../components/AddItem';
 
+interface SectionHeaderProps {
+  title: string;
+  icon?: string;
+}
+
+const SectionHeader: React.FC<SectionHeaderProps> = ({title, icon}) => {
+  const {theme} = useTheme();
+
+  const iconContainerStyle = useMemo(
+    () => [
+      styles.sectionIconContainer,
+      {backgroundColor: theme.colors.accent.muted},
+    ],
+    [theme.colors.accent.muted],
+  );
+
+  const headerTextStyle = useMemo(
+    () => [
+      styles.sectionHeaderText,
+      {
+        color: theme.colors.text.secondary,
+        fontSize: theme.typography.sizes.sm,
+        fontWeight: theme.typography.weights.semibold,
+        letterSpacing: theme.typography.letterSpacing.wide,
+      },
+    ],
+    [
+      theme.colors.text.secondary,
+      theme.typography.letterSpacing.wide,
+      theme.typography.sizes.sm,
+      theme.typography.weights.semibold,
+    ],
+  );
+
+  const headerLineStyle = useMemo(
+    () => [
+      styles.sectionHeaderLine,
+      {backgroundColor: theme.colors.accent.primary},
+    ],
+    [theme.colors.accent.primary],
+  );
+
+  return (
+    <View style={styles.sectionHeader}>
+      {icon && (
+        <View style={iconContainerStyle}>
+          <MaterialIcons
+            name={icon}
+            size={16}
+            color={theme.colors.accent.primary}
+          />
+        </View>
+      )}
+      <Text style={headerTextStyle}>{title.toUpperCase()}</Text>
+      <View style={headerLineStyle} />
+    </View>
+  );
+};
+
 const AddItemScreen: React.FC = () => {
   const {theme} = useTheme();
   const navigation = useNavigation();
@@ -38,6 +97,30 @@ const AddItemScreen: React.FC = () => {
     },
     theme.shadows.sm,
   ];
+
+  const contentStyle = useMemo(
+    () => [styles.content, {paddingHorizontal: theme.spacing.md}],
+    [theme.spacing.md],
+  );
+
+  const loadingIconStyle = useMemo(
+    () => [
+      styles.loadingIconContainer,
+      {backgroundColor: theme.colors.accent.muted},
+    ],
+    [theme.colors.accent.muted],
+  );
+
+  const loadingTextStyle = useMemo(
+    () => [
+      styles.loadingText,
+      {
+        color: theme.colors.text.secondary,
+        fontSize: theme.typography.sizes.md,
+      },
+    ],
+    [theme.colors.text.secondary, theme.typography.sizes.md],
+  );
 
   const {locations, labels, enabledFields, isConnecting, loadEnabledFields} =
     useItemData();
@@ -71,6 +154,48 @@ const AddItemScreen: React.FC = () => {
     resetForm,
     submitItem,
   } = useAddItemForm();
+
+  const submitButtonStyle = useMemo(
+    () => [
+      styles.submitButton,
+      {
+        backgroundColor: theme.colors.accent.primary,
+        borderRadius: theme.borderRadius.lg,
+        opacity: isLoading ? 0.6 : 1,
+      },
+      theme.shadows.md,
+    ],
+    [
+      isLoading,
+      theme.borderRadius.lg,
+      theme.colors.accent.primary,
+      theme.shadows.md,
+    ],
+  );
+
+  const submitIconStyle = useMemo(
+    () => [
+      styles.submitIconContainer,
+      {backgroundColor: 'rgba(255,255,255,0.2)'},
+    ],
+    [],
+  );
+
+  const submitButtonTextStyle = useMemo(
+    () => [
+      styles.submitButtonText,
+      {
+        color: theme.colors.text.inverse,
+        fontSize: theme.typography.sizes.md,
+        fontWeight: theme.typography.weights.semibold,
+      },
+    ],
+    [
+      theme.colors.text.inverse,
+      theme.typography.sizes.md,
+      theme.typography.weights.semibold,
+    ],
+  );
 
   useFocusEffect(
     React.useCallback(() => {
@@ -118,78 +243,23 @@ const AddItemScreen: React.FC = () => {
     return (
       <View style={screenStyle}>
         <View style={styles.loadingContainer}>
-          <View
-            style={[
-              styles.loadingIconContainer,
-              {backgroundColor: theme.colors.accent.muted},
-            ]}>
+          <View style={loadingIconStyle}>
             <ActivityIndicator
               size="large"
               color={theme.colors.accent.primary}
             />
           </View>
-          <Text
-            style={[
-              styles.loadingText,
-              {
-                color: theme.colors.text.secondary,
-                fontSize: theme.typography.sizes.md,
-              },
-            ]}>
-            Connecting to server...
-          </Text>
+          <Text style={loadingTextStyle}>Connecting to server...</Text>
         </View>
       </View>
     );
   }
 
-  const SectionHeader: React.FC<{title: string; icon?: string}> = ({
-    title,
-    icon,
-  }) => (
-    <View style={styles.sectionHeader}>
-      {icon && (
-        <View
-          style={[
-            styles.sectionIconContainer,
-            {backgroundColor: theme.colors.accent.muted},
-          ]}>
-          <MaterialIcons
-            name={icon}
-            size={16}
-            color={theme.colors.accent.primary}
-          />
-        </View>
-      )}
-      <Text
-        style={[
-          styles.sectionHeaderText,
-          {
-            color: theme.colors.text.secondary,
-            fontSize: theme.typography.sizes.sm,
-            fontWeight: theme.typography.weights.semibold,
-            letterSpacing: theme.typography.letterSpacing.wide,
-          },
-        ]}>
-        {title.toUpperCase()}
-      </Text>
-      <View
-        style={[
-          styles.sectionHeaderLine,
-          {backgroundColor: theme.colors.accent.primary},
-        ]}
-      />
-    </View>
-  );
-
   return (
     <View style={screenStyle}>
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={[
-          styles.content,
-          {paddingHorizontal: theme.spacing.md},
-        ]}
+        contentContainerStyle={contentStyle}
         showsVerticalScrollIndicator={false}>
         <SectionHeader title="Item Details" icon="info" />
 
@@ -249,15 +319,7 @@ const AddItemScreen: React.FC = () => {
         )}
 
         <TouchableOpacity
-          style={[
-            styles.submitButton,
-            {
-              backgroundColor: theme.colors.accent.primary,
-              borderRadius: theme.borderRadius.lg,
-              opacity: isLoading ? 0.6 : 1,
-            },
-            theme.shadows.md,
-          ]}
+          style={submitButtonStyle}
           onPress={handleSubmit}
           disabled={isLoading}
           activeOpacity={0.8}>
@@ -265,28 +327,14 @@ const AddItemScreen: React.FC = () => {
             <ActivityIndicator color={theme.colors.text.inverse} />
           ) : (
             <>
-              <View
-                style={[
-                  styles.submitIconContainer,
-                  {backgroundColor: 'rgba(255,255,255,0.2)'},
-                ]}>
+              <View style={submitIconStyle}>
                 <MaterialIcons
                   name="add"
                   size={20}
                   color={theme.colors.text.inverse}
                 />
               </View>
-              <Text
-                style={[
-                  styles.submitButtonText,
-                  {
-                    color: theme.colors.text.inverse,
-                    fontSize: theme.typography.sizes.md,
-                    fontWeight: theme.typography.weights.semibold,
-                  },
-                ]}>
-                Add Item
-              </Text>
+              <Text style={submitButtonTextStyle}>Add Item</Text>
             </>
           )}
         </TouchableOpacity>

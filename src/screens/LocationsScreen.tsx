@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, {useState, useEffect, useCallback, useMemo, useRef} from 'react';
 import {
   View,
   Text,
@@ -8,17 +8,17 @@ import {
   ScrollView,
   Animated,
 } from 'react-native';
-import { useTheme } from '../theme/ThemeContext';
-import type { Theme } from '../theme/theme';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import {useTheme} from '../theme/ThemeContext';
+import type {Theme} from '../theme/theme';
+import {useNavigation} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import ServerService from '../services/serverService';
-import { LocationsStackParamList } from '../types/navigation';
+import {LocationsStackParamList} from '../types/navigation';
 import axios from 'axios';
-import { logger } from '../utils/logger';
-import { useAsyncState } from '../hooks/useAsyncState';
-import { LoadingState, ErrorState } from '../components/common';
+import {logger} from '../utils/logger';
+import {useAsyncState} from '../hooks/useAsyncState';
+import {LoadingState, ErrorState} from '../components/common';
 
 type RootStackParamList = LocationsStackParamList;
 
@@ -47,9 +47,9 @@ const LocationTreeItemComponent: React.FC<LocationTreeItemProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const rotateAnim = useRef(new Animated.Value(0)).current;
 
-  const hasChildren = useMemo(() =>
-    node.children && node.children.length > 0,
-    [node.children]
+  const hasChildren = useMemo(
+    () => node.children && node.children.length > 0,
+    [node.children],
   );
 
   const handleToggleExpand = useCallback(() => {
@@ -75,41 +75,107 @@ const LocationTreeItemComponent: React.FC<LocationTreeItemProps> = ({
   const levelIndent = level * theme.spacing.lg;
   const isNested = level > 0;
 
+  const locationCardStyle = useMemo(
+    () => [
+      styles.locationCard,
+      {
+        backgroundColor: isSelected
+          ? theme.colors.accent.muted
+          : theme.colors.card.background,
+        borderColor: isSelected
+          ? theme.colors.accent.primary
+          : theme.colors.borderSubtle,
+        marginLeft: levelIndent,
+        borderRadius: theme.borderRadius.lg,
+        borderLeftWidth: isNested ? 3 : 1,
+        borderLeftColor: isNested
+          ? theme.colors.accent.secondary
+          : theme.colors.borderSubtle,
+      },
+      theme.shadows.sm,
+    ],
+    [
+      isNested,
+      isSelected,
+      levelIndent,
+      theme.borderRadius.lg,
+      theme.colors.accent.muted,
+      theme.colors.accent.primary,
+      theme.colors.accent.secondary,
+      theme.colors.borderSubtle,
+      theme.colors.card.background,
+      theme.shadows.sm,
+    ],
+  );
+
+  const expandButtonStyle = useMemo(
+    () => [
+      styles.expandButton,
+      {backgroundColor: theme.colors.background.secondary},
+    ],
+    [theme.colors.background.secondary],
+  );
+
+  const rotateStyle = useMemo(
+    () => ({transform: [{rotate: rotateInterpolate}]}),
+    [rotateInterpolate],
+  );
+
+  const locationIconStyle = useMemo(
+    () => [
+      styles.locationIconContainer,
+      {backgroundColor: theme.colors.accent.muted},
+    ],
+    [theme.colors.accent.muted],
+  );
+
+  const locationNameStyle = useMemo(
+    () => [
+      styles.locationName,
+      {
+        color: theme.colors.text.primary,
+        fontSize:
+          level === 0 ? theme.typography.sizes.lg : theme.typography.sizes.md,
+        fontWeight:
+          level === 0
+            ? theme.typography.weights.semibold
+            : theme.typography.weights.medium,
+      },
+    ],
+    [
+      level,
+      theme.colors.text.primary,
+      theme.typography.sizes.lg,
+      theme.typography.sizes.md,
+      theme.typography.weights.medium,
+      theme.typography.weights.semibold,
+    ],
+  );
+
+  const childCountStyle = useMemo(
+    () => [
+      styles.childCount,
+      {
+        color: theme.colors.text.tertiary,
+        fontSize: theme.typography.sizes.xs,
+      },
+    ],
+    [theme.colors.text.tertiary, theme.typography.sizes.xs],
+  );
+
   return (
     <View>
       <TouchableOpacity
-        style={[
-          styles.locationCard,
-          {
-            backgroundColor: isSelected
-              ? theme.colors.accent.muted
-              : theme.colors.card.background,
-            borderColor: isSelected
-              ? theme.colors.accent.primary
-              : theme.colors.borderSubtle,
-            marginLeft: levelIndent,
-            borderRadius: theme.borderRadius.lg,
-            borderLeftWidth: isNested ? 3 : 1,
-            borderLeftColor: isNested
-              ? theme.colors.accent.secondary
-              : theme.colors.borderSubtle,
-          },
-          theme.shadows.sm,
-        ]}
+        style={locationCardStyle}
         onPress={handlePress}
-        activeOpacity={0.7}
-      >
+        activeOpacity={0.7}>
         <View style={styles.locationContent}>
           {hasChildren && (
             <TouchableOpacity
               onPress={handleToggleExpand}
-              style={[
-                styles.expandButton,
-                { backgroundColor: theme.colors.background.secondary },
-              ]}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Animated.View style={{ transform: [{ rotate: rotateInterpolate }] }}>
+              style={expandButtonStyle}
+              hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
+              <Animated.View style={rotateStyle}>
                 <MaterialIcons
                   name="chevron-right"
                   size={20}
@@ -119,7 +185,7 @@ const LocationTreeItemComponent: React.FC<LocationTreeItemProps> = ({
             </TouchableOpacity>
           )}
 
-          <View style={[styles.locationIconContainer, { backgroundColor: theme.colors.accent.muted }]}>
+          <View style={locationIconStyle}>
             <MaterialIcons
               name={level === 0 ? 'home' : 'folder'}
               size={18}
@@ -128,34 +194,13 @@ const LocationTreeItemComponent: React.FC<LocationTreeItemProps> = ({
           </View>
 
           <View style={styles.locationTextContainer}>
-            <Text
-              style={[
-                styles.locationName,
-                {
-                  color: theme.colors.text.primary,
-                  fontSize: level === 0
-                    ? theme.typography.sizes.lg
-                    : theme.typography.sizes.md,
-                  fontWeight: level === 0
-                    ? theme.typography.weights.semibold
-                    : theme.typography.weights.medium,
-                },
-              ]}
-              numberOfLines={1}
-            >
+            <Text style={locationNameStyle} numberOfLines={1}>
               {node.name}
             </Text>
             {hasChildren && (
-              <Text
-                style={[
-                  styles.childCount,
-                  {
-                    color: theme.colors.text.tertiary,
-                    fontSize: theme.typography.sizes.xs,
-                  },
-                ]}
-              >
-                {node.children.length} {node.children.length === 1 ? 'sublocation' : 'sublocations'}
+              <Text style={childCountStyle}>
+                {node.children.length}{' '}
+                {node.children.length === 1 ? 'sublocation' : 'sublocations'}
               </Text>
             )}
           </View>
@@ -170,7 +215,7 @@ const LocationTreeItemComponent: React.FC<LocationTreeItemProps> = ({
 
       {isExpanded && hasChildren && (
         <Animated.View>
-          {node.children.map((child) => (
+          {node.children.map(child => (
             <LocationTreeItem
               key={child.id}
               node={child}
@@ -188,8 +233,9 @@ const LocationTreeItemComponent: React.FC<LocationTreeItemProps> = ({
 const LocationTreeItem = React.memo(LocationTreeItemComponent);
 
 const LocationsScreen: React.FC = () => {
-  const { theme } = useTheme();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const {theme} = useTheme();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const {
     data: locationTree,
     isLoading,
@@ -199,38 +245,50 @@ const LocationsScreen: React.FC = () => {
   } = useAsyncState<LocationNode[]>([]);
 
   const loadLocations = useCallback(async (): Promise<void> => {
-    await execute(async () => {
-      const service = ServerService.getInstance();
+    await execute(
+      async () => {
+        const service = ServerService.getInstance();
 
-      const axiosInstance = service.getAxiosInstance();
-      if (!axiosInstance) {
-        throw new Error('No active server connection. Please check your server settings.');
-      }
-
-      const response = await axiosInstance.get('/api/v1/locations/tree');
-      return response.data;
-    }, {
-      onError: (err) => {
-        logger.error('Error loading locations:', err);
-        if (axios.isAxiosError(err)) {
-          if (err.response?.status === 500) {
-            throw new Error('Server error occurred. Please check if the server is running and try again.');
-          }
+        const axiosInstance = service.getAxiosInstance();
+        if (!axiosInstance) {
+          throw new Error(
+            'No active server connection. Please check your server settings.',
+          );
         }
+
+        const response = await axiosInstance.get('/api/v1/locations/tree');
+        return response.data;
       },
-    });
+      {
+        onError: err => {
+          logger.error('Error loading locations:', err);
+          if (axios.isAxiosError(err)) {
+            if (err.response?.status === 500) {
+              throw new Error(
+                'Server error occurred. Please check if the server is running and try again.',
+              );
+            }
+          }
+        },
+      },
+    );
   }, [execute]);
 
   const onRefresh = (): void => {
-    execute(async () => {
-      const service = ServerService.getInstance();
-      const axiosInstance = service.getAxiosInstance();
-      if (!axiosInstance) {
-        throw new Error('No active server connection. Please check your server settings.');
-      }
-      const response = await axiosInstance.get('/api/v1/locations/tree');
-      return response.data;
-    }, { isRefresh: true });
+    execute(
+      async () => {
+        const service = ServerService.getInstance();
+        const axiosInstance = service.getAxiosInstance();
+        if (!axiosInstance) {
+          throw new Error(
+            'No active server connection. Please check your server settings.',
+          );
+        }
+        const response = await axiosInstance.get('/api/v1/locations/tree');
+        return response.data;
+      },
+      {isRefresh: true},
+    );
   };
 
   const handleLocationPress = (locationId: string, locationName: string) => {
@@ -244,6 +302,54 @@ const LocationsScreen: React.FC = () => {
     loadLocations();
   }, [loadLocations]);
 
+  const containerStyle = useMemo(
+    () => [
+      styles.container,
+      {backgroundColor: theme.colors.background.primary},
+    ],
+    [theme.colors.background.primary],
+  );
+
+  const listContentStyle = useMemo(
+    () => [styles.listContent, {paddingHorizontal: theme.spacing.md}],
+    [theme.spacing.md],
+  );
+
+  const emptyIconStyle = useMemo(
+    () => [
+      styles.emptyIconContainer,
+      {backgroundColor: theme.colors.accent.muted},
+    ],
+    [theme.colors.accent.muted],
+  );
+
+  const emptyTitleStyle = useMemo(
+    () => [
+      styles.emptyTitle,
+      {
+        color: theme.colors.text.primary,
+        fontSize: theme.typography.sizes.lg,
+        fontWeight: theme.typography.weights.semibold,
+      },
+    ],
+    [
+      theme.colors.text.primary,
+      theme.typography.sizes.lg,
+      theme.typography.weights.semibold,
+    ],
+  );
+
+  const emptySubtitleStyle = useMemo(
+    () => [
+      styles.emptySubtitle,
+      {
+        color: theme.colors.text.secondary,
+        fontSize: theme.typography.sizes.sm,
+      },
+    ],
+    [theme.colors.text.secondary, theme.typography.sizes.sm],
+  );
+
   if (isLoading) {
     return <LoadingState message="Loading locations..." />;
   }
@@ -253,12 +359,9 @@ const LocationsScreen: React.FC = () => {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
+    <View style={containerStyle}>
       <ScrollView
-        contentContainerStyle={[
-          styles.listContent,
-          { paddingHorizontal: theme.spacing.md },
-        ]}
+        contentContainerStyle={listContentStyle}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -268,47 +371,28 @@ const LocationsScreen: React.FC = () => {
             progressBackgroundColor={theme.colors.background.elevated}
           />
         }
-        showsVerticalScrollIndicator={false}
-      >
-        {locationTree && locationTree.map((node) => (
-          <LocationTreeItem
-            key={node.id}
-            node={node}
-            level={0}
-            onPress={handleLocationPress}
-            theme={theme}
-          />
-        ))}
+        showsVerticalScrollIndicator={false}>
+        {locationTree &&
+          locationTree.map(node => (
+            <LocationTreeItem
+              key={node.id}
+              node={node}
+              level={0}
+              onPress={handleLocationPress}
+              theme={theme}
+            />
+          ))}
         {locationTree && locationTree.length === 0 && (
           <View style={styles.emptyContainer}>
-            <View style={[styles.emptyIconContainer, { backgroundColor: theme.colors.accent.muted }]}>
+            <View style={emptyIconStyle}>
               <MaterialIcons
                 name="location-off"
                 size={48}
                 color={theme.colors.accent.primary}
               />
             </View>
-            <Text
-              style={[
-                styles.emptyTitle,
-                {
-                  color: theme.colors.text.primary,
-                  fontSize: theme.typography.sizes.lg,
-                  fontWeight: theme.typography.weights.semibold,
-                },
-              ]}
-            >
-              No locations found
-            </Text>
-            <Text
-              style={[
-                styles.emptySubtitle,
-                {
-                  color: theme.colors.text.secondary,
-                  fontSize: theme.typography.sizes.sm,
-                },
-              ]}
-            >
+            <Text style={emptyTitleStyle}>No locations found</Text>
+            <Text style={emptySubtitleStyle}>
               Add locations from your Homebox server
             </Text>
           </View>

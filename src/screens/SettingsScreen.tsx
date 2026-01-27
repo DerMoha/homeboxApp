@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import {
   View,
   Text,
@@ -7,16 +7,19 @@ import {
   Alert,
   ScrollView,
 } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import ServerService, { ServerConfig } from '../services/serverService';
-import { useTheme } from '../theme/ThemeContext';
-import { SettingsStackParamList } from '../types/navigation';
+import {Picker} from '@react-native-picker/picker';
+import {useNavigation, useFocusEffect} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import ServerService, {ServerConfig} from '../services/serverService';
+import {useTheme} from '../theme/ThemeContext';
+import {SettingsStackParamList} from '../types/navigation';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import { logger } from '../utils/logger';
+import {logger} from '../utils/logger';
 
-type SettingsScreenNavigationProp = NativeStackNavigationProp<SettingsStackParamList, 'Settings'>;
+type SettingsScreenNavigationProp = NativeStackNavigationProp<
+  SettingsStackParamList,
+  'Settings'
+>;
 
 interface ServerWithStatus extends ServerConfig {
   status: 'checking' | 'online' | 'offline';
@@ -26,11 +29,89 @@ interface SettingsItemProps {
   icon: string;
   title: string;
   onPress: () => void;
+  theme: ReturnType<typeof useTheme>['theme'];
 }
+
+interface SectionHeaderProps {
+  title: string;
+  theme: ReturnType<typeof useTheme>['theme'];
+}
+
+const SettingsItem: React.FC<SettingsItemProps> = ({
+  icon,
+  title,
+  onPress,
+  theme,
+}) => (
+  <TouchableOpacity
+    style={[
+      styles.settingsItem,
+      {
+        backgroundColor: theme.colors.card.background,
+        borderColor: theme.colors.borderSubtle,
+      },
+      theme.shadows.sm,
+    ]}
+    onPress={onPress}
+    activeOpacity={0.7}>
+    <View style={styles.settingsItemLeft}>
+      <View
+        style={[
+          styles.iconContainer,
+          {backgroundColor: theme.colors.accent.muted},
+        ]}>
+        <MaterialIcons
+          name={icon}
+          size={20}
+          color={theme.colors.accent.primary}
+        />
+      </View>
+      <Text
+        style={[
+          styles.settingsItemText,
+          {
+            color: theme.colors.text.primary,
+            fontSize: theme.typography.sizes.md,
+            fontWeight: theme.typography.weights.medium,
+          },
+        ]}>
+        {title}
+      </Text>
+    </View>
+    <MaterialIcons
+      name="chevron-right"
+      size={24}
+      color={theme.colors.text.tertiary}
+    />
+  </TouchableOpacity>
+);
+
+const SectionHeader: React.FC<SectionHeaderProps> = ({title, theme}) => (
+  <View style={styles.sectionHeader}>
+    <Text
+      style={[
+        styles.sectionHeaderText,
+        {
+          color: theme.colors.text.secondary,
+          fontSize: theme.typography.sizes.sm,
+          fontWeight: theme.typography.weights.semibold,
+          letterSpacing: theme.typography.letterSpacing.wide,
+        },
+      ]}>
+      {title.toUpperCase()}
+    </Text>
+    <View
+      style={[
+        styles.sectionHeaderLine,
+        {backgroundColor: theme.colors.accent.primary},
+      ]}
+    />
+  </View>
+);
 
 const SettingsScreen: React.FC = () => {
   const navigation = useNavigation<SettingsScreenNavigationProp>();
-  const { theme } = useTheme();
+  const {theme} = useTheme();
   const [servers, setServers] = useState<ServerWithStatus[]>([]);
   const [selectedServer, setSelectedServer] = useState<string>('');
   const [_isCheckingStatus, _setIsCheckingStatus] = useState(false);
@@ -46,33 +127,38 @@ const SettingsScreen: React.FC = () => {
     });
   }, [navigation, theme]);
 
-  const checkServerStatus = useCallback(async (server: ServerConfig): Promise<'online' | 'offline'> => {
-    try {
-      const serverService = ServerService.getInstance();
-      const result = await serverService.testConnection(server);
-      return result.success ? 'online' : 'offline';
-    } catch (error) {
-      return 'offline';
-    }
-  }, []);
+  const checkServerStatus = useCallback(
+    async (server: ServerConfig): Promise<'online' | 'offline'> => {
+      try {
+        const serverService = ServerService.getInstance();
+        const result = await serverService.testConnection(server);
+        return result.success ? 'online' : 'offline';
+      } catch (error) {
+        return 'offline';
+      }
+    },
+    [],
+  );
 
   const loadServers = useCallback(async (): Promise<void> => {
     try {
       const serverService = ServerService.getInstance();
       const savedServers = await serverService.getServers();
 
-      const serversWithStatus: ServerWithStatus[] = savedServers.map(server => ({
-        ...server,
-        status: 'checking',
-      }));
+      const serversWithStatus: ServerWithStatus[] = savedServers.map(
+        server => ({
+          ...server,
+          status: 'checking',
+        }),
+      );
       setServers(serversWithStatus);
 
       _setIsCheckingStatus(true);
       const updatedServers = await Promise.all(
-        serversWithStatus.map(async (server) => {
+        serversWithStatus.map(async server => {
           const status = await checkServerStatus(server);
-          return { ...server, status };
-        })
+          return {...server, status};
+        }),
       );
       setServers(updatedServers);
       _setIsCheckingStatus(false);
@@ -99,7 +185,7 @@ const SettingsScreen: React.FC = () => {
       if (currentConfig) {
         setSelectedServer(currentConfig.id);
       }
-    }, [loadServers])
+    }, [loadServers]),
   );
 
   useEffect(() => {
@@ -108,7 +194,7 @@ const SettingsScreen: React.FC = () => {
 
   const handleServerChange = async (serverId: string): Promise<void> => {
     if (serverId === 'add_new') {
-      navigation.navigate('ServerConfig', { server: undefined });
+      navigation.navigate('ServerConfig', {server: undefined});
       return;
     }
 
@@ -126,65 +212,14 @@ const SettingsScreen: React.FC = () => {
     }
   };
 
-  const SettingsItem: React.FC<SettingsItemProps> = ({ icon, title, onPress }) => (
-    <TouchableOpacity
-      style={[
-        styles.settingsItem,
-        {
-          backgroundColor: theme.colors.card.background,
-          borderColor: theme.colors.borderSubtle,
-        },
-        theme.shadows.sm,
-      ]}
-      onPress={onPress}
-      activeOpacity={0.7}
-    >
-      <View style={styles.settingsItemLeft}>
-        <View style={[styles.iconContainer, { backgroundColor: theme.colors.accent.muted }]}>
-          <MaterialIcons name={icon} size={20} color={theme.colors.accent.primary} />
-        </View>
-        <Text
-          style={[
-            styles.settingsItemText,
-            {
-              color: theme.colors.text.primary,
-              fontSize: theme.typography.sizes.md,
-              fontWeight: theme.typography.weights.medium,
-            },
-          ]}
-        >
-          {title}
-        </Text>
-      </View>
-      <MaterialIcons name="chevron-right" size={24} color={theme.colors.text.tertiary} />
-    </TouchableOpacity>
-  );
-
-  const SectionHeader: React.FC<{ title: string }> = ({ title }) => (
-    <View style={styles.sectionHeader}>
-      <Text
-        style={[
-          styles.sectionHeaderText,
-          {
-            color: theme.colors.text.secondary,
-            fontSize: theme.typography.sizes.sm,
-            fontWeight: theme.typography.weights.semibold,
-            letterSpacing: theme.typography.letterSpacing.wide,
-          },
-        ]}
-      >
-        {title.toUpperCase()}
-      </Text>
-      <View style={[styles.sectionHeaderLine, { backgroundColor: theme.colors.accent.primary }]} />
-    </View>
-  );
-
   return (
     <ScrollView
-      style={[styles.container, { backgroundColor: theme.colors.background.primary }]}
-      contentContainerStyle={styles.contentContainer}
-    >
-      <SectionHeader title="Server" />
+      style={[
+        styles.container,
+        {backgroundColor: theme.colors.background.primary},
+      ]}
+      contentContainerStyle={styles.contentContainer}>
+      <SectionHeader title="Server" theme={theme} />
 
       <View
         style={[
@@ -194,11 +229,18 @@ const SettingsScreen: React.FC = () => {
             borderColor: theme.colors.borderSubtle,
           },
           theme.shadows.sm,
-        ]}
-      >
+        ]}>
         <View style={styles.serverPickerHeader}>
-          <View style={[styles.iconContainer, { backgroundColor: theme.colors.accent.muted }]}>
-            <MaterialIcons name="dns" size={20} color={theme.colors.accent.primary} />
+          <View
+            style={[
+              styles.iconContainer,
+              {backgroundColor: theme.colors.accent.muted},
+            ]}>
+            <MaterialIcons
+              name="dns"
+              size={20}
+              color={theme.colors.accent.primary}
+            />
           </View>
           <Text
             style={[
@@ -208,8 +250,7 @@ const SettingsScreen: React.FC = () => {
                 fontSize: theme.typography.sizes.md,
                 fontWeight: theme.typography.weights.medium,
               },
-            ]}
-          >
+            ]}>
             Active Server
           </Text>
         </View>
@@ -221,16 +262,14 @@ const SettingsScreen: React.FC = () => {
               borderColor: theme.colors.borderSubtle,
               borderRadius: theme.borderRadius.md,
             },
-          ]}
-        >
+          ]}>
           <Picker
             selectedValue={selectedServer}
             onValueChange={handleServerChange}
-            style={[styles.picker, { color: theme.colors.text.primary }]}
-            dropdownIconColor={theme.colors.text.secondary}
-          >
+            style={[styles.picker, {color: theme.colors.text.primary}]}
+            dropdownIconColor={theme.colors.text.secondary}>
             {servers.length > 0 ? (
-              servers.map((server) => (
+              servers.map(server => (
                 <Picker.Item
                   key={server.id}
                   label={server.name || server.host}
@@ -245,33 +284,39 @@ const SettingsScreen: React.FC = () => {
         </View>
       </View>
 
-      <SectionHeader title="Configuration" />
+      <SectionHeader title="Configuration" theme={theme} />
 
       <View style={styles.settingsGroup}>
         <SettingsItem
           icon="settings-ethernet"
           title="Server Configuration"
-          onPress={() => navigation.navigate('ServerConfig', { server: undefined })}
+          onPress={() =>
+            navigation.navigate('ServerConfig', {server: undefined})
+          }
+          theme={theme}
         />
         <SettingsItem
           icon="palette"
           title="Appearance"
           onPress={() => navigation.navigate('Appearance')}
+          theme={theme}
         />
       </View>
 
-      <SectionHeader title="Preferences" />
+      <SectionHeader title="Preferences" theme={theme} />
 
       <View style={styles.settingsGroup}>
         <SettingsItem
           icon="view-list"
           title="Inventory Display"
           onPress={() => navigation.navigate('InventorySettings')}
+          theme={theme}
         />
         <SettingsItem
           icon="add-circle-outline"
           title="Add Item Fields"
           onPress={() => navigation.navigate('AddItemSettings')}
+          theme={theme}
         />
       </View>
     </ScrollView>

@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect} from 'react';
+import React, {useCallback, useEffect, useMemo} from 'react';
 import {View, Text, StyleSheet, ScrollView, Image} from 'react-native';
 import {RouteProp, useRoute} from '@react-navigation/native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
@@ -14,12 +14,167 @@ type ItemDetailRouteProp = RouteProp<
   'ItemDetail'
 >;
 
+type ThemeType = ReturnType<typeof useTheme>['theme'];
+
 function formatCurrency(value?: number): string {
   if (!value || value <= 0) {
     return '—';
   }
   return `$${value.toFixed(2)}`;
 }
+
+interface StatCardProps {
+  icon: string;
+  label: string;
+  value: string;
+  tone?: 'default' | 'success' | 'warning';
+  theme: ThemeType;
+}
+
+const StatCard: React.FC<StatCardProps> = ({
+  icon,
+  label,
+  value,
+  tone = 'default',
+  theme,
+}) => {
+  const toneColor = useMemo(() => {
+    if (tone === 'success') {
+      return theme.colors.success;
+    }
+    if (tone === 'warning') {
+      return theme.colors.warning;
+    }
+    return theme.colors.accent.primary;
+  }, [
+    theme.colors.accent.primary,
+    theme.colors.success,
+    theme.colors.warning,
+    tone,
+  ]);
+
+  const cardStyle = useMemo(
+    () => [
+      styles.statCard,
+      {
+        backgroundColor: theme.colors.card.background,
+        borderColor: theme.colors.card.border,
+        borderRadius: theme.borderRadius.md,
+      },
+    ],
+    [
+      theme.borderRadius.md,
+      theme.colors.card.background,
+      theme.colors.card.border,
+    ],
+  );
+
+  const iconStyle = useMemo(
+    () => [
+      styles.statIcon,
+      {
+        backgroundColor: theme.colors.accent.muted,
+        borderRadius: theme.borderRadius.sm,
+      },
+    ],
+    [theme.borderRadius.sm, theme.colors.accent.muted],
+  );
+
+  const labelStyle = useMemo(
+    () => [
+      styles.statLabel,
+      {
+        color: theme.colors.text.secondary,
+        fontSize: theme.typography.sizes.xs,
+      },
+    ],
+    [theme.colors.text.secondary, theme.typography.sizes.xs],
+  );
+
+  const valueStyle = useMemo(
+    () => [
+      styles.statValue,
+      {
+        color: theme.colors.text.primary,
+        fontSize: theme.typography.sizes.lg,
+        fontWeight: theme.typography.weights.semibold,
+      },
+    ],
+    [
+      theme.colors.text.primary,
+      theme.typography.sizes.lg,
+      theme.typography.weights.semibold,
+    ],
+  );
+
+  return (
+    <View style={cardStyle}>
+      <View style={iconStyle}>
+        <MaterialIcons name={icon} size={16} color={toneColor} />
+      </View>
+      <Text style={labelStyle}>{label}</Text>
+      <Text style={valueStyle}>{value}</Text>
+    </View>
+  );
+};
+
+interface MetaRowProps {
+  icon: string;
+  label: string;
+  value: string;
+  theme: ThemeType;
+}
+
+const MetaRow: React.FC<MetaRowProps> = ({icon, label, value, theme}) => {
+  const metaIconStyle = useMemo(
+    () => [
+      styles.metaIcon,
+      {
+        backgroundColor: theme.colors.background.tertiary,
+        borderRadius: theme.borderRadius.sm,
+      },
+    ],
+    [theme.borderRadius.sm, theme.colors.background.tertiary],
+  );
+
+  const metaLabelStyle = useMemo(
+    () => [
+      styles.metaLabel,
+      {
+        color: theme.colors.text.secondary,
+        fontSize: theme.typography.sizes.xs,
+      },
+    ],
+    [theme.colors.text.secondary, theme.typography.sizes.xs],
+  );
+
+  const metaValueStyle = useMemo(
+    () => [
+      styles.metaValue,
+      {
+        color: theme.colors.text.primary,
+        fontSize: theme.typography.sizes.md,
+      },
+    ],
+    [theme.colors.text.primary, theme.typography.sizes.md],
+  );
+
+  return (
+    <View style={styles.metaRow}>
+      <View style={metaIconStyle}>
+        <MaterialIcons
+          name={icon}
+          size={14}
+          color={theme.colors.text.tertiary}
+        />
+      </View>
+      <View style={styles.metaTextGroup}>
+        <Text style={metaLabelStyle}>{label}</Text>
+        <Text style={metaValueStyle}>{value}</Text>
+      </View>
+    </View>
+  );
+};
 
 const ItemDetailScreen: React.FC = () => {
   const {theme} = useTheme();
@@ -45,6 +200,203 @@ const ItemDetailScreen: React.FC = () => {
     execute(fetchItem);
   }, [execute, fetchItem]);
 
+  const description = item?.description?.trim();
+  const labels = item?.labels ?? [];
+
+  const containerStyle = useMemo(
+    () => [
+      styles.container,
+      {backgroundColor: theme.colors.background.primary},
+    ],
+    [theme.colors.background.primary],
+  );
+
+  const scrollContentStyle = useMemo(
+    () => [
+      styles.scrollContent,
+      {
+        paddingHorizontal: theme.spacing.md,
+        paddingBottom: theme.spacing.xl,
+      },
+    ],
+    [theme.spacing.md, theme.spacing.xl],
+  );
+
+  const heroCardStyle = useMemo(
+    () => [
+      styles.heroCard,
+      {
+        backgroundColor: theme.colors.card.background,
+        borderColor: theme.colors.card.border,
+        borderRadius: theme.borderRadius.lg,
+      },
+      theme.shadows.sm,
+    ],
+    [
+      theme.borderRadius.lg,
+      theme.colors.card.background,
+      theme.colors.card.border,
+      theme.shadows.sm,
+    ],
+  );
+
+  const accentStripeStyle = useMemo(
+    () => [
+      styles.accentStripe,
+      {
+        backgroundColor: theme.colors.accent.primary,
+        borderTopLeftRadius: theme.borderRadius.lg,
+        borderBottomLeftRadius: theme.borderRadius.lg,
+      },
+    ],
+    [theme.borderRadius.lg, theme.colors.accent.primary],
+  );
+
+  const heroContentStyle = useMemo(
+    () => [styles.heroContent, {padding: theme.spacing.md}],
+    [theme.spacing.md],
+  );
+
+  const heroRowStyle = useMemo(
+    () => [styles.heroRow, {gap: theme.spacing.md}],
+    [theme.spacing.md],
+  );
+
+  const heroImageStyle = useMemo(
+    () => [
+      styles.heroImage,
+      {
+        backgroundColor: theme.colors.background.tertiary,
+        borderRadius: theme.borderRadius.md,
+        borderColor: theme.colors.borderSubtle,
+      },
+    ],
+    [
+      theme.borderRadius.md,
+      theme.colors.background.tertiary,
+      theme.colors.borderSubtle,
+    ],
+  );
+
+  const heroImageFillStyle = useMemo(
+    () => [styles.heroImageFill, {borderRadius: theme.borderRadius.md}],
+    [theme.borderRadius.md],
+  );
+
+  const titleStyle = useMemo(
+    () => [
+      styles.title,
+      {
+        color: theme.colors.text.primary,
+        fontSize: theme.typography.sizes.xxl,
+        fontWeight: theme.typography.weights.semibold,
+      },
+    ],
+    [
+      theme.colors.text.primary,
+      theme.typography.sizes.xxl,
+      theme.typography.weights.semibold,
+    ],
+  );
+
+  const descStyle = useMemo(
+    () => [
+      styles.desc,
+      {
+        color: theme.colors.text.secondary,
+        fontSize: theme.typography.sizes.md,
+      },
+    ],
+    [theme.colors.text.secondary, theme.typography.sizes.md],
+  );
+
+  const locationTextStyle = useMemo(
+    () => [
+      styles.locationText,
+      {
+        color: theme.colors.text.tertiary,
+        fontSize: theme.typography.sizes.sm,
+      },
+    ],
+    [theme.colors.text.tertiary, theme.typography.sizes.sm],
+  );
+
+  const labelRowStyle = useMemo(
+    () => [
+      styles.labelRow,
+      {marginTop: theme.spacing.sm, gap: theme.spacing.xs},
+    ],
+    [theme.spacing.sm, theme.spacing.xs],
+  );
+
+  const labelChipStyle = useMemo(
+    () => [
+      styles.labelChip,
+      {
+        backgroundColor: theme.colors.accent.muted,
+        borderRadius: theme.borderRadius.full,
+      },
+    ],
+    [theme.borderRadius.full, theme.colors.accent.muted],
+  );
+
+  const labelChipTextStyle = useMemo(
+    () => [
+      styles.labelChipText,
+      {
+        color: theme.colors.accent.primary,
+        fontSize: theme.typography.sizes.xs,
+      },
+    ],
+    [theme.colors.accent.primary, theme.typography.sizes.xs],
+  );
+
+  const statsGridStyle = useMemo(
+    () => [
+      styles.statsGrid,
+      {marginTop: theme.spacing.lg, gap: theme.spacing.sm},
+    ],
+    [theme.spacing.lg, theme.spacing.sm],
+  );
+
+  const detailCardStyle = useMemo(
+    () => [
+      styles.detailCard,
+      {
+        backgroundColor: theme.colors.card.background,
+        borderColor: theme.colors.card.border,
+        borderRadius: theme.borderRadius.lg,
+        marginTop: theme.spacing.lg,
+      },
+      theme.shadows.sm,
+    ],
+    [
+      theme.borderRadius.lg,
+      theme.colors.card.background,
+      theme.colors.card.border,
+      theme.shadows.sm,
+      theme.spacing.lg,
+    ],
+  );
+
+  const detailTitleStyle = useMemo(
+    () => [
+      styles.detailTitle,
+      {
+        color: theme.colors.text.primary,
+        fontSize: theme.typography.sizes.sm,
+        fontWeight: theme.typography.weights.semibold,
+        letterSpacing: theme.typography.letterSpacing.wide,
+      },
+    ],
+    [
+      theme.colors.text.primary,
+      theme.typography.letterSpacing.wide,
+      theme.typography.sizes.sm,
+      theme.typography.weights.semibold,
+    ],
+  );
+
   if (isLoading) {
     return <LoadingState message="Loading item details..." />;
   }
@@ -57,164 +409,20 @@ const ItemDetailScreen: React.FC = () => {
     return null;
   }
 
-  const description = item.description?.trim();
-  const labels = item.labels ?? [];
-
-  const StatCard: React.FC<{
-    icon: string;
-    label: string;
-    value: string;
-    tone?: 'default' | 'success' | 'warning';
-  }> = ({icon, label, value, tone = 'default'}) => {
-    const toneColor =
-      tone === 'success'
-        ? theme.colors.success
-        : tone === 'warning'
-        ? theme.colors.warning
-        : theme.colors.accent.primary;
-    return (
-      <View
-        style={[
-          styles.statCard,
-          {
-            backgroundColor: theme.colors.card.background,
-            borderColor: theme.colors.card.border,
-            borderRadius: theme.borderRadius.md,
-          },
-        ]}>
-        <View
-          style={[
-            styles.statIcon,
-            {
-              backgroundColor: theme.colors.accent.muted,
-              borderRadius: theme.borderRadius.sm,
-            },
-          ]}>
-          <MaterialIcons name={icon} size={16} color={toneColor} />
-        </View>
-        <Text
-          style={[
-            styles.statLabel,
-            {
-              color: theme.colors.text.secondary,
-              fontSize: theme.typography.sizes.xs,
-            },
-          ]}>
-          {label}
-        </Text>
-        <Text
-          style={[
-            styles.statValue,
-            {
-              color: theme.colors.text.primary,
-              fontSize: theme.typography.sizes.lg,
-              fontWeight: theme.typography.weights.semibold,
-            },
-          ]}>
-          {value}
-        </Text>
-      </View>
-    );
-  };
-
-  const MetaRow: React.FC<{icon: string; label: string; value: string}> = ({
-    icon,
-    label,
-    value,
-  }) => (
-    <View style={styles.metaRow}>
-      <View
-        style={[
-          styles.metaIcon,
-          {
-            backgroundColor: theme.colors.background.tertiary,
-            borderRadius: theme.borderRadius.sm,
-          },
-        ]}>
-        <MaterialIcons
-          name={icon}
-          size={14}
-          color={theme.colors.text.tertiary}
-        />
-      </View>
-      <View style={styles.metaTextGroup}>
-        <Text
-          style={[
-            styles.metaLabel,
-            {
-              color: theme.colors.text.secondary,
-              fontSize: theme.typography.sizes.xs,
-            },
-          ]}>
-          {label}
-        </Text>
-        <Text
-          style={[
-            styles.metaValue,
-            {
-              color: theme.colors.text.primary,
-              fontSize: theme.typography.sizes.md,
-            },
-          ]}>
-          {value}
-        </Text>
-      </View>
-    </View>
-  );
-
   return (
-    <View
-      style={[
-        styles.container,
-        {backgroundColor: theme.colors.background.primary},
-      ]}>
+    <View style={containerStyle}>
       <ScrollView
-        contentContainerStyle={[
-          styles.scrollContent,
-          {
-            paddingHorizontal: theme.spacing.md,
-            paddingBottom: theme.spacing.xl,
-          },
-        ]}
+        contentContainerStyle={scrollContentStyle}
         showsVerticalScrollIndicator={false}>
-        <View
-          style={[
-            styles.heroCard,
-            {
-              backgroundColor: theme.colors.card.background,
-              borderColor: theme.colors.card.border,
-              borderRadius: theme.borderRadius.lg,
-            },
-            theme.shadows.sm,
-          ]}>
-          <View
-            style={[
-              styles.accentStripe,
-              {
-                backgroundColor: theme.colors.accent.primary,
-                borderTopLeftRadius: theme.borderRadius.lg,
-                borderBottomLeftRadius: theme.borderRadius.lg,
-              },
-            ]}
-          />
-          <View style={[styles.heroContent, {padding: theme.spacing.md}]}>
-            <View style={[styles.heroRow, {gap: theme.spacing.md}]}>
-              <View
-                style={[
-                  styles.heroImage,
-                  {
-                    backgroundColor: theme.colors.background.tertiary,
-                    borderRadius: theme.borderRadius.md,
-                    borderColor: theme.colors.borderSubtle,
-                  },
-                ]}>
+        <View style={heroCardStyle}>
+          <View style={accentStripeStyle} />
+          <View style={heroContentStyle}>
+            <View style={heroRowStyle}>
+              <View style={heroImageStyle}>
                 {item.imageId ? (
                   <Image
                     source={getImageSource(item.id, item.imageId)}
-                    style={[
-                      styles.heroImageFill,
-                      {borderRadius: theme.borderRadius.md},
-                    ]}
+                    style={heroImageFillStyle}
                     resizeMode="cover"
                   />
                 ) : (
@@ -226,25 +434,8 @@ const ItemDetailScreen: React.FC = () => {
                 )}
               </View>
               <View style={styles.heroText}>
-                <Text
-                  style={[
-                    styles.title,
-                    {
-                      color: theme.colors.text.primary,
-                      fontSize: theme.typography.sizes.xxl,
-                      fontWeight: theme.typography.weights.semibold,
-                    },
-                  ]}>
-                  {item.name}
-                </Text>
-                <Text
-                  style={[
-                    styles.desc,
-                    {
-                      color: theme.colors.text.secondary,
-                      fontSize: theme.typography.sizes.md,
-                    },
-                  ]}>
+                <Text style={titleStyle}>{item.name}</Text>
+                <Text style={descStyle}>
                   {description || 'No description added yet.'}
                 </Text>
                 <View style={styles.locationRow}>
@@ -253,14 +444,7 @@ const ItemDetailScreen: React.FC = () => {
                     size={14}
                     color={theme.colors.text.tertiary}
                   />
-                  <Text
-                    style={[
-                      styles.locationText,
-                      {
-                        color: theme.colors.text.tertiary,
-                        fontSize: theme.typography.sizes.sm,
-                      },
-                    ]}>
+                  <Text style={locationTextStyle}>
                     {item.location?.name || 'No location assigned'}
                   </Text>
                 </View>
@@ -268,31 +452,10 @@ const ItemDetailScreen: React.FC = () => {
             </View>
 
             {labels.length > 0 && (
-              <View
-                style={[
-                  styles.labelRow,
-                  {marginTop: theme.spacing.sm, gap: theme.spacing.xs},
-                ]}>
+              <View style={labelRowStyle}>
                 {labels.map(label => (
-                  <View
-                    key={label.id}
-                    style={[
-                      styles.labelChip,
-                      {
-                        backgroundColor: theme.colors.accent.muted,
-                        borderRadius: theme.borderRadius.full,
-                      },
-                    ]}>
-                    <Text
-                      style={[
-                        styles.labelChipText,
-                        {
-                          color: theme.colors.accent.primary,
-                          fontSize: theme.typography.sizes.xs,
-                        },
-                      ]}>
-                      {label.name}
-                    </Text>
+                  <View key={label.id} style={labelChipStyle}>
+                    <Text style={labelChipTextStyle}>{label.name}</Text>
                   </View>
                 ))}
               </View>
@@ -300,76 +463,62 @@ const ItemDetailScreen: React.FC = () => {
           </View>
         </View>
 
-        <View
-          style={[
-            styles.statsGrid,
-            {marginTop: theme.spacing.lg, gap: theme.spacing.sm},
-          ]}>
+        <View style={statsGridStyle}>
           <StatCard
             icon="inventory-2"
             label="Quantity"
             value={`${item.quantity}`}
+            theme={theme}
           />
           <StatCard
             icon={item.insured ? 'verified' : 'error-outline'}
             label="Insured"
             value={item.insured ? 'Yes' : 'No'}
             tone={item.insured ? 'success' : 'warning'}
+            theme={theme}
           />
           <StatCard
             icon="attach-money"
             label="Purchase Price"
             value={formatCurrency(item.purchasePrice)}
+            theme={theme}
           />
           <StatCard
             icon="category"
             label="Status"
             value={item.archived ? 'Archived' : 'Active'}
+            theme={theme}
           />
         </View>
 
-        <View
-          style={[
-            styles.detailCard,
-            {
-              backgroundColor: theme.colors.card.background,
-              borderColor: theme.colors.card.border,
-              borderRadius: theme.borderRadius.lg,
-              marginTop: theme.spacing.lg,
-            },
-            theme.shadows.sm,
-          ]}>
+        <View style={detailCardStyle}>
           <View style={styles.detailHeader}>
             <MaterialIcons
               name="article"
               size={16}
               color={theme.colors.accent.primary}
             />
-            <Text
-              style={[
-                styles.detailTitle,
-                {
-                  color: theme.colors.text.primary,
-                  fontSize: theme.typography.sizes.sm,
-                  fontWeight: theme.typography.weights.semibold,
-                  letterSpacing: theme.typography.letterSpacing.wide,
-                },
-              ]}>
-              DETAILS
-            </Text>
+            <Text style={detailTitleStyle}>DETAILS</Text>
           </View>
           <View style={styles.detailContent}>
             <MetaRow
               icon="schedule"
               label="Created"
               value={formatDateTime(item.createdAt)}
+              theme={theme}
             />
             <MetaRow
               icon="update"
               label="Updated"
               value={formatDateTime(item.updatedAt)}
+              theme={theme}
             />
-            <MetaRow icon="fingerprint" label="Asset ID" value={item.assetId} />
+            <MetaRow
+              icon="fingerprint"
+              label="Asset ID"
+              value={item.assetId}
+              theme={theme}
+            />
           </View>
         </View>
       </ScrollView>

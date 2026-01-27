@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useMemo} from 'react';
 import {View, Text, TextInput, StyleSheet} from 'react-native';
 import {useTheme} from '../../theme/ThemeContext';
 import {EnabledFields} from '../../hooks/useItemData';
@@ -11,6 +11,43 @@ interface ItemFormFieldsProps {
   onQuantityFocus: () => void;
   onQuantityBlur: () => void;
 }
+
+interface FieldTagProps {
+  label: string;
+  theme: ReturnType<typeof useTheme>['theme'];
+}
+
+const FieldTag: React.FC<FieldTagProps> = ({label, theme}) => {
+  const fieldTagStyle = useMemo(
+    () => [
+      styles.fieldTag,
+      {
+        backgroundColor: theme.colors.accent.muted,
+        borderRadius: theme.borderRadius.full,
+      },
+    ],
+    [theme.borderRadius.full, theme.colors.accent.muted],
+  );
+
+  const fieldTagTextStyle = useMemo(
+    () => ({
+      color: theme.colors.accent.primary,
+      fontSize: theme.typography.sizes.xs,
+      fontWeight: theme.typography.weights.medium,
+    }),
+    [
+      theme.colors.accent.primary,
+      theme.typography.sizes.xs,
+      theme.typography.weights.medium,
+    ],
+  );
+
+  return (
+    <View style={fieldTagStyle}>
+      <Text style={fieldTagTextStyle}>{label}</Text>
+    </View>
+  );
+};
 
 export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
   formData,
@@ -44,33 +81,18 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
     },
   ];
 
-  const FieldTag: React.FC<{label: string}> = ({label}) => (
-    <View
-      style={[
-        styles.fieldTag,
-        {
-          backgroundColor: theme.colors.accent.muted,
-          borderRadius: theme.borderRadius.full,
-        },
-      ]}>
-      <Text
-        style={{
-          color: theme.colors.accent.primary,
-          fontSize: theme.typography.sizes.xs,
-          fontWeight: theme.typography.weights.medium,
-        }}>
-        {label}
-      </Text>
-    </View>
+  const sectionSpacingStyle = useMemo(
+    () => ({marginBottom: theme.spacing.md}),
+    [theme.spacing.md],
   );
 
   return (
     <>
       {/* Item Name */}
-      <View style={{marginBottom: theme.spacing.md}}>
+      <View style={sectionSpacingStyle}>
         <View style={styles.labelRow}>
           <Text style={labelStyle}>ITEM NAME</Text>
-          <FieldTag label="Required" />
+          <FieldTag label="Required" theme={theme} />
         </View>
         <TextInput
           style={inputStyle}
@@ -82,7 +104,7 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
       </View>
 
       {/* Quantity */}
-      <View style={{marginBottom: theme.spacing.md}}>
+      <View style={sectionSpacingStyle}>
         <View style={styles.labelRow}>
           <Text style={labelStyle}>QUANTITY</Text>
         </View>
@@ -105,10 +127,10 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
 
       {/* Description (if enabled) */}
       {enabledFields.description && (
-        <View style={{marginBottom: theme.spacing.md}}>
+        <View style={sectionSpacingStyle}>
           <View style={styles.labelRow}>
             <Text style={labelStyle}>DESCRIPTION</Text>
-            <FieldTag label="Optional" />
+            <FieldTag label="Optional" theme={theme} />
           </View>
           <TextInput
             style={[inputStyle, styles.textArea]}
@@ -128,7 +150,7 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
         <View>
           <View style={styles.labelRow}>
             <Text style={labelStyle}>PURCHASE PRICE</Text>
-            <FieldTag label="Optional" />
+            <FieldTag label="Optional" theme={theme} />
           </View>
           <TextInput
             style={inputStyle}
