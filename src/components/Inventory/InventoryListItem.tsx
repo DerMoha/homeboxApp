@@ -2,6 +2,7 @@ import React, { useMemo, useCallback } from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { useTheme } from '../../theme/ThemeContext';
+import type { Theme } from '../../theme/theme';
 import { InventoryItem } from '../../hooks/useInventoryData';
 import { DisplayPreference } from '../../hooks/useDisplayPreferences';
 import { getImageSource, formatDate } from '../../utils/imageUtils';
@@ -13,6 +14,57 @@ interface InventoryListItemProps {
   onPress: (itemId: string) => void;
 }
 
+interface MetaItemProps {
+  icon: string;
+  text: string;
+  theme: Theme;
+}
+
+const MetaItem: React.FC<MetaItemProps> = ({ icon, text, theme }) => (
+  <View style={styles.metaItem}>
+    <MaterialIcons
+      name={icon}
+      size={14}
+      color={theme.colors.text.tertiary}
+      style={styles.metaIcon}
+    />
+    <Text style={[styles.metaText, { color: theme.colors.text.tertiary, fontSize: theme.typography.sizes.sm }]}>
+      {text}
+    </Text>
+  </View>
+);
+
+interface QuantityBadgeProps {
+  quantity: number;
+  theme: Theme;
+  style?: object;
+}
+
+const QuantityBadge: React.FC<QuantityBadgeProps> = ({ quantity, theme, style }) => (
+  <View
+    style={[
+      styles.quantityBadge,
+      {
+        backgroundColor: quantity > 0 ? theme.colors.accent.primary : theme.colors.error,
+        borderRadius: theme.borderRadius.full,
+        paddingHorizontal: theme.spacing.sm,
+        paddingVertical: theme.spacing.xs,
+      },
+      style,
+    ]}
+  >
+    <Text
+      style={{
+        color: theme.colors.text.inverse,
+        fontSize: theme.typography.sizes.sm,
+        fontWeight: theme.typography.weights.bold,
+      }}
+    >
+      {quantity}
+    </Text>
+  </View>
+);
+
 const InventoryListItemComponent: React.FC<InventoryListItemProps> = ({
   item,
   displayPreferences,
@@ -21,251 +73,176 @@ const InventoryListItemComponent: React.FC<InventoryListItemProps> = ({
 }) => {
   const { theme } = useTheme();
 
-  // Memoize preference lookup function
-  const getPreference = useCallback((id: string): boolean => {
-    const preference = displayPreferences.find(p => p.id === id);
-    return preference?.enabled ?? false;
-  }, [displayPreferences]);
+  const getPreference = useCallback(
+    (id: string): boolean => displayPreferences.find((p) => p.id === id)?.enabled ?? false,
+    [displayPreferences]
+  );
 
-  // Memoize computed values for better performance
-  const hasDescription = useMemo(() =>
-    getPreference('description') && item.description,
+  const hasDescription = useMemo(
+    () => getPreference('description') && item.description,
     [getPreference, item.description]
   );
 
-  const hasImage = useMemo(() =>
-    getPreference('image') && item.imageId,
+  const hasImage = useMemo(
+    () => getPreference('image') && item.imageId,
     [getPreference, item.imageId]
   );
 
-  const hasFooterContent = useMemo(() =>
-    (getPreference('location') && item.location) ||
-    (getPreference('labels') && item.labels.length > 0) ||
-    (getPreference('purchasePrice') && item.purchasePrice && item.purchasePrice > 0) ||
-    getPreference('insured') ||
-    getPreference('createdAt') ||
-    getPreference('updatedAt'),
+  const hasFooterContent = useMemo(
+    () =>
+      (getPreference('location') && item.location) ||
+      (getPreference('labels') && item.labels.length > 0) ||
+      (getPreference('purchasePrice') && item.purchasePrice && item.purchasePrice > 0) ||
+      getPreference('insured') ||
+      getPreference('createdAt') ||
+      getPreference('updatedAt'),
     [getPreference, item.location, item.labels.length, item.purchasePrice]
   );
 
-  // Memoize onPress handler
-  const handlePress = useCallback(() => {
-    onPress(item.id);
-  }, [onPress, item.id]);
+  const handlePress = useCallback(() => onPress(item.id), [onPress, item.id]);
 
-  // Compact view (listZoom === 0)
+  const containerStyle = [
+    styles.container,
+    {
+      backgroundColor: theme.colors.card.background,
+      borderRadius: theme.borderRadius.lg,
+      marginHorizontal: theme.spacing.sm,
+      marginVertical: theme.spacing.xs,
+      borderWidth: 1,
+      borderColor: theme.colors.card.border,
+    },
+    theme.shadows.sm,
+  ];
+
+  const AccentStripe = (
+    <View
+      style={[
+        styles.accentStripe,
+        {
+          backgroundColor: theme.colors.accent.primary,
+          borderTopLeftRadius: theme.borderRadius.lg,
+          borderBottomLeftRadius: theme.borderRadius.lg,
+        },
+      ]}
+    />
+  );
+
+  const ItemName: React.FC<{ size?: 'md' | 'lg' | 'xl' }> = ({ size = 'lg' }) => (
+    <Text
+      style={[
+        styles.itemName,
+        {
+          color: theme.colors.text.primary,
+          fontSize: theme.typography.sizes[size],
+          fontWeight: theme.typography.weights.semibold,
+        },
+      ]}
+      numberOfLines={1}
+    >
+      {item.name}
+    </Text>
+  );
+
+  // Compact View (listZoom === 0)
   if (listZoom === 0) {
     return (
-      <TouchableOpacity
-        style={[styles.itemContainer, { backgroundColor: theme.colors.background.secondary }]}
-        onPress={handlePress}
-      >
-        <View style={styles.compactContent}>
-          <View style={styles.compactHeader}>
-            <View style={styles.compactTextContent}>
-              <Text style={[styles.itemName, { color: theme.colors.text.primary }]}>
-                {item.name}
-              </Text>
+      <TouchableOpacity style={containerStyle} onPress={handlePress} activeOpacity={0.7}>
+        {AccentStripe}
+        <View style={[styles.content, { paddingLeft: theme.spacing.md, paddingVertical: theme.spacing.sm, paddingRight: theme.spacing.sm }]}>
+          <View style={styles.headerRow}>
+            <View style={styles.titleContainer}>
+              <ItemName />
             </View>
-            {getPreference('quantity') && (
-              <View style={[
-                styles.quantityBadge,
-                { backgroundColor: item.quantity > 0 ? theme.colors.success : theme.colors.error },
-              ]}>
-                <Text style={[styles.quantityText, { color: theme.colors.button.text }]}>
-                  {item.quantity}
-                </Text>
-              </View>
-            )}
+            {getPreference('quantity') && <QuantityBadge quantity={item.quantity} theme={theme} />}
           </View>
-          <View style={styles.compactDetails}>
-            <View style={styles.compactDetailsRow}>
-              <View style={styles.compactLeftContent}>
-                {getPreference('location') && item.location && (
-                  <View style={styles.compactLocation}>
-                    <MaterialIcons name="location-on" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
-                    <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
-                      {item.location.name}
-                    </Text>
-                  </View>
-                )}
-                {getPreference('labels') && item.labels.length > 0 && (
-                  <View style={styles.compactLabels}>
-                    <MaterialIcons name="label" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
-                    <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
-                      {item.labels.map(label => label.name).join(', ')}
-                    </Text>
-                  </View>
-                )}
-                {hasImage && (
-                  <MaterialIcons name="image" size={16} color={theme.colors.text.secondary} style={styles.compactImageIcon} />
-                )}
-              </View>
-            </View>
+          <View style={[styles.metaRow, { gap: theme.spacing.sm, marginTop: theme.spacing.xs }]}>
+            {getPreference('location') && item.location && (
+              <MetaItem icon="location-on" text={item.location.name} theme={theme} />
+            )}
+            {getPreference('labels') && item.labels.length > 0 && (
+              <MetaItem icon="label" text={item.labels.map((l) => l.name).join(', ')} theme={theme} />
+            )}
+            {hasImage && <MaterialIcons name="image" size={14} color={theme.colors.text.tertiary} />}
           </View>
         </View>
       </TouchableOpacity>
     );
   }
 
-  // Standard view (listZoom === 1)
+  // Standard View (listZoom === 1)
   if (listZoom === 1) {
     return (
-      <TouchableOpacity
-        style={[styles.itemContainer, { backgroundColor: theme.colors.background.secondary }]}
-        onPress={handlePress}
-      >
-        <View style={styles.standardContent}>
-          <View style={styles.standardRow}>
-            {/* Text Section */}
-            <View style={styles.standardTextSection}>
-              <Text style={[styles.itemName, { color: theme.colors.text.primary }]}>
-                {item.name}
-              </Text>
-              <View style={styles.standardDetails}>
+      <TouchableOpacity style={containerStyle} onPress={handlePress} activeOpacity={0.7}>
+        {AccentStripe}
+        <View style={[styles.content, { paddingLeft: theme.spacing.md, paddingVertical: theme.spacing.sm, paddingRight: theme.spacing.sm }]}>
+          <View style={[styles.standardRow, { gap: theme.spacing.md }]}>
+            <View style={styles.textSection}>
+              <ItemName />
+              <View style={[styles.metaRow, { marginTop: theme.spacing.xs }]}>
                 {getPreference('location') && item.location && (
-                  <View style={styles.footerItem}>
-                    <MaterialIcons name="location-on" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
-                    <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
-                      {item.location.name}
-                    </Text>
-                  </View>
+                  <MetaItem icon="location-on" text={item.location.name} theme={theme} />
                 )}
                 {getPreference('labels') && item.labels.length > 0 && (
-                  <View style={styles.footerItem}>
-                    <MaterialIcons name="label" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
-                    <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
-                      {item.labels.map(label => label.name).join(', ')}
-                    </Text>
-                  </View>
+                  <MetaItem icon="label" text={item.labels.map((l) => l.name).join(', ')} theme={theme} />
                 )}
               </View>
             </View>
-
-            {/* Image Section */}
             {hasImage && (
-              <View style={styles.standardImageSection}>
+              <View style={[styles.thumbnail, { borderRadius: theme.borderRadius.md, backgroundColor: theme.colors.background.tertiary }]}>
                 <Image
                   source={getImageSource(item.id, item.imageId!)}
-                  style={styles.standardImage}
+                  style={[styles.thumbnailImage, { borderRadius: theme.borderRadius.md }]}
                   resizeMode="cover"
                 />
               </View>
             )}
-
-            {/* Quantity Section */}
-            {getPreference('quantity') && (
-              <View style={[
-                styles.standardQuantityBadge,
-                { backgroundColor: item.quantity > 0 ? theme.colors.success : theme.colors.error },
-              ]}>
-                <Text style={[styles.quantityText, { color: theme.colors.button.text }]}>
-                  {item.quantity}
-                </Text>
-              </View>
-            )}
+            {getPreference('quantity') && <QuantityBadge quantity={item.quantity} theme={theme} />}
           </View>
         </View>
       </TouchableOpacity>
     );
   }
 
-  // Detailed view (listZoom === 2)
+  // Detailed View (listZoom === 2)
   return (
-    <TouchableOpacity
-      style={[styles.itemContainer, { backgroundColor: theme.colors.background.secondary }]}
-      onPress={() => onPress(item.id)}
-    >
-      <View style={styles.itemContent}>
-        <View style={styles.itemHeader}>
-          <View style={styles.detailedTextContent}>
-            <Text style={[styles.itemName, { color: theme.colors.text.primary }]}>
-              {item.name}
-            </Text>
+    <TouchableOpacity style={containerStyle} onPress={handlePress} activeOpacity={0.7}>
+      {AccentStripe}
+      <View style={[styles.content, { padding: theme.spacing.md, paddingLeft: theme.spacing.md + 4 }]}>
+        <View style={styles.headerRow}>
+          <View style={styles.titleContainer}>
+            <ItemName size="xl" />
           </View>
           {getPreference('quantity') && (
-            <View style={[
-              styles.quantityBadge,
-              { backgroundColor: item.quantity > 0 ? theme.colors.success : theme.colors.error },
-            ]}>
-              <Text style={[styles.quantityText, { color: theme.colors.button.text }]}>
-                {item.quantity}
-              </Text>
-            </View>
+            <QuantityBadge quantity={item.quantity} theme={theme} style={{ position: 'absolute', top: 0, right: 0 }} />
           )}
         </View>
 
         {hasImage && (
-          <View style={styles.imageContainer}>
+          <View style={[styles.imageContainer, { marginVertical: theme.spacing.sm, borderRadius: theme.borderRadius.md }]}>
             <Image
               source={getImageSource(item.id, item.imageId!)}
-              style={styles.itemImage}
+              style={[styles.fullImage, { borderRadius: theme.borderRadius.md }]}
               resizeMode="cover"
             />
           </View>
         )}
 
         {hasDescription && (
-          <Text style={[styles.itemDescription, { color: theme.colors.text.secondary }]}>
+          <Text style={{ color: theme.colors.text.secondary, fontSize: theme.typography.sizes.md, marginBottom: theme.spacing.sm }}>
             {item.description}
           </Text>
         )}
 
         {hasFooterContent && (
-          <View style={styles.itemFooter}>
-            {getPreference('location') && item.location && (
-              <View style={styles.footerItem}>
-                <MaterialIcons name="location-on" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
-                <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
-                  {item.location.name}
-                </Text>
-              </View>
-            )}
-            {getPreference('labels') && item.labels.length > 0 && (
-              <View style={styles.footerItem}>
-                <MaterialIcons name="label" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
-                <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
-                  {item.labels.map(label => label.name).join(', ')}
-                </Text>
-              </View>
-            )}
+          <View style={[styles.metaRow, { flexWrap: 'wrap', gap: theme.spacing.xs, marginTop: theme.spacing.xs }]}>
+            {getPreference('location') && item.location && <MetaItem icon="location-on" text={item.location.name} theme={theme} />}
+            {getPreference('labels') && item.labels.length > 0 && <MetaItem icon="label" text={item.labels.map((l) => l.name).join(', ')} theme={theme} />}
             {getPreference('purchasePrice') && item.purchasePrice && item.purchasePrice > 0 && (
-              <View style={styles.footerItem}>
-                <MaterialIcons name="attach-money" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
-                <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
-                  ${item.purchasePrice.toFixed(2)}
-                </Text>
-              </View>
+              <MetaItem icon="attach-money" text={`$${item.purchasePrice.toFixed(2)}`} theme={theme} />
             )}
-            {getPreference('insured') && (
-              <View style={styles.footerItem}>
-                <MaterialIcons
-                  name={item.insured ? 'verified' : 'error-outline'}
-                  size={16}
-                  color={theme.colors.text.secondary}
-                  style={styles.footerIcon}
-                />
-                <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
-                  {item.insured ? 'Insured' : 'Uninsured'}
-                </Text>
-              </View>
-            )}
-            {getPreference('createdAt') && (
-              <View style={styles.footerItem}>
-                <MaterialIcons name="schedule" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
-                <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
-                  Created: {formatDate(item.createdAt)}
-                </Text>
-              </View>
-            )}
-            {getPreference('updatedAt') && (
-              <View style={styles.footerItem}>
-                <MaterialIcons name="update" size={16} color={theme.colors.text.secondary} style={styles.footerIcon} />
-                <Text style={[styles.footerLabel, { color: theme.colors.text.secondary }]}>
-                  Updated: {formatDate(item.updatedAt)}
-                </Text>
-              </View>
-            )}
+            {getPreference('insured') && <MetaItem icon={item.insured ? 'verified' : 'error-outline'} text={item.insured ? 'Insured' : 'Uninsured'} theme={theme} />}
+            {getPreference('createdAt') && <MetaItem icon="schedule" text={`Created: ${formatDate(item.createdAt)}`} theme={theme} />}
+            {getPreference('updatedAt') && <MetaItem icon="update" text={`Updated: ${formatDate(item.updatedAt)}`} theme={theme} />}
           </View>
         )}
       </View>
@@ -273,153 +250,71 @@ const InventoryListItemComponent: React.FC<InventoryListItemProps> = ({
   );
 };
 
-// Memoized export to prevent unnecessary re-renders
 export const InventoryListItem = React.memo(InventoryListItemComponent);
 
 const styles = StyleSheet.create({
-  itemContainer: {
-    borderRadius: 12,
-    marginHorizontal: 5,
-    marginVertical: 6,
+  container: {
     overflow: 'hidden',
     flex: 1,
+    flexDirection: 'row',
   },
-  itemContent: {
-    padding: 12,
+  accentStripe: {
+    width: 3,
+    alignSelf: 'stretch',
   },
-  itemHeader: {
+  content: {
+    flex: 1,
+  },
+  headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+  },
+  titleContainer: {
+    flex: 1,
+    marginRight: 40,
   },
   itemName: {
-    fontSize: 18,
-    fontWeight: '600',
     flex: 1,
-    marginRight: 8,
   },
   quantityBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    minWidth: 40,
+    minWidth: 32,
     alignItems: 'center',
-    position: 'absolute',
-    top: 0,
-    right: 0,
   },
-  quantityText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  itemDescription: {
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  itemFooter: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 4,
-    marginTop: 4,
-  },
-  footerItem: {
+  metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 2,
   },
-  footerIcon: {
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  metaIcon: {
     marginRight: 4,
   },
-  footerLabel: {
-    fontSize: 12,
-  },
-  imageContainer: {
-    marginVertical: 4,
-    borderRadius: 4,
-    overflow: 'hidden',
-    backgroundColor: '#f0f0f0',
-  },
-  itemImage: {
-    width: '100%',
-    aspectRatio: 1,
-    borderRadius: 4,
-    marginBottom: 4,
-  },
-  compactContent: {
-    padding: 8,
-  },
-  compactHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 2,
-  },
-  compactTextContent: {
-    flex: 1,
-    marginRight: 32,
-  },
-  compactDetails: {
-    marginTop: 2,
-  },
-  compactDetailsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  compactLeftContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  compactLocation: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  compactLabels: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  compactImageIcon: {
-    marginLeft: 1,
-  },
-  standardContent: {
-    padding: 10,
-  },
+  metaText: {},
   standardRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 9,
   },
-  standardTextSection: {
+  textSection: {
     flex: 1,
     marginRight: 8,
   },
-  standardImageSection: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
+  thumbnail: {
+    width: 72,
+    height: 72,
     overflow: 'hidden',
-    backgroundColor: '#f0f0f0',
   },
-  standardImage: {
+  thumbnailImage: {
     width: '100%',
     height: '100%',
   },
-  standardQuantityBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    minWidth: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+  imageContainer: {
+    overflow: 'hidden',
   },
-  standardDetails: {
-    flex: 1,
-    marginRight: 8,
-  },
-  detailedTextContent: {
-    flex: 1,
-    marginRight: 40,
+  fullImage: {
+    width: '100%',
+    aspectRatio: 1,
   },
 });

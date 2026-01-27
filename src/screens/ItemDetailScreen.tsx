@@ -49,7 +49,7 @@ const ItemDetailScreen: React.FC = () => {
   }
 
   if (error) {
-    return <ErrorState message={error} onRetry={() => execute(async () => {
+    return <ErrorState error={error} onRetry={() => execute(async () => {
       const service = ServerService.getInstance();
       const result = await service.getItemById(itemId);
       if (result.success && result.data) {

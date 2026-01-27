@@ -37,7 +37,7 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
           }]}
           placeholder="Enter item name"
           placeholderTextColor={theme.colors.text.secondary}
-          value={formData.name || ''}
+          value={String(formData.name || '')}
           onChangeText={(text) => onUpdateField('name', text)}
         />
       </View>
@@ -56,7 +56,7 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
           placeholder="1"
           placeholderTextColor={theme.colors.text.secondary}
           keyboardType="number-pad"
-          value={isQuantityFocused ? formData.quantity : (formData.quantity || '1')}
+          value={String(isQuantityFocused ? formData.quantity : (formData.quantity || '1'))}
           onChangeText={(text) => {
             const numericValue = text.replace(/[^0-9]/g, '');
             onUpdateField('quantity', numericValue);
@@ -80,7 +80,7 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
             }]}
             placeholder="Enter description"
             placeholderTextColor={theme.colors.text.secondary}
-            value={formData.description || ''}
+            value={String(formData.description || '')}
             onChangeText={(text) => onUpdateField('description', text)}
             multiline
             numberOfLines={4}
@@ -104,7 +104,7 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
             placeholder="0.00"
             placeholderTextColor={theme.colors.text.secondary}
             keyboardType="decimal-pad"
-            value={formData.purchasePrice || ''}
+            value={String(formData.purchasePrice || '')}
             onChangeText={(text) => onUpdateField('purchasePrice', text)}
           />
         </View>

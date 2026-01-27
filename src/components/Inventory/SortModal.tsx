@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, Modal, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useRef, useEffect } from 'react';
+import { View, Text, Modal, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { useTheme } from '../../theme/ThemeContext';
 import { SortOption } from '../../hooks/useInventoryData';
@@ -31,48 +31,159 @@ export const SortModal: React.FC<SortModalProps> = ({
   onSelectSort,
 }) => {
   const { theme } = useTheme();
+  const slideAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.spring(slideAnim, {
+          toValue: 1,
+          tension: 65,
+          friction: 11,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 150,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 150,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [visible, fadeAnim, slideAnim]);
 
   const handleSelectSort = (option: SortOption) => {
     onSelectSort(option);
     onClose();
   };
 
+  const translateY = slideAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [50, 0],
+  });
+
+  const scale = slideAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.95, 1],
+  });
+
   return (
     <Modal
-      animationType="slide"
+      animationType="none"
       transparent={true}
       visible={visible}
       onRequestClose={onClose}
     >
-      <View style={styles.modalOverlay}>
-        <View style={[styles.modalContent, { backgroundColor: theme.colors.background.primary }]}>
-          <Text style={[styles.modalTitle, { color: theme.colors.text.primary }]}>Sort By</Text>
+      <Animated.View style={[styles.modalOverlay, { opacity: fadeAnim }]}>
+        <TouchableOpacity style={styles.backdropTouchable} onPress={onClose} activeOpacity={1} />
+        <Animated.View
+          style={[
+            styles.modalContent,
+            {
+              backgroundColor: theme.colors.card.background,
+              borderRadius: theme.borderRadius.xl,
+              padding: theme.spacing.lg,
+              transform: [{ translateY }, { scale }],
+              opacity: slideAnim,
+            },
+            theme.shadows.lg,
+          ]}
+        >
+          <Text
+            style={[
+              styles.modalTitle,
+              {
+                color: theme.colors.text.primary,
+                fontSize: theme.typography.sizes.xl,
+                fontWeight: theme.typography.weights.semibold,
+                marginBottom: theme.spacing.md,
+              },
+            ]}
+          >
+            Sort By
+          </Text>
 
-          {SORT_OPTIONS.map((option) => (
-            <TouchableOpacity
-              key={option.value}
-              style={[styles.sortOption, { borderColor: theme.colors.border }]}
-              onPress={() => handleSelectSort(option.value)}
-            >
-              <Text style={[styles.sortOptionText, { color: theme.colors.text.primary }]}>
-                {option.label}
-              </Text>
-              {sortOption === option.value && (
-                <MaterialIcons name="check" size={24} color={theme.colors.button.primary} />
-              )}
-            </TouchableOpacity>
-          ))}
+          {SORT_OPTIONS.map((option, index) => {
+            const isSelected = sortOption === option.value;
+            return (
+              <TouchableOpacity
+                key={option.value}
+                style={[
+                  styles.sortOption,
+                  {
+                    backgroundColor: isSelected ? theme.colors.accent.muted : 'transparent',
+                    borderRadius: theme.borderRadius.md,
+                    borderWidth: 1,
+                    borderColor: isSelected ? theme.colors.accent.primary : theme.colors.border,
+                    padding: theme.spacing.md,
+                    marginBottom: index === SORT_OPTIONS.length - 1 ? 0 : theme.spacing.sm,
+                  },
+                ]}
+                onPress={() => handleSelectSort(option.value)}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={[
+                    styles.sortOptionText,
+                    {
+                      color: isSelected ? theme.colors.accent.primary : theme.colors.text.primary,
+                      fontSize: theme.typography.sizes.lg,
+                      fontWeight: isSelected ? theme.typography.weights.semibold : theme.typography.weights.regular,
+                    },
+                  ]}
+                >
+                  {option.label}
+                </Text>
+                {isSelected && (
+                  <MaterialIcons name="check" size={22} color={theme.colors.accent.primary} />
+                )}
+              </TouchableOpacity>
+            );
+          })}
 
           <TouchableOpacity
-            style={[styles.modalCloseButton, { backgroundColor: theme.colors.button.primary }]}
+            style={[
+              styles.modalCloseButton,
+              {
+                backgroundColor: theme.colors.background.elevated,
+                borderRadius: theme.borderRadius.md,
+                padding: theme.spacing.md,
+                marginTop: theme.spacing.lg,
+                borderWidth: 1,
+                borderColor: theme.colors.border,
+              },
+            ]}
             onPress={onClose}
+            activeOpacity={0.7}
           >
-            <Text style={[styles.modalCloseButtonText, { color: theme.colors.button.text }]}>
+            <Text
+              style={[
+                styles.modalCloseButtonText,
+                {
+                  color: theme.colors.text.primary,
+                  fontSize: theme.typography.sizes.lg,
+                  fontWeight: theme.typography.weights.medium,
+                },
+              ]}
+            >
               Close
             </Text>
           </TouchableOpacity>
-        </View>
-      </View>
+        </Animated.View>
+      </Animated.View>
     </Modal>
   );
 };
@@ -82,45 +193,26 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+  },
+  backdropTouchable: {
+    ...StyleSheet.absoluteFillObject,
   },
   modalContent: {
-    width: '80%',
+    width: '85%',
     maxWidth: 400,
-    borderRadius: 12,
-    padding: 16,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginBottom: 16,
     textAlign: 'center',
   },
   sortOption: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 12,
-    borderWidth: 1,
-    borderRadius: 8,
-    marginBottom: 8,
   },
-  sortOptionText: {
-    fontSize: 16,
-  },
+  sortOptionText: {},
   modalCloseButton: {
-    marginTop: 16,
-    padding: 12,
-    borderRadius: 8,
     alignItems: 'center',
   },
-  modalCloseButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  modalCloseButtonText: {},
 });

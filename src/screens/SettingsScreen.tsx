@@ -22,6 +22,12 @@ interface ServerWithStatus extends ServerConfig {
   status: 'checking' | 'online' | 'offline';
 }
 
+interface SettingsItemProps {
+  icon: string;
+  title: string;
+  onPress: () => void;
+}
+
 const SettingsScreen: React.FC = () => {
   const navigation = useNavigation<SettingsScreenNavigationProp>();
   const { theme } = useTheme();
@@ -55,14 +61,12 @@ const SettingsScreen: React.FC = () => {
       const serverService = ServerService.getInstance();
       const savedServers = await serverService.getServers();
 
-      // Initialize servers with checking status
       const serversWithStatus: ServerWithStatus[] = savedServers.map(server => ({
         ...server,
         status: 'checking',
       }));
       setServers(serversWithStatus);
 
-      // Check status for each server
       _setIsCheckingStatus(true);
       const updatedServers = await Promise.all(
         serversWithStatus.map(async (server) => {
@@ -73,14 +77,11 @@ const SettingsScreen: React.FC = () => {
       setServers(updatedServers);
       _setIsCheckingStatus(false);
 
-      // Set the selected server based on current configuration
       const currentConfig = serverService.getCurrentConfig();
       if (currentConfig) {
         setSelectedServer(currentConfig.id);
       } else if (updatedServers.length > 0) {
-        // If no current config, set the first server as selected
         setSelectedServer(updatedServers[0].id);
-        // Also initialize the first server as active
         await serverService.initialize(updatedServers[0]);
       } else {
         setSelectedServer('');
@@ -93,7 +94,6 @@ const SettingsScreen: React.FC = () => {
   useFocusEffect(
     React.useCallback(() => {
       loadServers();
-      // Get the current active server from ServerService
       const serverService = ServerService.getInstance();
       const currentConfig = serverService.getCurrentConfig();
       if (currentConfig) {
@@ -126,15 +126,108 @@ const SettingsScreen: React.FC = () => {
     }
   };
 
+  const SettingsItem: React.FC<SettingsItemProps> = ({ icon, title, onPress }) => (
+    <TouchableOpacity
+      style={[
+        styles.settingsItem,
+        {
+          backgroundColor: theme.colors.card.background,
+          borderColor: theme.colors.borderSubtle,
+        },
+        theme.shadows.sm,
+      ]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <View style={styles.settingsItemLeft}>
+        <View style={[styles.iconContainer, { backgroundColor: theme.colors.accent.muted }]}>
+          <MaterialIcons name={icon} size={20} color={theme.colors.accent.primary} />
+        </View>
+        <Text
+          style={[
+            styles.settingsItemText,
+            {
+              color: theme.colors.text.primary,
+              fontSize: theme.typography.sizes.md,
+              fontWeight: theme.typography.weights.medium,
+            },
+          ]}
+        >
+          {title}
+        </Text>
+      </View>
+      <MaterialIcons name="chevron-right" size={24} color={theme.colors.text.tertiary} />
+    </TouchableOpacity>
+  );
+
+  const SectionHeader: React.FC<{ title: string }> = ({ title }) => (
+    <View style={styles.sectionHeader}>
+      <Text
+        style={[
+          styles.sectionHeaderText,
+          {
+            color: theme.colors.text.secondary,
+            fontSize: theme.typography.sizes.sm,
+            fontWeight: theme.typography.weights.semibold,
+            letterSpacing: theme.typography.letterSpacing.wide,
+          },
+        ]}
+      >
+        {title.toUpperCase()}
+      </Text>
+      <View style={[styles.sectionHeaderLine, { backgroundColor: theme.colors.accent.primary }]} />
+    </View>
+  );
+
   return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
-      <View style={[styles.serverSwitcher, { backgroundColor: theme.colors.background.secondary }]}>
-        <Text style={[styles.serverSwitcherLabel, { color: theme.colors.text.primary }]}>Current Server:</Text>
-        <View style={[styles.pickerContainer, { borderColor: theme.colors.border }]}>
+    <ScrollView
+      style={[styles.container, { backgroundColor: theme.colors.background.primary }]}
+      contentContainerStyle={styles.contentContainer}
+    >
+      <SectionHeader title="Server" />
+
+      <View
+        style={[
+          styles.serverPickerCard,
+          {
+            backgroundColor: theme.colors.card.background,
+            borderColor: theme.colors.borderSubtle,
+          },
+          theme.shadows.sm,
+        ]}
+      >
+        <View style={styles.serverPickerHeader}>
+          <View style={[styles.iconContainer, { backgroundColor: theme.colors.accent.muted }]}>
+            <MaterialIcons name="dns" size={20} color={theme.colors.accent.primary} />
+          </View>
+          <Text
+            style={[
+              styles.serverPickerLabel,
+              {
+                color: theme.colors.text.primary,
+                fontSize: theme.typography.sizes.md,
+                fontWeight: theme.typography.weights.medium,
+              },
+            ]}
+          >
+            Active Server
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.pickerContainer,
+            {
+              backgroundColor: theme.colors.background.secondary,
+              borderColor: theme.colors.borderSubtle,
+              borderRadius: theme.borderRadius.md,
+            },
+          ]}
+        >
           <Picker
             selectedValue={selectedServer}
             onValueChange={handleServerChange}
             style={[styles.picker, { color: theme.colors.text.primary }]}
+            dropdownIconColor={theme.colors.text.secondary}
           >
             {servers.length > 0 ? (
               servers.map((server) => (
@@ -147,50 +240,40 @@ const SettingsScreen: React.FC = () => {
             ) : (
               <Picker.Item label="No servers configured" value="" />
             )}
-            <Picker.Item label="Add New Server..." value="add_new" />
+            <Picker.Item label="+ Add New Server..." value="add_new" />
           </Picker>
         </View>
       </View>
 
-      <TouchableOpacity
-        style={[styles.sectionHeader, { backgroundColor: theme.colors.background.secondary }]}
-        onPress={() => navigation.navigate('ServerConfig', { server: undefined })}
-      >
-        <View style={styles.sectionHeaderContent}>
-          <MaterialIcons name="chevron-right" size={24} color={theme.colors.text.primary} />
-          <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Server Configuration</Text>
-        </View>
-      </TouchableOpacity>
+      <SectionHeader title="Configuration" />
 
-      <TouchableOpacity
-        style={[styles.sectionHeader, { backgroundColor: theme.colors.background.secondary }]}
-        onPress={() => navigation.navigate('Appearance')}
-      >
-        <View style={styles.sectionHeaderContent}>
-          <MaterialIcons name="chevron-right" size={24} color={theme.colors.text.primary} />
-          <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Appearance</Text>
-        </View>
-      </TouchableOpacity>
+      <View style={styles.settingsGroup}>
+        <SettingsItem
+          icon="settings-ethernet"
+          title="Server Configuration"
+          onPress={() => navigation.navigate('ServerConfig', { server: undefined })}
+        />
+        <SettingsItem
+          icon="palette"
+          title="Appearance"
+          onPress={() => navigation.navigate('Appearance')}
+        />
+      </View>
 
-      <TouchableOpacity
-        style={[styles.sectionHeader, { backgroundColor: theme.colors.background.secondary }]}
-        onPress={() => navigation.navigate('InventorySettings')}
-      >
-        <View style={styles.sectionHeaderContent}>
-          <MaterialIcons name="chevron-right" size={24} color={theme.colors.text.primary} />
-          <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Inventory Display</Text>
-        </View>
-      </TouchableOpacity>
+      <SectionHeader title="Preferences" />
 
-      <TouchableOpacity
-        style={[styles.sectionHeader, { backgroundColor: theme.colors.background.secondary }]}
-        onPress={() => navigation.navigate('AddItemSettings')}
-      >
-        <View style={styles.sectionHeaderContent}>
-          <MaterialIcons name="chevron-right" size={24} color={theme.colors.text.primary} />
-          <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Add Fields</Text>
-        </View>
-      </TouchableOpacity>
+      <View style={styles.settingsGroup}>
+        <SettingsItem
+          icon="view-list"
+          title="Inventory Display"
+          onPress={() => navigation.navigate('InventorySettings')}
+        />
+        <SettingsItem
+          icon="add-circle-outline"
+          title="Add Item Fields"
+          onPress={() => navigation.navigate('AddItemSettings')}
+        />
+      </View>
     </ScrollView>
   );
 };
@@ -199,183 +282,67 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  serverSwitcher: {
-    padding: 15,
-    marginTop: 16,
-    borderBottomWidth: 1,
+  contentContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 32,
   },
-  serverSwitcherLabel: {
-    fontSize: 16,
-    fontWeight: '600',
+  sectionHeader: {
+    marginTop: 24,
+    marginBottom: 12,
+  },
+  sectionHeaderText: {
     marginBottom: 8,
+  },
+  sectionHeaderLine: {
+    height: 2,
+    width: 32,
+    borderRadius: 1,
+  },
+  serverPickerCard: {
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+  },
+  serverPickerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  serverPickerLabel: {
+    marginLeft: 12,
   },
   pickerContainer: {
     borderWidth: 1,
-    borderRadius: 8,
     overflow: 'hidden',
-    marginHorizontal: 10,
   },
   picker: {
     height: 50,
-    marginLeft: 10,
   },
-  sectionHeader: {
-    padding: 15,
-    borderBottomWidth: 1,
+  settingsGroup: {
+    gap: 8,
+  },
+  settingsItem: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
   },
-  sectionHeaderContent: {
+  settingsItemLeft: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  serverSettingsContent: {
-    padding: 15,
-  },
-  form: {
-    marginBottom: 20,
-    backgroundColor: '#f8f8f8',
-    padding: 15,
+  iconContainer: {
+    width: 36,
+    height: 36,
     borderRadius: 10,
-  },
-  formTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 15,
-    color: '#333',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    padding: 12,
-    marginBottom: 10,
-    borderRadius: 8,
-    backgroundColor: '#fff',
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  serversList: {
-    marginTop: 20,
-  },
-  subtitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 15,
-    color: '#333',
-  },
-  serverItemContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  serverItem: {
-    flex: 1,
-    padding: 15,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    backgroundColor: '#fff',
-  },
-  selectedServer: {
-    backgroundColor: '#e6f2ff',
-    borderColor: '#007AFF',
-  },
-  serverInfo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  serverInfoLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  statusDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 12,
-  },
-  statusIndicator: {
-    marginRight: 12,
-  },
-  serverText: {
-    fontSize: 16,
-    fontWeight: '500',
-    flex: 1,
-  },
-  serverUsername: {
-    fontSize: 14,
-    color: '#666',
-  },
-  deleteButton: {
-    padding: 10,
-    marginLeft: 10,
-  },
-  deleteButtonText: {
-    fontSize: 24,
-    color: '#ff3b30',
-    fontWeight: 'bold',
-  },
-  section: {
-    padding: 15,
-    borderBottomWidth: 1,
-  },
-  sectionText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  serverLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  serverStatus: {
-    fontSize: 14,
-    color: '#666',
-  },
-  addServerText: {
-    fontSize: 14,
-    color: '#007AFF',
-  },
-  themeModeContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 10,
-  },
-  themeModeButton: {
-    padding: 10,
-    borderRadius: 8,
-    marginRight: 10,
-    marginBottom: 10,
-    borderWidth: 1,
-  },
-  selectedThemeMode: {
-    borderColor: '#007AFF',
-    borderWidth: 2,
-  },
-  themeModeText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  placeholderText: {
-    fontSize: 14,
-    marginTop: 5,
+  settingsItemText: {
+    marginLeft: 12,
   },
 });
 

@@ -1,350 +1,107 @@
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
+import { TextStyle } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { View, Text, StyleSheet } from 'react-native';
+import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import SettingsScreen from './src/screens/SettingsScreen';
-import AddItemScreen from './src/screens/AddItemScreen';
-import ServerConfigScreen from './src/screens/ServerConfigScreen';
-import AppearanceScreen from './src/screens/AppearanceScreen';
-import InventoryScreen from './src/screens/InventoryScreen';
-import ItemDetailScreen from './src/screens/ItemDetailScreen';
-import InventorySettingsScreen from './src/screens/InventorySettingsScreen';
-import LocationsScreen from './src/screens/LocationsScreen';
-import LocationItemsScreen from './src/screens/LocationItemsScreen';
+
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import { CustomTabBar } from './src/components/navigation/CustomTabBar';
+import {
+  SettingsStackScreen,
+  LocationsStackScreen,
+  InventoryStackScreen,
+  AddItemStackScreen,
+} from './src/navigation/stacks';
+import HomeScreen from './src/screens/HomeScreen';
 import ServerService from './src/services/serverService';
 
+type FontWeight = TextStyle['fontWeight'];
+
 const Tab = createBottomTabNavigator();
-const SettingsStack = createNativeStackNavigator();
-const LocationsStack = createNativeStackNavigator();
-const InventoryStack = createNativeStackNavigator();
-const AddItemStack = createNativeStackNavigator();
 
-// Tab bar icon components (defined outside to prevent re-creation on each render)
-const HomeIcon = ({ color, size }: { color: string; size: number }) => (
-  <MaterialIcons name="home" size={size} color={color} />
-);
-
-const InventoryIcon = ({ color, size }: { color: string; size: number }) => (
-  <MaterialIcons name="inventory" size={size} color={color} />
-);
-
-const AddItemIcon = ({ color, size }: { color: string; size: number }) => (
-  <MaterialIcons name="add-box" size={size} color={color} />
-);
-
-const LocationIcon = ({ color, size }: { color: string; size: number }) => (
-  <MaterialIcons name="location-on" size={size} color={color} />
-);
-
-const SettingsIcon = ({ color, size }: { color: string; size: number }) => (
-  <MaterialIcons name="settings" size={size} color={color} />
-);
-
-// Placeholder screens
-const HomeScreen = () => {
-  const { theme } = useTheme();
-  return (
-    <View style={[styles.centeredContainer, { backgroundColor: theme.colors.background.primary }]}>
-      <Text style={{ color: theme.colors.text.primary }}>Home Screen</Text>
-    </View>
-  );
-};
-
-const SettingsStackScreen = () => {
-  const { theme } = useTheme();
-  return (
-    <SettingsStack.Navigator
-      screenOptions={{
-        headerStyle: {
-          backgroundColor: theme.colors.background.primary,
-        },
-        headerTintColor: theme.colors.text.primary,
-        headerTitleStyle: {
-          fontWeight: 'bold',
-        },
-        headerShadowVisible: false,
-        headerBackTitle: '',
-        contentStyle: {
-          backgroundColor: theme.colors.background.primary,
-        },
-      }}
-    >
-      <SettingsStack.Screen
-        name="Settings"
-        component={SettingsScreen}
-        options={{
-          headerShown: true,
-        }}
-      />
-      <SettingsStack.Screen
-        name="ServerConfig"
-        component={ServerConfigScreen}
-        options={{
-          headerShown: true,
-          title: 'Server Configuration',
-        }}
-      />
-      <SettingsStack.Screen
-        name="Appearance"
-        component={AppearanceScreen}
-        options={{
-          headerShown: true,
-          title: 'Appearance',
-        }}
-      />
-      <SettingsStack.Screen
-        name="InventorySettings"
-        component={InventorySettingsScreen}
-        options={{
-          headerShown: true,
-          title: 'Inventory Display',
-        }}
-      />
-      <SettingsStack.Screen
-        name="AddItemSettings"
-        component={require('./src/screens/AddItemSettingsScreen').default}
-        options={{
-          headerShown: true,
-          title: 'Add Fields',
-        }}
-      />
-    </SettingsStack.Navigator>
-  );
-};
-
-const LocationsStackScreen = () => {
-  const { theme } = useTheme();
-  return (
-    <LocationsStack.Navigator
-      screenOptions={{
-        headerStyle: {
-          backgroundColor: theme.colors.background.primary,
-        },
-        headerTintColor: theme.colors.text.primary,
-        headerTitleStyle: {
-          fontWeight: 'bold',
-        },
-        headerShadowVisible: false,
-        headerBackTitle: '',
-        contentStyle: {
-          backgroundColor: theme.colors.background.primary,
-        },
-      }}
-    >
-      <LocationsStack.Screen
-        name="LocationsList"
-        component={LocationsScreen}
-        options={{
-          headerShown: true,
-          title: 'Locations',
-        }}
-      />
-      <LocationsStack.Screen
-        name="LocationItems"
-        component={LocationItemsScreen}
-        options={{
-          headerShown: true,
-        }}
-      />
-    </LocationsStack.Navigator>
-  );
-};
-
-const InventoryStackScreen = () => {
-  const { theme } = useTheme();
-  return (
-    <InventoryStack.Navigator
-      screenOptions={{
-        headerStyle: {
-          backgroundColor: theme.colors.background.primary,
-        },
-        headerTintColor: theme.colors.text.primary,
-        headerTitleStyle: {
-          fontWeight: 'bold',
-        },
-        headerShadowVisible: false,
-        headerBackTitle: '',
-        contentStyle: {
-          backgroundColor: theme.colors.background.primary,
-        },
-      }}
-    >
-      <InventoryStack.Screen
-        name="Inventory"
-        component={InventoryScreen}
-        options={{
-          headerShown: true,
-          title: 'Inventory',
-        }}
-      />
-      <InventoryStack.Screen
-        name="ItemDetail"
-        component={ItemDetailScreen}
-        options={{
-          headerShown: true,
-          title: 'Item Details',
-        }}
-      />
-    </InventoryStack.Navigator>
-  );
-};
-
-const AddItemStackScreen = () => {
-  const { theme } = useTheme();
-  return (
-    <AddItemStack.Navigator
-      screenOptions={{
-        headerStyle: {
-          backgroundColor: theme.colors.background.primary,
-        },
-        headerTintColor: theme.colors.text.primary,
-        headerTitleStyle: {
-          fontWeight: 'bold',
-        },
-        headerShadowVisible: false,
-        headerBackTitle: '',
-        contentStyle: {
-          backgroundColor: theme.colors.background.primary,
-        },
-      }}
-    >
-      <AddItemStack.Screen
-        name="AddItem"
-        component={AddItemScreen}
-        options={{
-          headerShown: true,
-          title: 'Add Item',
-        }}
-      />
-    </AddItemStack.Navigator>
-  );
-};
-
-const AppContent = () => {
+const AppContent: React.FC = () => {
   const { theme, isDarkMode } = useTheme();
 
   useEffect(() => {
-    const autoConnectServer = async () => {
-      const serverService = ServerService.getInstance();
-      await serverService.autoConnect();
-    };
-
-    autoConnectServer();
+    ServerService.getInstance().autoConnect();
   }, []);
 
-  return (
-    <NavigationContainer theme={{
+  const navigationTheme = useMemo(
+    () => ({
       dark: isDarkMode,
       colors: {
-        primary: theme.colors.button.primary,
+        primary: theme.colors.accent.primary,
         background: theme.colors.background.primary,
-        card: theme.colors.background.secondary,
+        card: theme.colors.background.elevated,
         text: theme.colors.text.primary,
         border: theme.colors.border,
         notification: theme.colors.error,
       },
       fonts: {
-        regular: {
-          fontFamily: 'System',
-          fontWeight: '400',
-        },
-        medium: {
-          fontFamily: 'System',
-          fontWeight: '500',
-        },
-        bold: {
-          fontFamily: 'System',
-          fontWeight: '700',
-        },
-        heavy: {
-          fontFamily: 'System',
-          fontWeight: '800',
-        },
+        regular: { fontFamily: 'System', fontWeight: '400' as const },
+        medium: { fontFamily: 'System', fontWeight: '500' as const },
+        bold: { fontFamily: 'System', fontWeight: '700' as const },
+        heavy: { fontFamily: 'System', fontWeight: '800' as const },
       },
-    }}>
-      <Tab.Navigator
-        screenOptions={{
-          tabBarActiveTintColor: theme.colors.button.primary,
-          tabBarInactiveTintColor: theme.colors.text.secondary,
-          tabBarStyle: {
-            backgroundColor: theme.colors.background.secondary,
-            borderTopColor: theme.colors.border,
-          },
-          headerStyle: {
-            backgroundColor: theme.colors.background.primary,
-          },
-          headerTintColor: theme.colors.text.primary,
-          headerTitleStyle: {
-            color: theme.colors.text.primary,
-          },
-        }}
-      >
-        <Tab.Screen
-          name="Home"
-          component={HomeScreen}
-          options={{
-            tabBarIcon: HomeIcon,
-          }}
-        />
+    }),
+    [isDarkMode, theme]
+  );
+
+  const screenOptions = useMemo(
+    () => ({
+      headerStyle: { backgroundColor: theme.colors.background.primary },
+      headerTintColor: theme.colors.text.primary,
+      headerTitleStyle: {
+        color: theme.colors.text.primary,
+        fontSize: theme.typography.sizes.xl,
+        fontWeight: theme.typography.weights.semibold as FontWeight,
+      },
+      headerShadowVisible: false,
+    }),
+    [theme]
+  );
+
+  const renderTabBar = useCallback(
+    (props: BottomTabBarProps) => <CustomTabBar {...props} />,
+    []
+  );
+
+  return (
+    <NavigationContainer theme={navigationTheme}>
+      <Tab.Navigator tabBar={renderTabBar} screenOptions={screenOptions}>
+        <Tab.Screen name="Home" component={HomeScreen} />
         <Tab.Screen
           name="InventoryTab"
           component={InventoryStackScreen}
-          options={{
-            headerShown: false,
-            tabBarIcon: InventoryIcon,
-            tabBarLabel: 'Inventory',
-          }}
+          options={{ headerShown: false }}
         />
         <Tab.Screen
           name="AddItemTab"
           component={AddItemStackScreen}
-          options={{
-            headerShown: false,
-            tabBarIcon: AddItemIcon,
-            tabBarLabel: 'Add Item',
-          }}
+          options={{ headerShown: false }}
         />
         <Tab.Screen
           name="Locations"
           component={LocationsStackScreen}
-          options={{
-            headerShown: false,
-            tabBarIcon: LocationIcon,
-          }}
+          options={{ headerShown: false }}
         />
         <Tab.Screen
           name="SettingsTab"
           component={SettingsStackScreen}
-          options={{
-            headerShown: false,
-            tabBarIcon: SettingsIcon,
-          }}
+          options={{ headerShown: false }}
         />
       </Tab.Navigator>
     </NavigationContainer>
   );
 };
 
-const App = () => {
-  return (
-    <SafeAreaProvider>
-      <ThemeProvider>
-        <AppContent />
-      </ThemeProvider>
-    </SafeAreaProvider>
-  );
-};
-
-const styles = StyleSheet.create({
-  centeredContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
+const App: React.FC = () => (
+  <SafeAreaProvider>
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
+  </SafeAreaProvider>
+);
 
 export default App;

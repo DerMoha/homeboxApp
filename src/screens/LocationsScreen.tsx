@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   ScrollView,
+  Animated,
 } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import type { Theme } from '../theme/theme';
@@ -33,6 +34,7 @@ interface LocationTreeItemProps {
   level: number;
   onPress: (locationId: string, locationName: string) => void;
   theme: Theme;
+  isSelected?: boolean;
 }
 
 const LocationTreeItemComponent: React.FC<LocationTreeItemProps> = ({
@@ -40,59 +42,134 @@ const LocationTreeItemComponent: React.FC<LocationTreeItemProps> = ({
   level,
   onPress,
   theme,
+  isSelected = false,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const rotateAnim = useRef(new Animated.Value(0)).current;
 
-  // Memoize hasChildren check
   const hasChildren = useMemo(() =>
     node.children && node.children.length > 0,
     [node.children]
   );
 
-  // Memoize style calculations
-  const containerStyle = useMemo(() => [
-    styles.locationContainer,
-    { backgroundColor: theme.colors.background.secondary },
-    { marginLeft: level * 16 },
-  ], [theme.colors.background.secondary, level]);
+  const handleToggleExpand = useCallback(() => {
+    const toValue = isExpanded ? 0 : 1;
+    Animated.spring(rotateAnim, {
+      toValue,
+      useNativeDriver: true,
+      tension: 100,
+      friction: 8,
+    }).start();
+    setIsExpanded(prev => !prev);
+  }, [isExpanded, rotateAnim]);
 
-  // Memoize callbacks
+  const rotateInterpolate = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '90deg'],
+  });
+
   const handlePress = useCallback(() => {
     onPress(node.id, node.name);
   }, [onPress, node.id, node.name]);
 
-  const toggleExpanded = useCallback(() => {
-    setIsExpanded(prev => !prev);
-  }, []);
+  const levelIndent = level * theme.spacing.lg;
+  const isNested = level > 0;
 
   return (
     <View>
       <TouchableOpacity
-        style={containerStyle}
+        style={[
+          styles.locationCard,
+          {
+            backgroundColor: isSelected
+              ? theme.colors.accent.muted
+              : theme.colors.card.background,
+            borderColor: isSelected
+              ? theme.colors.accent.primary
+              : theme.colors.borderSubtle,
+            marginLeft: levelIndent,
+            borderRadius: theme.borderRadius.lg,
+            borderLeftWidth: isNested ? 3 : 1,
+            borderLeftColor: isNested
+              ? theme.colors.accent.secondary
+              : theme.colors.borderSubtle,
+          },
+          theme.shadows.sm,
+        ]}
         onPress={handlePress}
+        activeOpacity={0.7}
       >
         <View style={styles.locationContent}>
-          <View style={styles.locationHeader}>
-            {hasChildren && (
-              <TouchableOpacity
-                onPress={toggleExpanded}
-                style={styles.expandButton}
-              >
+          {hasChildren && (
+            <TouchableOpacity
+              onPress={handleToggleExpand}
+              style={[
+                styles.expandButton,
+                { backgroundColor: theme.colors.background.secondary },
+              ]}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Animated.View style={{ transform: [{ rotate: rotateInterpolate }] }}>
                 <MaterialIcons
-                  name={isExpanded ? 'expand-more' : 'chevron-right'}
-                  size={24}
-                  color={theme.colors.text.primary}
+                  name="chevron-right"
+                  size={20}
+                  color={theme.colors.accent.primary}
                 />
-              </TouchableOpacity>
-            )}
-            <Text style={[styles.locationName, { color: theme.colors.text.primary }]}>
+              </Animated.View>
+            </TouchableOpacity>
+          )}
+
+          <View style={[styles.locationIconContainer, { backgroundColor: theme.colors.accent.muted }]}>
+            <MaterialIcons
+              name={level === 0 ? 'home' : 'folder'}
+              size={18}
+              color={theme.colors.accent.primary}
+            />
+          </View>
+
+          <View style={styles.locationTextContainer}>
+            <Text
+              style={[
+                styles.locationName,
+                {
+                  color: theme.colors.text.primary,
+                  fontSize: level === 0
+                    ? theme.typography.sizes.lg
+                    : theme.typography.sizes.md,
+                  fontWeight: level === 0
+                    ? theme.typography.weights.semibold
+                    : theme.typography.weights.medium,
+                },
+              ]}
+              numberOfLines={1}
+            >
               {node.name}
             </Text>
+            {hasChildren && (
+              <Text
+                style={[
+                  styles.childCount,
+                  {
+                    color: theme.colors.text.tertiary,
+                    fontSize: theme.typography.sizes.xs,
+                  },
+                ]}
+              >
+                {node.children.length} {node.children.length === 1 ? 'sublocation' : 'sublocations'}
+              </Text>
+            )}
           </View>
+
+          <MaterialIcons
+            name="chevron-right"
+            size={20}
+            color={theme.colors.text.tertiary}
+          />
         </View>
       </TouchableOpacity>
+
       {isExpanded && hasChildren && (
-        <View>
+        <Animated.View>
           {node.children.map((child) => (
             <LocationTreeItem
               key={child.id}
@@ -102,13 +179,12 @@ const LocationTreeItemComponent: React.FC<LocationTreeItemProps> = ({
               theme={theme}
             />
           ))}
-        </View>
+        </Animated.View>
       )}
     </View>
   );
 };
 
-// Memoized export to prevent unnecessary re-renders in recursive tree
 const LocationTreeItem = React.memo(LocationTreeItemComponent);
 
 const LocationsScreen: React.FC = () => {
@@ -126,7 +202,6 @@ const LocationsScreen: React.FC = () => {
     await execute(async () => {
       const service = ServerService.getInstance();
 
-      // Verify server connection
       const axiosInstance = service.getAxiosInstance();
       if (!axiosInstance) {
         throw new Error('No active server connection. Please check your server settings.');
@@ -180,14 +255,20 @@ const LocationsScreen: React.FC = () => {
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
       <ScrollView
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[
+          styles.listContent,
+          { paddingHorizontal: theme.spacing.md },
+        ]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={[theme.colors.button.primary]}
+            tintColor={theme.colors.accent.primary}
+            colors={[theme.colors.accent.primary]}
+            progressBackgroundColor={theme.colors.background.elevated}
           />
         }
+        showsVerticalScrollIndicator={false}
       >
         {locationTree && locationTree.map((node) => (
           <LocationTreeItem
@@ -200,8 +281,35 @@ const LocationsScreen: React.FC = () => {
         ))}
         {locationTree && locationTree.length === 0 && (
           <View style={styles.emptyContainer}>
-            <Text style={[styles.emptyText, { color: theme.colors.text.secondary }]}>
+            <View style={[styles.emptyIconContainer, { backgroundColor: theme.colors.accent.muted }]}>
+              <MaterialIcons
+                name="location-off"
+                size={48}
+                color={theme.colors.accent.primary}
+              />
+            </View>
+            <Text
+              style={[
+                styles.emptyTitle,
+                {
+                  color: theme.colors.text.primary,
+                  fontSize: theme.typography.sizes.lg,
+                  fontWeight: theme.typography.weights.semibold,
+                },
+              ]}
+            >
               No locations found
+            </Text>
+            <Text
+              style={[
+                styles.emptySubtitle,
+                {
+                  color: theme.colors.text.secondary,
+                  fontSize: theme.typography.sizes.sm,
+                },
+              ]}
+            >
+              Add locations from your Homebox server
             </Text>
           </View>
         )}
@@ -215,61 +323,63 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   listContent: {
-    padding: 16,
+    paddingTop: 16,
+    paddingBottom: 32,
   },
-  locationContainer: {
-    borderRadius: 12,
+  locationCard: {
     marginBottom: 8,
+    borderWidth: 1,
     overflow: 'hidden',
   },
   locationContent: {
-    padding: 12,
-    flex: 1,
-    justifyContent: 'center',
-  },
-  locationHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    minHeight: 40,
-  },
-  locationName: {
-    fontSize: 16,
-    fontWeight: '600',
-    flex: 1,
+    padding: 14,
+    minHeight: 56,
   },
   expandButton: {
-    padding: 4,
-    marginRight: 4,
-  },
-  errorIcon: {
-    alignSelf: 'center',
-    marginBottom: 16,
-  },
-  errorText: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 16,
-    paddingHorizontal: 16,
-  },
-  retryButton: {
-    padding: 12,
+    width: 28,
+    height: 28,
     borderRadius: 8,
+    justifyContent: 'center',
     alignItems: 'center',
-    alignSelf: 'center',
-    minWidth: 120,
+    marginRight: 10,
   },
-  retryButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
+  locationIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  locationTextContainer: {
+    flex: 1,
+  },
+  locationName: {
+    marginBottom: 2,
+  },
+  childCount: {
+    marginTop: 2,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 32,
+    paddingVertical: 64,
   },
-  emptyText: {
-    fontSize: 16,
+  emptyIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    marginBottom: 8,
+  },
+  emptySubtitle: {
     textAlign: 'center',
   },
 });

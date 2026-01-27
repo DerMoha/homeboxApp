@@ -24,7 +24,6 @@ const AddItemScreen: React.FC = () => {
   const { theme } = useTheme();
   const navigation = useNavigation();
 
-  // Custom Hooks
   const {
     locations,
     labels,
@@ -63,7 +62,6 @@ const AddItemScreen: React.FC = () => {
     submitItem,
   } = useAddItemForm();
 
-  // Load settings on focus
   useFocusEffect(
     React.useCallback(() => {
       loadEnabledFields();
@@ -71,7 +69,6 @@ const AddItemScreen: React.FC = () => {
     }, [loadEnabledFields, loadImageQuality])
   );
 
-  // Set header options
   useEffect(() => {
     navigation.setOptions({
       title: 'Add Item',
@@ -82,7 +79,6 @@ const AddItemScreen: React.FC = () => {
     });
   }, [navigation, theme]);
 
-  // Handle submit
   const handleSubmit = async () => {
     const success = await submitItem(selectedImage, enabledFields, () => {
       resetForm();
@@ -94,7 +90,6 @@ const AddItemScreen: React.FC = () => {
     }
   };
 
-  // Handle quantity focus/blur
   const handleQuantityFocus = () => {
     setIsQuantityFocused(true);
     if (formData.quantity === '1') {
@@ -109,13 +104,27 @@ const AddItemScreen: React.FC = () => {
     }
   };
 
-  // Loading state
   if (isConnecting) {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text style={[styles.loadingText, { color: theme.colors.text.secondary }]}>
+          <View
+            style={[
+              styles.loadingIconContainer,
+              { backgroundColor: theme.colors.accent.muted },
+            ]}
+          >
+            <ActivityIndicator size="large" color={theme.colors.accent.primary} />
+          </View>
+          <Text
+            style={[
+              styles.loadingText,
+              {
+                color: theme.colors.text.secondary,
+                fontSize: theme.typography.sizes.md,
+              },
+            ]}
+          >
             Connecting to server...
           </Text>
         </View>
@@ -123,73 +132,180 @@ const AddItemScreen: React.FC = () => {
     );
   }
 
+  const SectionHeader: React.FC<{ title: string; icon?: string }> = ({ title, icon }) => (
+    <View style={styles.sectionHeader}>
+      {icon && (
+        <View style={[styles.sectionIconContainer, { backgroundColor: theme.colors.accent.muted }]}>
+          <MaterialIcons name={icon} size={16} color={theme.colors.accent.primary} />
+        </View>
+      )}
+      <Text
+        style={[
+          styles.sectionHeaderText,
+          {
+            color: theme.colors.text.secondary,
+            fontSize: theme.typography.sizes.sm,
+            fontWeight: theme.typography.weights.semibold,
+            letterSpacing: theme.typography.letterSpacing.wide,
+          },
+        ]}
+      >
+        {title.toUpperCase()}
+      </Text>
+      <View style={[styles.sectionHeaderLine, { backgroundColor: theme.colors.accent.primary }]} />
+    </View>
+  );
+
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        {/* Item Form Fields */}
-        <ItemFormFields
-          formData={formData}
-          enabledFields={enabledFields}
-          isQuantityFocused={isQuantityFocused}
-          onUpdateField={updateFormField}
-          onQuantityFocus={handleQuantityFocus}
-          onQuantityBlur={handleQuantityBlur}
-        />
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.content,
+          { paddingHorizontal: theme.spacing.md },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        <SectionHeader title="Item Details" icon="info" />
 
-        {/* Location Selector */}
-        <LocationSelector
-          locations={locations}
-          selectedLocation={selectedLocation}
-          onSelectLocation={setSelectedLocation}
-        />
+        <View
+          style={[
+            styles.formCard,
+            {
+              backgroundColor: theme.colors.card.background,
+              borderColor: theme.colors.borderSubtle,
+              borderRadius: theme.borderRadius.lg,
+            },
+            theme.shadows.sm,
+          ]}
+        >
+          <ItemFormFields
+            formData={formData}
+            enabledFields={enabledFields}
+            isQuantityFocused={isQuantityFocused}
+            onUpdateField={updateFormField}
+            onQuantityFocus={handleQuantityFocus}
+            onQuantityBlur={handleQuantityBlur}
+          />
+        </View>
 
-        {/* Image Picker */}
-        <ImagePickerSection
-          selectedImage={selectedImage}
-          imageRotation={imageRotation}
-          imageFlip={imageFlip}
-          originalSize={originalSize}
-          compressedSize={compressedSize}
-          isPreviewVisible={isPreviewVisible}
-          onPickImage={handleImagePicker}
-          onRotateImage={handleRotateImage}
-          onFlipImage={handleFlipImage}
-          onClearImage={clearImage}
-          onTogglePreview={() => setIsPreviewVisible(!isPreviewVisible)}
-          formatFileSize={formatFileSize}
-        />
+        <SectionHeader title="Location" icon="place" />
 
-        {/* Label Selector */}
-        <LabelSelector
-          labels={labels}
-          selectedLabels={selectedLabels}
-          onToggleLabel={handleLabelToggle}
-          enabled={enabledFields.labels}
-        />
+        <View
+          style={[
+            styles.formCard,
+            {
+              backgroundColor: theme.colors.card.background,
+              borderColor: theme.colors.borderSubtle,
+              borderRadius: theme.borderRadius.lg,
+            },
+            theme.shadows.sm,
+          ]}
+        >
+          <LocationSelector
+            locations={locations}
+            selectedLocation={selectedLocation}
+            onSelectLocation={setSelectedLocation}
+          />
+        </View>
 
-        {/* Submit Button */}
+        <SectionHeader title="Image" icon="photo-camera" />
+
+        <View
+          style={[
+            styles.formCard,
+            {
+              backgroundColor: theme.colors.card.background,
+              borderColor: theme.colors.borderSubtle,
+              borderRadius: theme.borderRadius.lg,
+            },
+            theme.shadows.sm,
+          ]}
+        >
+          <ImagePickerSection
+            selectedImage={selectedImage}
+            imageRotation={imageRotation}
+            imageFlip={imageFlip}
+            originalSize={originalSize}
+            compressedSize={compressedSize}
+            isPreviewVisible={isPreviewVisible}
+            onPickImage={handleImagePicker}
+            onRotateImage={handleRotateImage}
+            onFlipImage={handleFlipImage}
+            onClearImage={clearImage}
+            onTogglePreview={() => setIsPreviewVisible(!isPreviewVisible)}
+            formatFileSize={formatFileSize}
+          />
+        </View>
+
+        {enabledFields.labels && (
+          <>
+            <SectionHeader title="Labels" icon="label" />
+
+            <View
+              style={[
+                styles.formCard,
+                {
+                  backgroundColor: theme.colors.card.background,
+                  borderColor: theme.colors.borderSubtle,
+                  borderRadius: theme.borderRadius.lg,
+                },
+                theme.shadows.sm,
+              ]}
+            >
+              <LabelSelector
+                labels={labels}
+                selectedLabels={selectedLabels}
+                onToggleLabel={handleLabelToggle}
+                enabled={enabledFields.labels}
+              />
+            </View>
+          </>
+        )}
+
         <TouchableOpacity
           style={[
             styles.submitButton,
             {
-              backgroundColor: theme.colors.button.primary,
-              opacity: isLoading ? 0.5 : 1,
+              backgroundColor: theme.colors.accent.primary,
+              borderRadius: theme.borderRadius.lg,
+              opacity: isLoading ? 0.6 : 1,
             },
+            theme.shadows.md,
           ]}
           onPress={handleSubmit}
           disabled={isLoading}
+          activeOpacity={0.8}
         >
           {isLoading ? (
-            <ActivityIndicator color={theme.colors.button.text} />
+            <ActivityIndicator color={theme.colors.text.inverse} />
           ) : (
             <>
-              <MaterialIcons name="add" size={20} color={theme.colors.button.text} />
-              <Text style={[styles.submitButtonText, { color: theme.colors.button.text }]}>
+              <View
+                style={[
+                  styles.submitIconContainer,
+                  { backgroundColor: 'rgba(255,255,255,0.2)' },
+                ]}
+              >
+                <MaterialIcons name="add" size={20} color={theme.colors.text.inverse} />
+              </View>
+              <Text
+                style={[
+                  styles.submitButtonText,
+                  {
+                    color: theme.colors.text.inverse,
+                    fontSize: theme.typography.sizes.md,
+                    fontWeight: theme.typography.weights.semibold,
+                  },
+                ]}
+              >
                 Add Item
               </Text>
             </>
           )}
         </TouchableOpacity>
+
+        <View style={styles.bottomSpacer} />
       </ScrollView>
     </View>
   );
@@ -204,28 +320,71 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  loadingIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   loadingText: {
     marginTop: 12,
-    fontSize: 14,
   },
   scrollView: {
     flex: 1,
   },
   content: {
+    paddingTop: 8,
+    paddingBottom: 32,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 24,
+    marginBottom: 12,
+  },
+  sectionIconContainer: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  sectionHeaderText: {
+    marginRight: 12,
+  },
+  sectionHeaderLine: {
+    flex: 1,
+    height: 1,
+    opacity: 0.3,
+  },
+  formCard: {
     padding: 16,
+    borderWidth: 1,
   },
   submitButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 16,
+    padding: 18,
+    marginTop: 32,
+    gap: 10,
+  },
+  submitIconContainer: {
+    width: 28,
+    height: 28,
     borderRadius: 8,
-    marginTop: 24,
-    gap: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   submitButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  bottomSpacer: {
+    height: 24,
   },
 });
 

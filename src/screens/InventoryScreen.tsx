@@ -39,7 +39,6 @@ const InventoryScreen: React.FC = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
-  // Custom hooks
   const {
     inventory,
     sortOption,
@@ -68,7 +67,6 @@ const InventoryScreen: React.FC = () => {
     loadDisplayPreferences,
   } = useDisplayPreferences();
 
-  // Initialize screen
   const initializeScreen = useCallback(async () => {
     await loadDisplayPreferences();
     await loadInventory();
@@ -78,7 +76,6 @@ const InventoryScreen: React.FC = () => {
     initializeScreen();
   }, [initializeScreen]);
 
-  // Set header with controls
   const renderHeaderRight = useCallback(() => (
     <InventoryHeader
       viewMode={viewMode}
@@ -109,12 +106,10 @@ const InventoryScreen: React.FC = () => {
     });
   }, [navigation, renderHeaderRight]);
 
-  // Handle item press
   const handleItemPress = useCallback((itemId: string) => {
     navigation.navigate('ItemDetail', { itemId });
   }, [navigation]);
 
-  // Render item based on view mode
   const renderItem = useCallback(({ item }: { item: InventoryItem }) => {
     if (viewMode === 'list') {
       return (
@@ -137,12 +132,10 @@ const InventoryScreen: React.FC = () => {
     );
   }, [viewMode, displayPreferences, listZoom, itemsPerRow, handleItemPress]);
 
-  // Loading state
   if (isLoading && inventory.length === 0) {
     return <LoadingState message="Loading inventory..." />;
   }
 
-  // Empty state
   if (!isLoading && inventory.length === 0) {
     return <EmptyState message="No items in inventory" icon="inventory" />;
   }
@@ -155,17 +148,22 @@ const InventoryScreen: React.FC = () => {
         keyExtractor={(item) => item.id}
         key={viewMode === 'grid' ? `grid-${itemsPerRow}` : 'list'}
         numColumns={viewMode === 'grid' ? itemsPerRow : 1}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[
+          styles.listContent,
+          { paddingHorizontal: theme.spacing.md },
+        ]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={theme.colors.primary}
+            tintColor={theme.colors.accent.primary}
+            colors={[theme.colors.accent.primary]}
+            progressBackgroundColor={theme.colors.background.elevated}
           />
         }
+        showsVerticalScrollIndicator={false}
       />
 
-      {/* Sort Modal */}
       <SortModal
         visible={sortModalVisible}
         sortOption={sortOption}
@@ -184,7 +182,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   listContent: {
-    padding: 8,
+    paddingTop: 8,
+    paddingBottom: 16,
   },
 });
 

@@ -1,5 +1,5 @@
-import React, { useMemo, useCallback } from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet, Dimensions } from 'react-native';
+import React, { useMemo, useCallback, useRef } from 'react';
+import { View, Text, TouchableOpacity, Image, StyleSheet, Dimensions, Animated } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { useTheme } from '../../theme/ThemeContext';
 import { InventoryItem } from '../../hooks/useInventoryData';
@@ -20,82 +20,148 @@ const InventoryGridItemComponent: React.FC<InventoryGridItemProps> = ({
   itemsPerRow,
 }) => {
   const { theme } = useTheme();
+  const scaleAnim = useRef(new Animated.Value(1)).current;
 
-  // Memoize preference lookup
   const getPreference = useCallback((id: string): boolean => {
     const preference = displayPreferences.find(p => p.id === id);
     return preference?.enabled ?? false;
   }, [displayPreferences]);
 
-  // Memoize screen calculations
   const itemWidth = useMemo(() => {
     const screenWidth = Dimensions.get('window').width;
-    return Math.floor(screenWidth / itemsPerRow);
-  }, [itemsPerRow]);
+    const gap = theme.spacing.xs;
+    return Math.floor((screenWidth - gap * (itemsPerRow + 1)) / itemsPerRow);
+  }, [itemsPerRow, theme.spacing.xs]);
 
-  // Memoize onPress handler
+  const handlePressIn = useCallback(() => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.96,
+      useNativeDriver: true,
+      tension: 100,
+      friction: 10,
+    }).start();
+  }, [scaleAnim]);
+
+  const handlePressOut = useCallback(() => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      tension: 100,
+      friction: 10,
+    }).start();
+  }, [scaleAnim]);
+
   const handlePress = useCallback(() => {
     onPress(item.id);
   }, [onPress, item.id]);
 
   return (
-    <TouchableOpacity
+    <Animated.View
       style={[
-        styles.gridItemContainer,
         {
-          backgroundColor: theme.colors.background.secondary,
-          width: itemWidth,
-          height: itemWidth,
+          transform: [{ scale: scaleAnim }],
+          margin: theme.spacing.xs / 2,
         },
       ]}
-      onPress={handlePress}
     >
-      <View style={[styles.gridItemImageContainer, { height: itemWidth }]}>
-        {item.imageId ? (
-          <Image
-            source={getImageSource(item.id, item.imageId)}
-            style={styles.gridItemImage}
-            resizeMode="cover"
-          />
-        ) : (
-          <View style={styles.placeholderContainer}>
-            <MaterialIcons name="image-not-supported" size={48} color={theme.colors.text.secondary} />
-          </View>
-        )}
-      </View>
+      <TouchableOpacity
+        style={[
+          styles.gridItemContainer,
+          {
+            backgroundColor: theme.colors.card.background,
+            width: itemWidth,
+            height: itemWidth,
+            borderRadius: theme.borderRadius.lg,
+            borderWidth: 1,
+            borderColor: theme.colors.card.border,
+          },
+          theme.shadows.md,
+        ]}
+        onPress={handlePress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        activeOpacity={1}
+      >
+        <View style={[styles.gridItemImageContainer, { height: itemWidth, borderRadius: theme.borderRadius.md }]}>
+          {item.imageId ? (
+            <Image
+              source={getImageSource(item.id, item.imageId)}
+              style={[styles.gridItemImage, { borderRadius: theme.borderRadius.md }]}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={[styles.placeholderContainer, { backgroundColor: theme.colors.background.tertiary }]}>
+              <MaterialIcons name="image-not-supported" size={48} color={theme.colors.text.tertiary} />
+            </View>
+          )}
+        </View>
 
-      <View style={styles.gridItemInfo}>
-        <Text style={styles.gridItemName} numberOfLines={1} ellipsizeMode="tail">
-          {item.name}
-        </Text>
-
-        {item.location && (
-          <Text style={styles.gridItemLocation} numberOfLines={1} ellipsizeMode="tail">
-            {item.location.name}
+        <View style={[styles.gridItemInfo, { padding: theme.spacing.sm }]}>
+          <Text
+            style={[
+              styles.gridItemName,
+              {
+                fontSize: theme.typography.sizes.md,
+                fontWeight: theme.typography.weights.semibold,
+              },
+            ]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {item.name}
           </Text>
-        )}
 
-        {getPreference('quantity') && (
-          <View style={[
-            styles.gridQuantityBadge,
-            { backgroundColor: item.quantity > 0 ? theme.colors.success : theme.colors.error },
-          ]}>
-            <Text style={styles.gridQuantityText}>{item.quantity}</Text>
-          </View>
-        )}
-      </View>
-    </TouchableOpacity>
+          {item.location && (
+            <Text
+              style={[
+                styles.gridItemLocation,
+                {
+                  fontSize: theme.typography.sizes.xs,
+                  color: 'rgba(255, 255, 255, 0.6)',
+                },
+              ]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {item.location.name}
+            </Text>
+          )}
+
+          {getPreference('quantity') && (
+            <View
+              style={[
+                styles.gridQuantityBadge,
+                {
+                  backgroundColor: theme.colors.accent.primary,
+                  borderRadius: theme.borderRadius.full,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.gridQuantityText,
+                  {
+                    fontSize: theme.typography.sizes.xs,
+                    fontWeight: theme.typography.weights.bold,
+                    color: theme.colors.text.inverse,
+                  },
+                ]}
+              >
+                {item.quantity}
+              </Text>
+            </View>
+          )}
+        </View>
+      </TouchableOpacity>
+    </Animated.View>
   );
 };
 
-// Memoized export to prevent unnecessary re-renders
 export const InventoryGridItem = React.memo(InventoryGridItemComponent);
 
 const styles = StyleSheet.create({
   gridItemContainer: {
-    borderRadius: 3,
     overflow: 'hidden',
-    margin: 0,
     position: 'relative',
   },
   placeholderContainer: {
@@ -104,44 +170,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   gridItemImageContainer: {
-    borderRadius: 3,
     overflow: 'hidden',
   },
   gridItemImage: {
     width: '100%',
     height: '100%',
-    borderRadius: 3,
   },
   gridItemInfo: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
   },
   gridItemName: {
     color: 'white',
-    fontWeight: '600',
-    fontSize: 14,
   },
   gridItemLocation: {
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 12,
+    marginTop: 2,
   },
   gridQuantityBadge: {
     position: 'absolute',
-    top: -24,
+    top: -28,
     right: 8,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 26,
+    height: 26,
     justifyContent: 'center',
     alignItems: 'center',
   },
   gridQuantityText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-    fontSize: 12,
+    textAlign: 'center',
   },
 });

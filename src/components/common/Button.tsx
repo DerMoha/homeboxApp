@@ -1,5 +1,12 @@
-import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle } from 'react-native';
+import React, { useRef } from 'react';
+import {
+  Pressable,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  ViewStyle,
+  Animated,
+} from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { useTheme } from '../../theme/ThemeContext';
 
@@ -30,69 +37,117 @@ export const Button: React.FC<ButtonProps> = ({
   style,
 }) => {
   const { theme } = useTheme();
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const borderOpacity = useRef(new Animated.Value(0)).current;
+
+  const handlePressIn = () => {
+    Animated.parallel([
+      Animated.spring(scaleAnim, {
+        toValue: 0.97,
+        useNativeDriver: true,
+        speed: 50,
+        bounciness: 4,
+      }),
+      Animated.timing(borderOpacity, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: false,
+      }),
+    ]).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.parallel([
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+        speed: 50,
+        bounciness: 4,
+      }),
+      Animated.timing(borderOpacity, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: false,
+      }),
+    ]).start();
+  };
 
   const getBackgroundColor = (): string => {
-    if (disabled) {return theme.colors.text.secondary;}
+    if (disabled) return theme.colors.text.tertiary;
 
     switch (variant) {
       case 'primary':
-        return theme.colors.button.primary;
+        return theme.colors.accent.primary;
       case 'secondary':
-        return theme.colors.background.secondary;
+        return theme.colors.button.secondary;
       case 'danger':
         return theme.colors.error;
       case 'ghost':
         return 'transparent';
       default:
-        return theme.colors.button.primary;
+        return theme.colors.accent.primary;
     }
   };
 
   const getTextColor = (): string => {
-    if (disabled) {return theme.colors.text.tertiary;}
+    if (disabled) return theme.colors.text.tertiary;
 
     switch (variant) {
       case 'primary':
+        return theme.colors.text.inverse;
       case 'danger':
         return theme.colors.button.text;
       case 'secondary':
       case 'ghost':
         return theme.colors.text.primary;
       default:
-        return theme.colors.button.text;
+        return theme.colors.text.inverse;
     }
   };
 
-  const getPadding = (): number => {
+  const getHeight = (): number => {
     switch (size) {
       case 'small':
-        return 8;
+        return 40;
       case 'medium':
-        return 12;
+        return 48;
       case 'large':
-        return 16;
+        return 56;
       default:
-        return 12;
+        return 48;
+    }
+  };
+
+  const getPaddingHorizontal = (): number => {
+    switch (size) {
+      case 'small':
+        return 16;
+      case 'medium':
+        return 24;
+      case 'large':
+        return 32;
+      default:
+        return 24;
     }
   };
 
   const getFontSize = (): number => {
     switch (size) {
       case 'small':
-        return 12;
+        return theme.typography.sizes.sm;
       case 'medium':
-        return 14;
+        return theme.typography.sizes.md;
       case 'large':
-        return 16;
+        return theme.typography.sizes.lg;
       default:
-        return 14;
+        return theme.typography.sizes.md;
     }
   };
 
   const getIconSize = (): number => {
     switch (size) {
       case 'small':
-        return 16;
+        return 18;
       case 'medium':
         return 20;
       case 'large':
@@ -102,42 +157,85 @@ export const Button: React.FC<ButtonProps> = ({
     }
   };
 
+  const getBorderRadius = (): number => {
+    switch (size) {
+      case 'small':
+        return theme.borderRadius.sm;
+      case 'medium':
+        return theme.borderRadius.md;
+      case 'large':
+        return theme.borderRadius.lg;
+      default:
+        return theme.borderRadius.md;
+    }
+  };
+
+  const ghostBorderColor = borderOpacity.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['transparent', theme.colors.border],
+  });
+
   return (
-    <TouchableOpacity
+    <Animated.View
       style={[
-        styles.button,
-        {
-          backgroundColor: getBackgroundColor(),
-          padding: getPadding(),
-          borderWidth: variant === 'ghost' || variant === 'secondary' ? 1 : 0,
-          borderColor: variant === 'ghost' ? theme.colors.border : theme.colors.border,
-          opacity: disabled ? 0.5 : 1,
-        },
+        { transform: [{ scale: scaleAnim }] },
         fullWidth && styles.fullWidth,
-        style,
       ]}
-      onPress={onPress}
-      disabled={disabled || loading}
-      activeOpacity={0.7}
     >
-      {loading ? (
-        <ActivityIndicator color={getTextColor()} size="small" />
-      ) : (
-        <>
-          {icon && (
-            <MaterialIcons
-              name={icon as any}
-              size={getIconSize()}
-              color={getTextColor()}
-              style={styles.icon}
-            />
-          )}
-          <Text style={[styles.text, { color: getTextColor(), fontSize: getFontSize() }]}>
-            {title}
-          </Text>
-        </>
-      )}
-    </TouchableOpacity>
+      <Pressable
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        disabled={disabled || loading}
+        style={({ pressed }) => [
+          styles.button,
+          {
+            backgroundColor: getBackgroundColor(),
+            height: getHeight(),
+            paddingHorizontal: getPaddingHorizontal(),
+            borderRadius: getBorderRadius(),
+            borderWidth: variant === 'ghost' || variant === 'secondary' ? 1.5 : 0,
+            borderColor:
+              variant === 'ghost'
+                ? pressed
+                  ? theme.colors.border
+                  : theme.colors.borderSubtle
+                : theme.colors.border,
+            opacity: disabled ? 0.5 : 1,
+            ...(variant === 'primary' && !disabled ? theme.shadows.sm : {}),
+          },
+          style,
+        ]}
+      >
+        {loading ? (
+          <ActivityIndicator color={getTextColor()} size="small" />
+        ) : (
+          <>
+            {icon && (
+              <MaterialIcons
+                name={icon as any}
+                size={getIconSize()}
+                color={getTextColor()}
+                style={styles.icon}
+              />
+            )}
+            <Text
+              style={[
+                styles.text,
+                {
+                  color: getTextColor(),
+                  fontSize: getFontSize(),
+                  fontWeight: theme.typography.weights.semibold as any,
+                  letterSpacing: theme.typography.letterSpacing.wide,
+                },
+              ]}
+            >
+              {title.toUpperCase()}
+            </Text>
+          </>
+        )}
+      </Pressable>
+    </Animated.View>
   );
 };
 
@@ -146,16 +244,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 8,
-    gap: 6,
+    gap: 8,
   },
   fullWidth: {
     width: '100%',
   },
   icon: {
-    marginRight: 4,
+    marginRight: 2,
   },
   text: {
-    fontWeight: '600',
+    textTransform: 'uppercase',
   },
 });

@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useCallback, useRef } from 'react';
+import { View, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { useTheme } from '../../theme/ThemeContext';
 
@@ -17,6 +17,13 @@ interface InventoryHeaderProps {
   onOpenSort: () => void;
 }
 
+interface AnimatedButtonProps {
+  onPress: () => void;
+  disabled?: boolean;
+  isActive?: boolean;
+  icon: string;
+}
+
 export const InventoryHeader: React.FC<InventoryHeaderProps> = ({
   viewMode,
   itemsPerRow,
@@ -30,83 +37,95 @@ export const InventoryHeader: React.FC<InventoryHeaderProps> = ({
 }) => {
   const { theme } = useTheme();
 
+  const AnimatedButton: React.FC<AnimatedButtonProps> = ({ onPress, disabled = false, isActive = false, icon }) => {
+    const scaleAnim = useRef(new Animated.Value(1)).current;
+
+    const handlePressIn = useCallback(() => {
+      Animated.spring(scaleAnim, {
+        toValue: 0.9,
+        useNativeDriver: true,
+        tension: 100,
+        friction: 10,
+      }).start();
+    }, []);
+
+    const handlePressOut = useCallback(() => {
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+        tension: 100,
+        friction: 10,
+      }).start();
+    }, []);
+
+    return (
+      <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+        <TouchableOpacity
+          style={[
+            styles.headerButton,
+            {
+              backgroundColor: isActive ? theme.colors.accent.primary : theme.colors.background.elevated,
+              borderRadius: theme.borderRadius.md,
+              borderWidth: 1,
+              borderColor: isActive ? theme.colors.accent.primary : theme.colors.border,
+              opacity: disabled ? 0.4 : 1,
+            },
+          ]}
+          onPress={onPress}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          disabled={disabled}
+          activeOpacity={1}
+        >
+          <MaterialIcons
+            name={icon}
+            size={20}
+            color={isActive ? theme.colors.text.inverse : theme.colors.text.primary}
+          />
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
+
   return (
-    <View style={styles.headerControls}>
+    <View style={[styles.headerControls, { gap: theme.spacing.sm }]}>
       {viewMode === 'grid' ? (
         <>
-          <TouchableOpacity
-            style={[
-              styles.headerButton,
-              {
-                backgroundColor: theme.colors.button.primary,
-                opacity: itemsPerRow <= 1 ? 0.5 : 1,
-              },
-            ]}
+          <AnimatedButton
             onPress={onDecreaseItemsPerRow}
             disabled={itemsPerRow <= 1}
-          >
-            <MaterialIcons name="remove" size={20} color={theme.colors.button.text} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.headerButton,
-              {
-                backgroundColor: theme.colors.button.primary,
-                opacity: itemsPerRow >= 5 ? 0.5 : 1,
-              },
-            ]}
+            icon="remove"
+          />
+          <AnimatedButton
             onPress={onIncreaseItemsPerRow}
             disabled={itemsPerRow >= 5}
-          >
-            <MaterialIcons name="add" size={20} color={theme.colors.button.text} />
-          </TouchableOpacity>
+            icon="add"
+          />
         </>
       ) : (
         <>
-          <TouchableOpacity
-            style={[
-              styles.headerButton,
-              {
-                backgroundColor: theme.colors.button.primary,
-                opacity: listZoom >= 2 ? 0.5 : 1,
-              },
-            ]}
+          <AnimatedButton
             onPress={onIncreaseZoom}
             disabled={listZoom >= 2}
-          >
-            <MaterialIcons name="zoom-in" size={20} color={theme.colors.button.text} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.headerButton,
-              {
-                backgroundColor: theme.colors.button.primary,
-                opacity: listZoom <= 0 ? 0.5 : 1,
-              },
-            ]}
+            icon="zoom-in"
+          />
+          <AnimatedButton
             onPress={onDecreaseZoom}
             disabled={listZoom <= 0}
-          >
-            <MaterialIcons name="zoom-out" size={20} color={theme.colors.button.text} />
-          </TouchableOpacity>
+            icon="zoom-out"
+          />
         </>
       )}
-      <TouchableOpacity
-        style={[styles.headerButton, { backgroundColor: theme.colors.button.primary }]}
+      <AnimatedButton
         onPress={onToggleView}
-      >
-        <MaterialIcons
-          name={viewMode === 'list' ? 'grid-view' : 'view-list'}
-          size={20}
-          color={theme.colors.button.text}
-        />
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[styles.headerButton, { backgroundColor: theme.colors.button.primary }]}
+        icon={viewMode === 'list' ? 'grid-view' : 'view-list'}
+        isActive={false}
+      />
+      <AnimatedButton
         onPress={onOpenSort}
-      >
-        <MaterialIcons name="sort" size={20} color={theme.colors.button.text} />
-      </TouchableOpacity>
+        icon="sort"
+        isActive={false}
+      />
     </View>
   );
 };
@@ -118,11 +137,9 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   headerButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 38,
+    height: 38,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 8,
   },
 });
