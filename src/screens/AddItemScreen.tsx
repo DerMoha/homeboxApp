@@ -19,65 +19,7 @@ import {
   LabelSelector,
   ItemFormFields,
 } from '../components/AddItem';
-
-interface SectionHeaderProps {
-  title: string;
-  icon?: string;
-}
-
-const SectionHeader: React.FC<SectionHeaderProps> = ({title, icon}) => {
-  const {theme} = useTheme();
-
-  const iconContainerStyle = useMemo(
-    () => [
-      styles.sectionIconContainer,
-      {backgroundColor: theme.colors.accent.muted},
-    ],
-    [theme.colors.accent.muted],
-  );
-
-  const headerTextStyle = useMemo(
-    () => [
-      styles.sectionHeaderText,
-      {
-        color: theme.colors.text.secondary,
-        fontSize: theme.typography.sizes.sm,
-        fontWeight: theme.typography.weights.semibold,
-        letterSpacing: theme.typography.letterSpacing.wide,
-      },
-    ],
-    [
-      theme.colors.text.secondary,
-      theme.typography.letterSpacing.wide,
-      theme.typography.sizes.sm,
-      theme.typography.weights.semibold,
-    ],
-  );
-
-  const headerLineStyle = useMemo(
-    () => [
-      styles.sectionHeaderLine,
-      {backgroundColor: theme.colors.accent.primary},
-    ],
-    [theme.colors.accent.primary],
-  );
-
-  return (
-    <View style={styles.sectionHeader}>
-      {icon && (
-        <View style={iconContainerStyle}>
-          <MaterialIcons
-            name={icon}
-            size={16}
-            color={theme.colors.accent.primary}
-          />
-        </View>
-      )}
-      <Text style={headerTextStyle}>{title.toUpperCase()}</Text>
-      <View style={headerLineStyle} />
-    </View>
-  );
-};
+import {SectionHeader} from '../components/SectionHeader';
 
 const AddItemScreen: React.FC = () => {
   const {theme} = useTheme();
@@ -261,7 +203,7 @@ const AddItemScreen: React.FC = () => {
         style={styles.scrollView}
         contentContainerStyle={contentStyle}
         showsVerticalScrollIndicator={false}>
-        <SectionHeader title="Item Details" icon="info" />
+        <SectionHeader title="Item Details" icon="info" variant="withIcon" />
 
         <View style={formCardStyle}>
           <ItemFormFields
@@ -274,7 +216,7 @@ const AddItemScreen: React.FC = () => {
           />
         </View>
 
-        <SectionHeader title="Location" icon="place" />
+        <SectionHeader title="Location" icon="place" variant="withIcon" />
 
         <View style={formCardStyle}>
           <LocationSelector
@@ -284,7 +226,7 @@ const AddItemScreen: React.FC = () => {
           />
         </View>
 
-        <SectionHeader title="Image" icon="photo-camera" />
+        <SectionHeader title="Image" icon="photo-camera" variant="withIcon" />
 
         <View style={formCardStyle}>
           <ImagePickerSection
@@ -305,7 +247,7 @@ const AddItemScreen: React.FC = () => {
 
         {enabledFields.labels && (
           <>
-            <SectionHeader title="Labels" icon="label" />
+            <SectionHeader title="Labels" icon="label" variant="withIcon" />
 
             <View style={formCardStyle}>
               <LabelSelector
@@ -371,28 +313,6 @@ const styles = StyleSheet.create({
   content: {
     paddingTop: 8,
     paddingBottom: 32,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 24,
-    marginBottom: 12,
-  },
-  sectionIconContainer: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 8,
-  },
-  sectionHeaderText: {
-    marginRight: 12,
-  },
-  sectionHeaderLine: {
-    flex: 1,
-    height: 1,
-    opacity: 0.3,
   },
   formCard: {
     padding: 16,

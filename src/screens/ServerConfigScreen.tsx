@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, {useEffect} from 'react';
 import {
   View,
   Text,
@@ -6,22 +6,22 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
-import { useRoute, RouteProp } from '@react-navigation/native';
-import { useTheme } from '../theme/ThemeContext';
-import { useServerConfig } from '../hooks/useServerConfig';
-import { ServerFormFields, ServerActions } from '../components/ServerConfig';
-import { ServerConfig } from '../services/serverService';
+import {useRoute, RouteProp} from '@react-navigation/native';
+import {useTheme} from '../theme/ThemeContext';
+import {useServerConfig} from '../hooks/useServerConfig';
+import {ServerFormFields, ServerActions} from '../components/ServerConfig';
+import {ServerConfig} from '../services/serverService';
 
 type RootStackParamList = {
   Settings: undefined;
-  ServerConfig: { server?: ServerConfig };
+  ServerConfig: {server?: ServerConfig};
 };
 
 type ServerConfigRouteProp = RouteProp<RootStackParamList, 'ServerConfig'>;
 
 const ServerConfigScreen: React.FC = () => {
   const route = useRoute<ServerConfigRouteProp>();
-  const { theme } = useTheme();
+  const {theme} = useTheme();
   const {
     formData,
     isLoading,
@@ -38,7 +38,6 @@ const ServerConfigScreen: React.FC = () => {
     clearSelection,
   } = useServerConfig();
 
-  // Load servers and handle route params on mount
   useEffect(() => {
     loadServers();
     if (route.params?.server) {
@@ -59,29 +58,42 @@ const ServerConfigScreen: React.FC = () => {
 
   return (
     <ScrollView
-      style={[styles.container, { backgroundColor: theme.colors.background.primary }]}
+      style={[
+        styles.container,
+        {backgroundColor: theme.colors.background.primary},
+      ]}
       contentContainerStyle={styles.scrollViewContent}
       bounces={false}
       overScrollMode="never"
-      showsVerticalScrollIndicator={false}
-    >
+      showsVerticalScrollIndicator={false}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: theme.colors.text.primary }]}>
+        <Text style={[styles.headerTitle, {color: theme.colors.text.primary}]}>
           Server Configuration
         </Text>
-        <Text style={[styles.headerSubtitle, { color: theme.colors.text.primary }]}>
+        <Text
+          style={[styles.headerSubtitle, {color: theme.colors.text.primary}]}>
           Configure and manage your server connections
         </Text>
       </View>
 
       {/* Add Server Button */}
-      <View style={[styles.card, { backgroundColor: theme.colors.background.secondary }]}>
+      <View
+        style={[
+          styles.card,
+          {backgroundColor: theme.colors.background.secondary},
+        ]}>
         <TouchableOpacity
-          style={[styles.addServerButton, { backgroundColor: theme.colors.button.primary }]}
-          onPress={handleAddServer}
-        >
-          <Text style={[styles.addServerButtonText, { color: theme.colors.button.text }]}>
+          style={[
+            styles.addServerButton,
+            {backgroundColor: theme.colors.button.primary},
+          ]}
+          onPress={handleAddServer}>
+          <Text
+            style={[
+              styles.addServerButtonText,
+              {color: theme.colors.button.text},
+            ]}>
             + Add Server
           </Text>
         </TouchableOpacity>
@@ -89,30 +101,37 @@ const ServerConfigScreen: React.FC = () => {
 
       {/* Add/Edit Server Form */}
       {(!selectedServer || isEditingForm) && (
-        <View style={[styles.card, { backgroundColor: theme.colors.background.secondary }]}>
+        <View
+          style={[
+            styles.card,
+            {backgroundColor: theme.colors.background.secondary},
+          ]}>
           <View style={styles.editHeader}>
-            <Text style={[styles.formTitle, { color: theme.colors.text.primary }]}>
+            <Text
+              style={[styles.formTitle, {color: theme.colors.text.primary}]}>
               {isEditingForm ? 'Edit Server' : 'Add New Server'}
             </Text>
             <TouchableOpacity
               style={styles.cancelEditButton}
-              onPress={handleCancelEdit}
-            >
-              <Text style={[styles.cancelEditButtonText, { color: theme.colors.text.primary }]}>
+              onPress={handleCancelEdit}>
+              <Text
+                style={[
+                  styles.cancelEditButtonText,
+                  {color: theme.colors.text.primary},
+                ]}>
                 Cancel
               </Text>
             </TouchableOpacity>
           </View>
 
-          <ServerFormFields
-            formData={formData}
-            onUpdateField={updateField}
-          />
+          <ServerFormFields formData={formData} onUpdateField={updateField} />
 
           <ServerActions
             onTest={testConnection}
             onSave={saveServer}
-            onDelete={isEditingForm ? () => deleteServer(formData.id) : undefined}
+            onDelete={
+              isEditingForm ? () => deleteServer(formData.id) : undefined
+            }
             isLoading={isLoading}
             isSaving={isSaving}
             canDelete={!!isEditingForm}
@@ -122,11 +141,15 @@ const ServerConfigScreen: React.FC = () => {
 
       {/* Saved Servers List */}
       {servers.length > 0 && (
-        <View style={[styles.card, { backgroundColor: theme.colors.background.secondary }]}>
-          <Text style={[styles.formTitle, { color: theme.colors.text.primary }]}>
+        <View
+          style={[
+            styles.card,
+            {backgroundColor: theme.colors.background.secondary},
+          ]}>
+          <Text style={[styles.formTitle, {color: theme.colors.text.primary}]}>
             Saved Servers
           </Text>
-          {servers.map((server) => (
+          {servers.map(server => (
             <View key={server.id} style={[styles.serverItemContainer]}>
               <TouchableOpacity
                 style={[
@@ -138,16 +161,23 @@ const ServerConfigScreen: React.FC = () => {
                       backgroundColor: theme.colors.button.primary + '10',
                     },
                   ],
-                  { backgroundColor: theme.colors.background.primary },
+                  {backgroundColor: theme.colors.background.primary},
                 ]}
-                onPress={() => selectServer(server)}
-              >
+                onPress={() => selectServer(server)}>
                 <View style={styles.serverContent}>
                   <View style={styles.serverInfo}>
-                    <Text style={[styles.serverName, { color: theme.colors.text.primary }]}>
+                    <Text
+                      style={[
+                        styles.serverName,
+                        {color: theme.colors.text.primary},
+                      ]}>
                       {server.name || 'Unnamed Server'}
                     </Text>
-                    <Text style={[styles.serverDetails, { color: theme.colors.text.primary }]}>
+                    <Text
+                      style={[
+                        styles.serverDetails,
+                        {color: theme.colors.text.primary},
+                      ]}>
                       {server.host} • {server.username}
                     </Text>
                   </View>
@@ -155,17 +185,22 @@ const ServerConfigScreen: React.FC = () => {
               </TouchableOpacity>
               <View style={styles.serverActions}>
                 <TouchableOpacity
-                  style={[styles.editButton, { backgroundColor: theme.colors.button.primary }]}
-                  onPress={() => editServer(server)}
-                >
-                  <Text style={[styles.editButtonText, { color: theme.colors.button.text }]}>
+                  style={[
+                    styles.editButton,
+                    {backgroundColor: theme.colors.button.primary},
+                  ]}
+                  onPress={() => editServer(server)}>
+                  <Text
+                    style={[
+                      styles.editButtonText,
+                      {color: theme.colors.button.text},
+                    ]}>
                     ✎
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.deleteButton}
-                  onPress={() => deleteServer(server.id)}
-                >
+                  onPress={() => deleteServer(server.id)}>
                   <Text style={styles.deleteButtonText}>×</Text>
                 </TouchableOpacity>
               </View>
@@ -208,7 +243,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     marginHorizontal: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.06,
     shadowRadius: 10,
     elevation: 2,

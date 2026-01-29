@@ -3,8 +3,11 @@ import {View, Text, TouchableOpacity, Image, StyleSheet} from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useTheme} from '../../theme/ThemeContext';
 import type {Theme} from '../../theme/theme';
-import {InventoryItem} from '../../hooks/useInventoryData';
-import {DisplayPreference} from '../../hooks/useDisplayPreferences';
+import {InventoryItem} from '../../types';
+import {
+  DisplayPreference,
+  isPreferenceEnabled,
+} from '../../hooks/useDisplayPreferences';
 import {getImageSource, formatDate} from '../../utils/imageUtils';
 
 interface InventoryListItemProps {
@@ -138,33 +141,30 @@ const InventoryListItemComponent: React.FC<InventoryListItemProps> = ({
 }) => {
   const {theme} = useTheme();
 
-  const getPreference = useCallback(
-    (id: string): boolean =>
-      displayPreferences.find(p => p.id === id)?.enabled ?? false,
-    [displayPreferences],
-  );
-
   const hasDescription = useMemo(
-    () => getPreference('description') && item.description,
-    [getPreference, item.description],
+    () =>
+      isPreferenceEnabled(displayPreferences, 'description') &&
+      item.description,
+    [displayPreferences, item.description],
   );
 
   const hasImage = useMemo(
-    () => getPreference('image') && item.imageId,
-    [getPreference, item.imageId],
+    () => isPreferenceEnabled(displayPreferences, 'image') && item.imageId,
+    [displayPreferences, item.imageId],
   );
 
   const hasFooterContent = useMemo(
     () =>
-      (getPreference('location') && item.location) ||
-      (getPreference('labels') && item.labels.length > 0) ||
-      (getPreference('purchasePrice') &&
+      (isPreferenceEnabled(displayPreferences, 'location') && item.location) ||
+      (isPreferenceEnabled(displayPreferences, 'labels') &&
+        item.labels.length > 0) ||
+      (isPreferenceEnabled(displayPreferences, 'purchasePrice') &&
         item.purchasePrice &&
         item.purchasePrice > 0) ||
-      getPreference('insured') ||
-      getPreference('createdAt') ||
-      getPreference('updatedAt'),
-    [getPreference, item.location, item.labels.length, item.purchasePrice],
+      isPreferenceEnabled(displayPreferences, 'insured') ||
+      isPreferenceEnabled(displayPreferences, 'createdAt') ||
+      isPreferenceEnabled(displayPreferences, 'updatedAt'),
+    [displayPreferences, item.location, item.labels.length, item.purchasePrice],
   );
 
   const handlePress = useCallback(() => onPress(item.id), [onPress, item.id]);
@@ -311,25 +311,27 @@ const InventoryListItemComponent: React.FC<InventoryListItemProps> = ({
             <View style={styles.titleContainer}>
               <ItemNameText name={item.name} theme={theme} />
             </View>
-            {getPreference('quantity') && (
+            {isPreferenceEnabled(displayPreferences, 'quantity') && (
               <QuantityBadge quantity={item.quantity} theme={theme} />
             )}
           </View>
           <View style={compactMetaRowStyle}>
-            {getPreference('location') && item.location && (
-              <MetaItem
-                icon="location-on"
-                text={item.location.name}
-                theme={theme}
-              />
-            )}
-            {getPreference('labels') && item.labels.length > 0 && (
-              <MetaItem
-                icon="label"
-                text={item.labels.map(l => l.name).join(', ')}
-                theme={theme}
-              />
-            )}
+            {isPreferenceEnabled(displayPreferences, 'location') &&
+              item.location && (
+                <MetaItem
+                  icon="location-on"
+                  text={item.location.name}
+                  theme={theme}
+                />
+              )}
+            {isPreferenceEnabled(displayPreferences, 'labels') &&
+              item.labels.length > 0 && (
+                <MetaItem
+                  icon="label"
+                  text={item.labels.map(l => l.name).join(', ')}
+                  theme={theme}
+                />
+              )}
             {hasImage && (
               <MaterialIcons
                 name="image"
@@ -356,20 +358,22 @@ const InventoryListItemComponent: React.FC<InventoryListItemProps> = ({
             <View style={styles.textSection}>
               <ItemNameText name={item.name} theme={theme} />
               <View style={standardMetaRowStyle}>
-                {getPreference('location') && item.location && (
-                  <MetaItem
-                    icon="location-on"
-                    text={item.location.name}
-                    theme={theme}
-                  />
-                )}
-                {getPreference('labels') && item.labels.length > 0 && (
-                  <MetaItem
-                    icon="label"
-                    text={item.labels.map(l => l.name).join(', ')}
-                    theme={theme}
-                  />
-                )}
+                {isPreferenceEnabled(displayPreferences, 'location') &&
+                  item.location && (
+                    <MetaItem
+                      icon="location-on"
+                      text={item.location.name}
+                      theme={theme}
+                    />
+                  )}
+                {isPreferenceEnabled(displayPreferences, 'labels') &&
+                  item.labels.length > 0 && (
+                    <MetaItem
+                      icon="label"
+                      text={item.labels.map(l => l.name).join(', ')}
+                      theme={theme}
+                    />
+                  )}
               </View>
             </View>
             {hasImage && (
@@ -381,7 +385,7 @@ const InventoryListItemComponent: React.FC<InventoryListItemProps> = ({
                 />
               </View>
             )}
-            {getPreference('quantity') && (
+            {isPreferenceEnabled(displayPreferences, 'quantity') && (
               <QuantityBadge quantity={item.quantity} theme={theme} />
             )}
           </View>
@@ -402,7 +406,7 @@ const InventoryListItemComponent: React.FC<InventoryListItemProps> = ({
           <View style={styles.titleContainer}>
             <ItemNameText name={item.name} size="xl" theme={theme} />
           </View>
-          {getPreference('quantity') && (
+          {isPreferenceEnabled(displayPreferences, 'quantity') && (
             <QuantityBadge
               quantity={item.quantity}
               theme={theme}
@@ -427,21 +431,23 @@ const InventoryListItemComponent: React.FC<InventoryListItemProps> = ({
 
         {hasFooterContent && (
           <View style={detailedMetaRowStyle}>
-            {getPreference('location') && item.location && (
-              <MetaItem
-                icon="location-on"
-                text={item.location.name}
-                theme={theme}
-              />
-            )}
-            {getPreference('labels') && item.labels.length > 0 && (
-              <MetaItem
-                icon="label"
-                text={item.labels.map(l => l.name).join(', ')}
-                theme={theme}
-              />
-            )}
-            {getPreference('purchasePrice') &&
+            {isPreferenceEnabled(displayPreferences, 'location') &&
+              item.location && (
+                <MetaItem
+                  icon="location-on"
+                  text={item.location.name}
+                  theme={theme}
+                />
+              )}
+            {isPreferenceEnabled(displayPreferences, 'labels') &&
+              item.labels.length > 0 && (
+                <MetaItem
+                  icon="label"
+                  text={item.labels.map(l => l.name).join(', ')}
+                  theme={theme}
+                />
+              )}
+            {isPreferenceEnabled(displayPreferences, 'purchasePrice') &&
               item.purchasePrice &&
               item.purchasePrice > 0 && (
                 <MetaItem
@@ -450,21 +456,21 @@ const InventoryListItemComponent: React.FC<InventoryListItemProps> = ({
                   theme={theme}
                 />
               )}
-            {getPreference('insured') && (
+            {isPreferenceEnabled(displayPreferences, 'insured') && (
               <MetaItem
                 icon={item.insured ? 'verified' : 'error-outline'}
                 text={item.insured ? 'Insured' : 'Uninsured'}
                 theme={theme}
               />
             )}
-            {getPreference('createdAt') && (
+            {isPreferenceEnabled(displayPreferences, 'createdAt') && (
               <MetaItem
                 icon="schedule"
                 text={`Created: ${formatDate(item.createdAt)}`}
                 theme={theme}
               />
             )}
-            {getPreference('updatedAt') && (
+            {isPreferenceEnabled(displayPreferences, 'updatedAt') && (
               <MetaItem
                 icon="update"
                 text={`Updated: ${formatDate(item.updatedAt)}`}

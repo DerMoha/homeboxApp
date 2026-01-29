@@ -1,7 +1,7 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import React, {useEffect, useRef} from 'react';
+import {View, Text, StyleSheet, TouchableOpacity, Animated} from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import { useTheme } from '../../theme/ThemeContext';
+import {useTheme} from '../../theme/ThemeContext';
 
 interface ErrorStateProps {
   error: string | Error;
@@ -16,7 +16,7 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
   retryText = 'Try Again',
   icon = 'error-outline',
 }) => {
-  const { theme } = useTheme();
+  const {theme} = useTheme();
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
 
@@ -36,32 +36,59 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
           duration: 1500,
           useNativeDriver: true,
         }),
-      ])
+      ]),
     ).start();
 
     // Initial shake animation
     Animated.sequence([
-      Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 8, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: -8, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeAnim, {
+        toValue: 10,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+      Animated.timing(shakeAnim, {
+        toValue: -10,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+      Animated.timing(shakeAnim, {
+        toValue: 8,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+      Animated.timing(shakeAnim, {
+        toValue: -8,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+      Animated.timing(shakeAnim, {
+        toValue: 0,
+        duration: 50,
+        useNativeDriver: true,
+      }),
     ]).start();
   }, [pulseAnim, shakeAnim]);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
+    <View
+      style={[
+        styles.container,
+        {backgroundColor: theme.colors.background.primary},
+      ]}>
       {/* Error glow effect */}
-      <View style={[styles.glowContainer, { backgroundColor: `${theme.colors.error}15` }]}>
+      <View
+        style={[
+          styles.glowContainer,
+          {backgroundColor: `${theme.colors.error}15`},
+        ]}>
         <Animated.View
           style={[
             styles.iconContainer,
             {
               backgroundColor: `${theme.colors.error}20`,
-              transform: [{ scale: pulseAnim }, { translateX: shakeAnim }],
+              transform: [{scale: pulseAnim}, {translateX: shakeAnim}],
             },
-          ]}
-        >
+          ]}>
           <MaterialIcons name={icon} size={48} color={theme.colors.error} />
         </Animated.View>
       </View>
@@ -72,10 +99,9 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
           {
             color: theme.colors.text.primary,
             fontSize: theme.typography.sizes.xl,
-            fontWeight: theme.typography.weights.semibold as any,
+            fontWeight: theme.typography.weights.semibold,
           },
-        ]}
-      >
+        ]}>
         Something went wrong
       </Text>
 
@@ -86,8 +112,7 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
             color: theme.colors.text.secondary,
             fontSize: theme.typography.sizes.md,
           },
-        ]}
-      >
+        ]}>
         {errorMessage}
       </Text>
 
@@ -102,19 +127,21 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
             theme.shadows.md,
           ]}
           onPress={onRetry}
-          activeOpacity={0.8}
-        >
-          <MaterialIcons name="refresh" size={20} color={theme.colors.text.inverse} />
+          activeOpacity={0.8}>
+          <MaterialIcons
+            name="refresh"
+            size={20}
+            color={theme.colors.text.inverse}
+          />
           <Text
             style={[
               styles.retryButtonText,
               {
                 color: theme.colors.text.inverse,
                 fontSize: theme.typography.sizes.md,
-                fontWeight: theme.typography.weights.semibold as any,
+                fontWeight: theme.typography.weights.semibold,
               },
-            ]}
-          >
+            ]}>
             {retryText}
           </Text>
         </TouchableOpacity>

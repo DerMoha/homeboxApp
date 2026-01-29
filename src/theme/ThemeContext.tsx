@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Theme, lightTheme, darkTheme, oledTheme } from './theme';
+import React, {createContext, useContext, useState, useEffect} from 'react';
+import {Theme, lightTheme, darkTheme, oledTheme} from './theme';
+import {storageService, STORAGE_KEYS} from '../services/storageService';
 
 type ThemeMode = 'auto' | 'light' | 'dark' | 'oled';
 
@@ -15,22 +15,29 @@ type ThemeContextType = {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const ThemeProvider: React.FC<{children: React.ReactNode}> = ({
+  children,
+}) => {
   const [themeMode, setThemeMode] = useState<ThemeMode>('auto');
-  const [customColors, setCustomColors] = useState<Partial<Theme['colors']>>({});
+  const [customColors, setCustomColors] = useState<Partial<Theme['colors']>>(
+    {},
+  );
 
   useEffect(() => {
-    // Load saved theme preferences
     const loadThemePreferences = async () => {
       try {
-        const savedMode = await AsyncStorage.getItem('themeMode');
-        const savedColors = await AsyncStorage.getItem('customColors');
+        const savedMode = await storageService.getItem<ThemeMode>(
+          STORAGE_KEYS.THEME_MODE,
+        );
+        const savedColors = await storageService.getItem<
+          Partial<Theme['colors']>
+        >(STORAGE_KEYS.CUSTOM_COLORS);
 
         if (savedMode) {
-          setThemeMode(savedMode as ThemeMode);
+          setThemeMode(savedMode);
         }
         if (savedColors) {
-          setCustomColors(JSON.parse(savedColors));
+          setCustomColors(savedColors);
         }
       } catch (error) {
         console.error('Error loading theme preferences:', error);
@@ -43,17 +50,20 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const handleSetThemeMode = async (mode: ThemeMode) => {
     try {
       setThemeMode(mode);
-      await AsyncStorage.setItem('themeMode', mode);
+      await storageService.setItem(STORAGE_KEYS.THEME_MODE, mode);
     } catch (error) {
       console.error('Error saving theme mode:', error);
     }
   };
 
-  const handleSetCustomColor = async (colorType: keyof Theme['colors'], value: string) => {
+  const handleSetCustomColor = async (
+    colorType: keyof Theme['colors'],
+    value: string,
+  ) => {
     try {
-      const newColors = { ...customColors, [colorType]: value };
+      const newColors = {...customColors, [colorType]: value};
       setCustomColors(newColors);
-      await AsyncStorage.setItem('customColors', JSON.stringify(newColors));
+      await storageService.setItem(STORAGE_KEYS.CUSTOM_COLORS, newColors);
     } catch (error) {
       console.error('Error saving custom color:', error);
     }
@@ -73,12 +83,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         baseTheme = oledTheme;
         break;
       default:
-        // Auto mode - use system preference
-        baseTheme = lightTheme; // TODO: Implement system preference detection
+        baseTheme = lightTheme;
         break;
     }
 
-    // Apply custom colors
     return {
       ...baseTheme,
       colors: {
@@ -96,14 +104,15 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   return (
-    <ThemeContext.Provider value={{
-      theme,
-      isDarkMode,
-      themeMode,
-      setThemeMode: handleSetThemeMode,
-      setCustomColor: handleSetCustomColor,
-      toggleTheme,
-    }}>
+    <ThemeContext.Provider
+      value={{
+        theme,
+        isDarkMode,
+        themeMode,
+        setThemeMode: handleSetThemeMode,
+        setCustomColor: handleSetCustomColor,
+        toggleTheme,
+      }}>
       {children}
     </ThemeContext.Provider>
   );

@@ -1,8 +1,8 @@
-import { useState, useCallback } from 'react';
-import { Alert } from 'react-native';
+import {useState, useCallback} from 'react';
+import {Alert} from 'react-native';
 import ServerService from '../services/serverService';
-import { Location, Label, EnabledFields } from './useItemData';
-import { logger } from '../utils/logger';
+import {Location, Label, EnabledFields, FormDataFile} from '../types';
+import {logger} from '../utils/logger';
 
 interface FormData {
   quantity: string;
@@ -14,14 +14,16 @@ interface FormData {
 }
 
 export const useAddItemForm = () => {
-  const [formData, setFormData] = useState<FormData>({ quantity: '1' });
-  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
+  const [formData, setFormData] = useState<FormData>({quantity: '1'});
+  const [selectedLocation, setSelectedLocation] = useState<Location | null>(
+    null,
+  );
   const [selectedLabels, setSelectedLabels] = useState<Label[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isQuantityFocused, setIsQuantityFocused] = useState(false);
 
   const updateFormField = useCallback((field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => ({...prev, [field]: value}));
   }, []);
 
   const handleLabelToggle = useCallback((label: Label) => {
@@ -36,95 +38,110 @@ export const useAddItemForm = () => {
   }, []);
 
   const resetForm = useCallback(() => {
-    setFormData({ quantity: '1' });
+    setFormData({quantity: '1'});
     setSelectedLocation(null);
     setSelectedLabels([]);
   }, []);
 
-  const submitItem = useCallback(async (
-    imageUri: string | null,
-    enabledFields: EnabledFields,
-    onSuccess: () => void
-  ): Promise<boolean> => {
-    if (!formData.name?.trim()) {
-      Alert.alert('Error', 'Please enter an item name');
-      return false;
-    }
-
-    if (!selectedLocation) {
-      Alert.alert('Error', 'Please select a location');
-      return false;
-    }
-
-    try {
-      setIsLoading(true);
-      const service = ServerService.getInstance();
-
-      const itemData = {
-        name: formData.name,
-        quantity: parseInt(formData.quantity || '1', 10),
-        locationId: selectedLocation?.id,
-        description: enabledFields.description ? formData.description || '' : '',
-        purchasePrice: enabledFields.purchasePrice ? parseFloat(formData.purchasePrice || '0') || 0 : 0,
-        insured: enabledFields.insured ? formData.insured || false : false,
-        labels: selectedLabels.map(label => label.id),
-      };
-
-      const itemResponse = await service.createItem(itemData);
-
-      if (!itemResponse.success || !itemResponse.data) {
-        throw new Error('Failed to create item');
+  const submitItem = useCallback(
+    async (
+      imageUri: string | null,
+      enabledFields: EnabledFields,
+      onSuccess: () => void,
+    ): Promise<boolean> => {
+      if (!formData.name?.trim()) {
+        Alert.alert('Error', 'Please enter an item name');
+        return false;
       }
 
-      // Upload image if selected
-      if (imageUri) {
-        logger.log('Starting image upload for item:', itemResponse.data.id);
-        const imageFormData = new FormData();
+      if (!selectedLocation) {
+        Alert.alert('Error', 'Please select a location');
+        return false;
+      }
 
-        const fileExtension = imageUri.split('.').pop() || 'jpg';
-        const fileName = `image.${fileExtension}`;
+      try {
+        setIsLoading(true);
+        const service = ServerService.getInstance();
 
-        const file = {
-          uri: imageUri,
-          type: `image/${fileExtension}`,
-          name: fileName,
+        const itemData = {
+          name: formData.name,
+          quantity: parseInt(formData.quantity || '1', 10),
+          locationId: selectedLocation?.id,
+          description: enabledFields.description
+            ? formData.description || ''
+            : '',
+          purchasePrice: enabledFields.purchasePrice
+            ? parseFloat(formData.purchasePrice || '0') || 0
+            : 0,
+          insured: enabledFields.insured ? formData.insured || false : false,
+          labels: selectedLabels.map(label => label.id),
         };
 
-        logger.log('File object:', file);
+        const itemResponse = await service.createItem(itemData);
 
-        imageFormData.append('file', file as any);
-        imageFormData.append('type', 'photo');
-        imageFormData.append('primary', 'true');
-        imageFormData.append('name', 'Item Image');
-
-        logger.log('FormData for image upload:', imageFormData);
-
-        const imageResponse = await service.uploadItemImage(itemResponse.data.id, imageFormData);
-        logger.log('Image upload response:', imageResponse);
-
-        if (!imageResponse.success) {
-          logger.warn('Failed to upload image:', imageResponse.error);
-          Alert.alert('Warning', 'Item was created but image upload failed');
-        } else if (imageResponse.data) {
-          logger.log('Image uploaded successfully, updated item:', imageResponse.data);
-        } else {
-          logger.log('Image uploaded successfully but no updated item data received');
+        if (!itemResponse.success || !itemResponse.data) {
+          throw new Error('Failed to create item');
         }
+
+        // Upload image if selected
+        if (imageUri) {
+          logger.log('Starting image upload for item:', itemResponse.data.id);
+          const imageFormData = new FormData();
+
+          const fileExtension = imageUri.split('.').pop() || 'jpg';
+          const fileName = `image.${fileExtension}`;
+
+          const file: FormDataFile = {
+            uri: imageUri,
+            type: `image/${fileExtension}`,
+            name: fileName,
+          };
+
+          logger.log('File object:', file);
+
+          imageFormData.append('file', file as unknown as Blob);
+          imageFormData.append('type', 'photo');
+          imageFormData.append('primary', 'true');
+          imageFormData.append('name', 'Item Image');
+
+          logger.log('FormData for image upload:', imageFormData);
+
+          const imageResponse = await service.uploadItemImage(
+            itemResponse.data.id,
+            imageFormData,
+          );
+          logger.log('Image upload response:', imageResponse);
+
+          if (!imageResponse.success) {
+            logger.warn('Failed to upload image:', imageResponse.error);
+            Alert.alert('Warning', 'Item was created but image upload failed');
+          } else if (imageResponse.data) {
+            logger.log(
+              'Image uploaded successfully, updated item:',
+              imageResponse.data,
+            );
+          } else {
+            logger.log(
+              'Image uploaded successfully but no updated item data received',
+            );
+          }
+        }
+
+        Alert.alert('Success', 'Item added successfully!', [
+          {text: 'OK', onPress: onSuccess},
+        ]);
+
+        return true;
+      } catch (error) {
+        logger.error('Error creating item:', error);
+        Alert.alert('Error', 'Failed to create item. Please try again.');
+        return false;
+      } finally {
+        setIsLoading(false);
       }
-
-      Alert.alert('Success', 'Item added successfully!', [
-        { text: 'OK', onPress: onSuccess },
-      ]);
-
-      return true;
-    } catch (error) {
-      logger.error('Error creating item:', error);
-      Alert.alert('Error', 'Failed to create item. Please try again.');
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [formData, selectedLocation, selectedLabels]);
+    },
+    [formData, selectedLocation, selectedLabels],
+  );
 
   return {
     formData,

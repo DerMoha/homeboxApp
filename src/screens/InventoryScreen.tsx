@@ -1,24 +1,20 @@
-import React, { useEffect, useCallback } from 'react';
-import {
-  View,
-  StyleSheet,
-  FlatList,
-  RefreshControl,
-} from 'react-native';
-import { useTheme } from '../theme/ThemeContext';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useInventoryData, InventoryItem } from '../hooks/useInventoryData';
-import { useInventoryDisplay } from '../hooks/useInventoryDisplay';
-import { useDisplayPreferences } from '../hooks/useDisplayPreferences';
+import React, {useEffect, useCallback} from 'react';
+import {View, StyleSheet, FlatList, RefreshControl} from 'react-native';
+import {useTheme} from '../theme/ThemeContext';
+import {useNavigation} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {useInventoryData} from '../hooks/useInventoryData';
+import {useInventoryDisplay} from '../hooks/useInventoryDisplay';
+import {useDisplayPreferences} from '../hooks/useDisplayPreferences';
 import {
   InventoryHeader,
   SortModal,
   InventoryListItem,
   InventoryGridItem,
 } from '../components/Inventory';
-import { LoadingState } from '../components/common/LoadingState';
-import { EmptyState } from '../components/common/EmptyState';
+import {LoadingState} from '../components/common/LoadingState';
+import {EmptyState} from '../components/common/EmptyState';
+import {InventoryItem} from '../types';
 
 type RootStackParamList = {
   InventoryTab: undefined;
@@ -32,12 +28,13 @@ type RootStackParamList = {
       screen: 'ServerConfig';
     };
   };
-  ItemDetail: { itemId: string };
+  ItemDetail: {itemId: string};
 };
 
 const InventoryScreen: React.FC = () => {
-  const { theme } = useTheme();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const {theme} = useTheme();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const {
     inventory,
@@ -62,10 +59,7 @@ const InventoryScreen: React.FC = () => {
     decreaseListZoom,
   } = useInventoryDisplay();
 
-  const {
-    displayPreferences,
-    loadDisplayPreferences,
-  } = useDisplayPreferences();
+  const {displayPreferences, loadDisplayPreferences} = useDisplayPreferences();
 
   const initializeScreen = useCallback(async () => {
     await loadDisplayPreferences();
@@ -76,29 +70,32 @@ const InventoryScreen: React.FC = () => {
     initializeScreen();
   }, [initializeScreen]);
 
-  const renderHeaderRight = useCallback(() => (
-    <InventoryHeader
-      viewMode={viewMode}
-      itemsPerRow={itemsPerRow}
-      listZoom={listZoom}
-      onToggleView={toggleViewMode}
-      onIncreaseItemsPerRow={increaseItemsPerRow}
-      onDecreaseItemsPerRow={decreaseItemsPerRow}
-      onIncreaseZoom={increaseListZoom}
-      onDecreaseZoom={decreaseListZoom}
-      onOpenSort={() => setSortModalVisible(true)}
-    />
-  ), [
-    viewMode,
-    itemsPerRow,
-    listZoom,
-    toggleViewMode,
-    increaseItemsPerRow,
-    decreaseItemsPerRow,
-    increaseListZoom,
-    decreaseListZoom,
-    setSortModalVisible,
-  ]);
+  const renderHeaderRight = useCallback(
+    () => (
+      <InventoryHeader
+        viewMode={viewMode}
+        itemsPerRow={itemsPerRow}
+        listZoom={listZoom}
+        onToggleView={toggleViewMode}
+        onIncreaseItemsPerRow={increaseItemsPerRow}
+        onDecreaseItemsPerRow={decreaseItemsPerRow}
+        onIncreaseZoom={increaseListZoom}
+        onDecreaseZoom={decreaseListZoom}
+        onOpenSort={() => setSortModalVisible(true)}
+      />
+    ),
+    [
+      viewMode,
+      itemsPerRow,
+      listZoom,
+      toggleViewMode,
+      increaseItemsPerRow,
+      decreaseItemsPerRow,
+      increaseListZoom,
+      decreaseListZoom,
+      setSortModalVisible,
+    ],
+  );
 
   useEffect(() => {
     navigation.setOptions({
@@ -106,31 +103,37 @@ const InventoryScreen: React.FC = () => {
     });
   }, [navigation, renderHeaderRight]);
 
-  const handleItemPress = useCallback((itemId: string) => {
-    navigation.navigate('ItemDetail', { itemId });
-  }, [navigation]);
+  const handleItemPress = useCallback(
+    (itemId: string) => {
+      navigation.navigate('ItemDetail', {itemId});
+    },
+    [navigation],
+  );
 
-  const renderItem = useCallback(({ item }: { item: InventoryItem }) => {
-    if (viewMode === 'list') {
+  const renderItem = useCallback(
+    ({item}: {item: InventoryItem}) => {
+      if (viewMode === 'list') {
+        return (
+          <InventoryListItem
+            item={item}
+            displayPreferences={displayPreferences}
+            listZoom={listZoom}
+            onPress={() => handleItemPress(item.id)}
+          />
+        );
+      }
+
       return (
-        <InventoryListItem
+        <InventoryGridItem
           item={item}
           displayPreferences={displayPreferences}
-          listZoom={listZoom}
+          itemsPerRow={itemsPerRow}
           onPress={() => handleItemPress(item.id)}
         />
       );
-    }
-
-    return (
-      <InventoryGridItem
-        item={item}
-        displayPreferences={displayPreferences}
-        itemsPerRow={itemsPerRow}
-        onPress={() => handleItemPress(item.id)}
-      />
-    );
-  }, [viewMode, displayPreferences, listZoom, itemsPerRow, handleItemPress]);
+    },
+    [viewMode, displayPreferences, listZoom, itemsPerRow, handleItemPress],
+  );
 
   if (isLoading && inventory.length === 0) {
     return <LoadingState message="Loading inventory..." />;
@@ -141,16 +144,20 @@ const InventoryScreen: React.FC = () => {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
+    <View
+      style={[
+        styles.container,
+        {backgroundColor: theme.colors.background.primary},
+      ]}>
       <FlatList
         data={inventory}
         renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={item => item.id}
         key={viewMode === 'grid' ? `grid-${itemsPerRow}` : 'list'}
         numColumns={viewMode === 'grid' ? itemsPerRow : 1}
         contentContainerStyle={[
           styles.listContent,
-          { paddingHorizontal: theme.spacing.md },
+          {paddingHorizontal: theme.spacing.md},
         ]}
         refreshControl={
           <RefreshControl
@@ -168,7 +175,7 @@ const InventoryScreen: React.FC = () => {
         visible={sortModalVisible}
         sortOption={sortOption}
         onClose={() => setSortModalVisible(false)}
-        onSelectSort={(option) => {
+        onSelectSort={option => {
           updateSortOption(option);
           setSortModalVisible(false);
         }}

@@ -233,7 +233,7 @@ export const Button: React.FC<ButtonProps> = ({
       {
         color: textColor,
         fontSize: buttonFontSize,
-        fontWeight: theme.typography.weights.semibold as any,
+        fontWeight: theme.typography.weights.semibold,
         letterSpacing: theme.typography.letterSpacing.wide,
       },
     ],
@@ -269,7 +269,7 @@ export const Button: React.FC<ButtonProps> = ({
           <>
             {icon && (
               <MaterialIcons
-                name={icon as any}
+                name={icon}
                 size={iconSize}
                 color={textColor}
                 style={styles.icon}

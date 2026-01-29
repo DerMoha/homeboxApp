@@ -1,7 +1,8 @@
-import React, {useCallback, useRef, useState} from 'react';
+import React, {useCallback, useState} from 'react';
 import {
   ActivityIndicator,
-  Animated,
+  Alert,
+  ScrollView,
   StyleSheet,
   Text,
   TextStyle,
@@ -10,13 +11,15 @@ import {
 } from 'react-native';
 import {
   NavigationProp,
+  NavigatorScreenParams,
   useFocusEffect,
   useNavigation,
 } from '@react-navigation/native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useTheme} from '../theme/ThemeContext';
 import ServerService from '../services/serverService';
-import {InventoryItem} from '../hooks/useInventoryData';
+import {InventoryItem} from '../types';
+import {LocationsStackParamList} from '../types/navigation';
 
 type FontWeight = TextStyle['fontWeight'];
 
@@ -33,7 +36,7 @@ type RootTabParamList = {
     | {screen?: 'Inventory' | 'ItemDetail'; params?: {itemId?: string}}
     | undefined;
   AddItemTab: undefined;
-  Locations: undefined;
+  Locations: NavigatorScreenParams<LocationsStackParamList> | undefined;
   SettingsTab: undefined;
 };
 
@@ -42,11 +45,22 @@ interface RecentItemRowProps {
   onPress: (itemId: string) => void;
 }
 
-const RECENT_ITEMS_LIMIT = 6;
-const STATS_EXPANDED_HEIGHT = 150;
-const STATS_COLLAPSED_HEIGHT = 84;
-const STATS_COLLAPSE_DISTANCE = 120;
+interface QuickActionProps {
+  icon: string;
+  label: string;
+  subtitle?: string;
+  onPress: () => void;
+}
 
+interface LocationSummary {
+  id: string;
+  name: string;
+  itemCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+const RECENT_ITEMS_LIMIT = 6;
 const formatCount = (count: number | null) =>
   count === null ? '—' : count.toLocaleString();
 
@@ -56,6 +70,40 @@ const formatShortDate = (value: string) => {
     return '—';
   }
   return date.toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
+};
+
+const getTimestamp = (value?: string) => {
+  if (!value) {
+    return 0;
+  }
+  const timestamp = new Date(value).getTime();
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+};
+
+const selectMostAccessedLocation = (locations: LocationSummary[]) => {
+  if (!locations.length) {
+    return null;
+  }
+
+  const mostRecent = locations.reduce((best, location) => {
+    const bestTime = getTimestamp(best.updatedAt ?? best.createdAt);
+    const currentTime = getTimestamp(location.updatedAt ?? location.createdAt);
+    return currentTime > bestTime ? location : best;
+  }, locations[0]);
+
+  const hasRecent =
+    getTimestamp(mostRecent.updatedAt ?? mostRecent.createdAt) > 0;
+
+  if (hasRecent) {
+    return mostRecent;
+  }
+
+  return locations.reduce((best, location) => {
+    const bestCount = typeof best.itemCount === 'number' ? best.itemCount : -1;
+    const currentCount =
+      typeof location.itemCount === 'number' ? location.itemCount : -1;
+    return currentCount > bestCount ? location : best;
+  }, locations[0]);
 };
 
 const StatCard: React.FC<StatCardProps> = ({
@@ -183,52 +231,82 @@ const RecentItemRow: React.FC<RecentItemRowProps> = ({item, onPress}) => {
   );
 };
 
+const QuickAction: React.FC<QuickActionProps> = ({
+  icon,
+  label,
+  subtitle,
+  onPress,
+}) => {
+  const {theme} = useTheme();
+
+  return (
+    <TouchableOpacity
+      style={[
+        styles.quickAction,
+        {
+          backgroundColor: theme.colors.background.elevated,
+          borderRadius: theme.borderRadius.lg,
+        },
+        theme.shadows.sm,
+      ]}
+      onPress={onPress}
+      activeOpacity={0.85}>
+      <View
+        style={[
+          styles.quickActionIcon,
+          {
+            backgroundColor: theme.colors.accent.muted,
+            borderRadius: theme.borderRadius.md,
+          },
+        ]}>
+        <MaterialIcons
+          name={icon}
+          size={18}
+          color={theme.colors.accent.primary}
+        />
+      </View>
+      <Text
+        numberOfLines={1}
+        style={[
+          styles.quickActionLabel,
+          {
+            color: theme.colors.text.primary,
+            fontSize: theme.typography.sizes.sm,
+            fontWeight: theme.typography.weights.semibold as FontWeight,
+          },
+        ]}>
+        {label}
+      </Text>
+      {subtitle ? (
+        <Text
+          numberOfLines={1}
+          style={[
+            styles.quickActionSubtitle,
+            {
+              color: theme.colors.text.tertiary,
+              fontSize: theme.typography.sizes.xs,
+            },
+          ]}>
+          {subtitle}
+        </Text>
+      ) : null}
+    </TouchableOpacity>
+  );
+};
+
 const HomeScreen: React.FC = () => {
   const {theme} = useTheme();
   const navigation = useNavigation<NavigationProp<RootTabParamList>>();
-  const scrollY = useRef(new Animated.Value(0)).current;
   const [itemCount, setItemCount] = useState<number | null>(null);
   const [locationCount, setLocationCount] = useState<number | null>(null);
+  const [topLocation, setTopLocation] = useState<LocationSummary | null>(null);
   const [recentItems, setRecentItems] = useState<InventoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-
-  const statsHeight = scrollY.interpolate({
-    inputRange: [0, STATS_COLLAPSE_DISTANCE],
-    outputRange: [STATS_EXPANDED_HEIGHT, STATS_COLLAPSED_HEIGHT],
-    extrapolate: 'clamp',
-  });
-
-  const cardOpacity = scrollY.interpolate({
-    inputRange: [0, STATS_COLLAPSE_DISTANCE * 0.6, STATS_COLLAPSE_DISTANCE],
-    outputRange: [1, 0.4, 0],
-    extrapolate: 'clamp',
-  });
-
-  const panelOpacity = scrollY.interpolate({
-    inputRange: [0, STATS_COLLAPSE_DISTANCE * 0.7, STATS_COLLAPSE_DISTANCE],
-    outputRange: [0, 0.3, 1],
-    extrapolate: 'clamp',
-  });
-
-  const cardScale = scrollY.interpolate({
-    inputRange: [0, STATS_COLLAPSE_DISTANCE],
-    outputRange: [1, 0.92],
-    extrapolate: 'clamp',
-  });
-
-  const panelTranslate = scrollY.interpolate({
-    inputRange: [0, STATS_COLLAPSE_DISTANCE],
-    outputRange: [12, 0],
-    extrapolate: 'clamp',
-  });
 
   const loadHomeData = useCallback(async () => {
     setIsLoading(true);
     try {
       const service = ServerService.getInstance();
-      if (!service.getAxiosInstance()) {
-        await service.autoConnect();
-      }
 
       const [itemsResponse, locationsResponse] = await Promise.all([
         service.getInventory(1, RECENT_ITEMS_LIMIT),
@@ -253,17 +331,21 @@ const HomeScreen: React.FC = () => {
       }
 
       if (locationsResponse.success && locationsResponse.data?.locations) {
+        const locations = locationsResponse.data.locations as LocationSummary[];
         const total =
           typeof locationsResponse.data.total === 'number'
             ? locationsResponse.data.total
-            : locationsResponse.data.locations.length;
+            : locations.length;
         setLocationCount(total);
+        setTopLocation(selectMostAccessedLocation(locations));
       } else {
         setLocationCount(null);
+        setTopLocation(null);
       }
     } catch (error) {
       setItemCount(null);
       setLocationCount(null);
+      setTopLocation(null);
       setRecentItems([]);
     } finally {
       setIsLoading(false);
@@ -286,17 +368,41 @@ const HomeScreen: React.FC = () => {
     [navigation],
   );
 
+  const handleTopLocationPress = useCallback(() => {
+    if (topLocation) {
+      navigation.navigate('Locations', {
+        screen: 'LocationItems',
+        params: {
+          locationId: topLocation.id,
+          locationName: topLocation.name,
+        },
+      });
+      return;
+    }
+
+    navigation.navigate('Locations');
+  }, [navigation, topLocation]);
+
+  const handleScanPress = useCallback(() => {
+    Alert.alert('Scan barcode', 'Barcode scanning is not available yet.');
+  }, []);
+
+  const latestItem = recentItems[0];
+  const lastItemName = latestItem?.name ?? 'No items yet';
+  const lastItemDate = latestItem ? formatShortDate(latestItem.createdAt) : '—';
+  const topLocationName = topLocation?.name ?? 'No locations yet';
+  const topLocationItems =
+    typeof topLocation?.itemCount === 'number'
+      ? `${formatCount(topLocation.itemCount)} items`
+      : '—';
+
   return (
-    <Animated.ScrollView
+    <ScrollView
       style={[
         styles.container,
         {backgroundColor: theme.colors.background.primary},
       ]}
       contentContainerStyle={styles.contentContainer}
-      onScroll={Animated.event([{nativeEvent: {contentOffset: {y: scrollY}}}], {
-        useNativeDriver: false,
-      })}
-      scrollEventThrottle={16}
       showsVerticalScrollIndicator={false}>
       <View style={styles.brandingArea}>
         <View
@@ -309,7 +415,7 @@ const HomeScreen: React.FC = () => {
           ]}>
           <MaterialIcons
             name="inventory-2"
-            size={48}
+            size={36}
             color={theme.colors.accent.primary}
           />
         </View>
@@ -318,7 +424,7 @@ const HomeScreen: React.FC = () => {
             styles.appTitle,
             {
               color: theme.colors.text.primary,
-              fontSize: theme.typography.sizes.xxl,
+              fontSize: theme.typography.sizes.xl,
               fontWeight: theme.typography.weights.bold as FontWeight,
             },
           ]}>
@@ -329,73 +435,163 @@ const HomeScreen: React.FC = () => {
             styles.tagline,
             {
               color: theme.colors.text.secondary,
-              fontSize: theme.typography.sizes.md,
+              fontSize: theme.typography.sizes.sm,
             },
           ]}>
           Your home inventory
         </Text>
       </View>
 
-      <Animated.View style={[styles.statsContainer, {height: statsHeight}]}>
+      <View style={styles.statsContainer}>
         <View style={styles.statSlot}>
-          <Animated.View
-            style={[
-              styles.statLayer,
-              {opacity: cardOpacity, transform: [{scale: cardScale}]},
-            ]}>
-            <StatCard
-              icon="inventory"
-              value={formatCount(itemCount)}
-              label="ITEMS"
-            />
-          </Animated.View>
-          <Animated.View
-            style={[
-              styles.statLayer,
-              styles.statPanelLayer,
-              {
-                opacity: panelOpacity,
-                transform: [{translateY: panelTranslate}],
-              },
-            ]}>
-            <StatCard
-              icon="inventory"
-              value={formatCount(itemCount)}
-              label="ITEMS"
-              variant="panel"
-            />
-          </Animated.View>
+          <StatCard
+            icon="inventory"
+            value={formatCount(itemCount)}
+            label="ITEMS"
+            variant="panel"
+          />
         </View>
         <View style={styles.statSlot}>
-          <Animated.View
+          <StatCard
+            icon="folder"
+            value={formatCount(locationCount)}
+            label="LOCATIONS"
+            variant="panel"
+          />
+        </View>
+      </View>
+
+      <View style={styles.sectionHeader}>
+        <Text
+          style={[
+            styles.sectionTitle,
+            {
+              color: theme.colors.text.primary,
+              fontSize: theme.typography.sizes.lg,
+              fontWeight: theme.typography.weights.bold as FontWeight,
+            },
+          ]}>
+          Quick actions
+        </Text>
+      </View>
+
+      <View style={styles.quickActions}>
+        <QuickAction
+          icon="place"
+          label="Most accessed"
+          subtitle={topLocationName}
+          onPress={handleTopLocationPress}
+        />
+        <QuickAction
+          icon="qr-code-scanner"
+          label="Scan barcode"
+          onPress={handleScanPress}
+        />
+      </View>
+
+      <View style={styles.sectionHeader}>
+        <Text
+          style={[
+            styles.sectionTitle,
+            {
+              color: theme.colors.text.primary,
+              fontSize: theme.typography.sizes.lg,
+              fontWeight: theme.typography.weights.bold as FontWeight,
+            },
+          ]}>
+          Snapshot
+        </Text>
+      </View>
+
+      <View
+        style={[
+          styles.insightCard,
+          {
+            backgroundColor: theme.colors.background.elevated,
+            borderRadius: theme.borderRadius.lg,
+            borderColor: theme.colors.borderSubtle,
+          },
+          theme.shadows.sm,
+        ]}>
+        <View style={styles.insightRow}>
+          <Text
             style={[
-              styles.statLayer,
-              {opacity: cardOpacity, transform: [{scale: cardScale}]},
-            ]}>
-            <StatCard
-              icon="folder"
-              value={formatCount(locationCount)}
-              label="LOCATIONS"
-            />
-          </Animated.View>
-          <Animated.View
-            style={[
-              styles.statLayer,
-              styles.statPanelLayer,
+              styles.insightLabel,
               {
-                opacity: panelOpacity,
-                transform: [{translateY: panelTranslate}],
+                color: theme.colors.text.tertiary,
+                fontSize: theme.typography.sizes.xs,
               },
             ]}>
-            <StatCard
-              icon="folder"
-              value={formatCount(locationCount)}
-              label="LOCATIONS"
-              variant="panel"
-            />
-          </Animated.View>
+            Last added
+          </Text>
+          <View style={styles.insightValueBlock}>
+            <Text
+              numberOfLines={1}
+              style={[
+                styles.insightValue,
+                {
+                  color: theme.colors.text.primary,
+                  fontSize: theme.typography.sizes.sm,
+                  fontWeight: theme.typography.weights.semibold as FontWeight,
+                },
+              ]}>
+              {lastItemName}
+            </Text>
+            <Text
+              style={[
+                styles.insightMeta,
+                {
+                  color: theme.colors.text.tertiary,
+                  fontSize: theme.typography.sizes.xs,
+                },
+              ]}>
+              {lastItemDate}
+            </Text>
+          </View>
         </View>
-      </Animated.View>
+        <View
+          style={[
+            styles.insightDivider,
+            {backgroundColor: theme.colors.borderSubtle},
+          ]}
+        />
+        <View style={styles.insightRow}>
+          <Text
+            style={[
+              styles.insightLabel,
+              {
+                color: theme.colors.text.tertiary,
+                fontSize: theme.typography.sizes.xs,
+              },
+            ]}>
+            Most accessed
+          </Text>
+          <View style={styles.insightValueBlock}>
+            <Text
+              numberOfLines={1}
+              style={[
+                styles.insightValue,
+                {
+                  color: theme.colors.text.primary,
+                  fontSize: theme.typography.sizes.sm,
+                  fontWeight: theme.typography.weights.semibold as FontWeight,
+                },
+              ]}>
+              {topLocationName}
+            </Text>
+            <Text
+              style={[
+                styles.insightMeta,
+                {
+                  color: theme.colors.text.tertiary,
+                  fontSize: theme.typography.sizes.xs,
+                },
+              ]}>
+              {topLocationItems}
+            </Text>
+          </View>
+        </View>
+      </View>
 
       <View style={styles.sectionHeader}>
         <Text
@@ -438,7 +634,7 @@ const HomeScreen: React.FC = () => {
           </Text>
         )
       )}
-    </Animated.ScrollView>
+    </ScrollView>
   );
 };
 
@@ -453,18 +649,18 @@ const styles = StyleSheet.create({
   },
   brandingArea: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 24,
   },
   logoContainer: {
-    width: 96,
-    height: 96,
+    width: 72,
+    height: 72,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 12,
   },
   appTitle: {
     letterSpacing: -0.5,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   tagline: {
     letterSpacing: 0.2,
@@ -473,26 +669,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 16,
     marginBottom: 28,
-    position: 'relative',
-    overflow: 'hidden',
   },
   statSlot: {
     flex: 1,
-    position: 'relative',
-  },
-  statLayer: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-  },
-  statPanelLayer: {
-    justifyContent: 'center',
   },
   statCard: {
     width: '100%',
-    height: '100%',
     paddingVertical: 20,
     paddingHorizontal: 18,
     alignItems: 'center',
@@ -534,6 +716,64 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     letterSpacing: -0.2,
+  },
+  quickActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 28,
+  },
+  quickAction: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 10,
+    minHeight: 78,
+  },
+  quickActionIcon: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  quickActionLabel: {
+    textAlign: 'center',
+  },
+  quickActionSubtitle: {
+    textAlign: 'center',
+    marginTop: 2,
+  },
+  insightCard: {
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginBottom: 28,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  insightRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  insightLabel: {
+    flex: 1,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  insightValueBlock: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  insightValue: {
+    textAlign: 'right',
+  },
+  insightMeta: {
+    marginTop: 2,
+  },
+  insightDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginVertical: 10,
   },
   recentList: {
     gap: 12,

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import {useState, useCallback, useMemo} from 'react';
 
 export interface AsyncState<T> {
   data: T | null;
@@ -20,7 +20,11 @@ export interface UseAsyncStateReturn<T> {
   reset: () => void;
   execute: (
     asyncFn: () => Promise<T>,
-    options?: { isRefresh?: boolean; onSuccess?: (data: T) => void; onError?: (error: Error) => void }
+    options?: {
+      isRefresh?: boolean;
+      onSuccess?: (data: T) => void;
+      onError?: (error: Error) => void;
+    },
   ) => Promise<void>;
 }
 
@@ -41,7 +45,9 @@ export interface UseAsyncStateReturn<T> {
  *   });
  * }, []);
  */
-export const useAsyncState = <T = any>(initialData: T | null = null): UseAsyncStateReturn<T> => {
+export const useAsyncState = <T = any>(
+  initialData: T | null = null,
+): UseAsyncStateReturn<T> => {
   const [data, setData] = useState<T | null>(initialData);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [refreshing, setRefreshing] = useState<boolean>(false);
@@ -73,9 +79,9 @@ export const useAsyncState = <T = any>(initialData: T | null = null): UseAsyncSt
         isRefresh?: boolean;
         onSuccess?: (data: T) => void;
         onError?: (error: Error) => void;
-      }
+      },
     ): Promise<void> => {
-      const { isRefresh = false, onSuccess, onError } = options || {};
+      const {isRefresh = false, onSuccess, onError} = options || {};
 
       try {
         if (isRefresh) {
@@ -92,7 +98,8 @@ export const useAsyncState = <T = any>(initialData: T | null = null): UseAsyncSt
           onSuccess(result);
         }
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+        const errorMessage =
+          err instanceof Error ? err.message : 'An unknown error occurred';
         setError(errorMessage);
 
         if (onError && err instanceof Error) {
@@ -103,20 +110,23 @@ export const useAsyncState = <T = any>(initialData: T | null = null): UseAsyncSt
         setRefreshing(false);
       }
     },
-    []
+    [setData, setError, setIsLoading, setRefreshing],
   );
 
-  return {
-    data,
-    isLoading,
-    refreshing,
-    error,
-    setData,
-    setIsLoading,
-    setRefreshing,
-    setError,
-    clearError,
-    reset,
-    execute,
-  };
+  return useMemo(
+    () => ({
+      data,
+      isLoading,
+      refreshing,
+      error,
+      setData,
+      setIsLoading,
+      setRefreshing,
+      setError,
+      clearError,
+      reset,
+      execute,
+    }),
+    [data, isLoading, refreshing, error, clearError, reset, execute],
+  );
 };

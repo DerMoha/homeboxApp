@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { logger } from '../utils/logger';
+import {logger} from '../utils/logger';
 
 /**
  * Centralized storage service for type-safe AsyncStorage operations
@@ -8,6 +8,8 @@ import { logger } from '../utils/logger';
 // Storage keys - centralized and type-safe
 export const STORAGE_KEYS = {
   // Server & Connection
+  SERVERS: '@servers',
+  LAST_USED_SERVER_ID: '@lastUsedServerId',
   ACTIVE_SERVER: '@active_server',
   SAVED_SERVERS: '@saved_servers',
 
@@ -17,13 +19,17 @@ export const STORAGE_KEYS = {
   INVENTORY_ITEMS_PER_ROW: '@inventory_items_per_row',
   INVENTORY_LIST_ZOOM: '@inventory_list_zoom',
   INVENTORY_SORT_OPTION: '@inventory_sort_option',
+  INVENTORY_DISPLAY_MODE: '@inventory_displayMode',
+  INVENTORY_SORT_BY: '@inventory_sortBy',
+  INVENTORY_GROUP_BY: '@inventory_groupBy',
+  INVENTORY_SHOW_ARCHIVED: '@inventory_showArchived',
 
-  // Add Item Settings
   ADD_ITEM_FIELDS: '@add_item_fields',
   IMAGE_QUALITY: '@image_quality',
 
   // Theme
   THEME_MODE: '@theme_mode',
+  CUSTOM_COLORS: '@customColors',
 } as const;
 
 class StorageService {
@@ -38,7 +44,7 @@ class StorageService {
       }
       return JSON.parse(value) as T;
     } catch (error) {
-      logger.error(`Error getting item from storage (${key}):`, error);
+      logger.error(`Error getting item from storage (${key}):`, {error});
       return defaultValue ?? null;
     }
   }
@@ -51,7 +57,7 @@ class StorageService {
       await AsyncStorage.setItem(key, JSON.stringify(value));
       return true;
     } catch (error) {
-      logger.error(`Error setting item in storage (${key}):`, error);
+      logger.error(`Error setting item in storage (${key}):`, {error});
       return false;
     }
   }
@@ -64,7 +70,7 @@ class StorageService {
       await AsyncStorage.removeItem(key);
       return true;
     } catch (error) {
-      logger.error(`Error removing item from storage (${key}):`, error);
+      logger.error(`Error removing item from storage (${key}):`, {error});
       return false;
     }
   }
@@ -77,7 +83,7 @@ class StorageService {
       await AsyncStorage.clear();
       return true;
     } catch (error) {
-      logger.error('Error clearing storage:', error);
+      logger.error('Error clearing storage:', {error});
       return false;
     }
   }
@@ -104,7 +110,7 @@ class StorageService {
 
       return data;
     } catch (error) {
-      logger.error('Error getting multiple items from storage:', error);
+      logger.error('Error getting multiple items from storage:', {error});
       return {};
     }
   }
@@ -115,12 +121,12 @@ class StorageService {
   async multiSet(keyValuePairs: Array<[string, any]>): Promise<boolean> {
     try {
       const stringifiedPairs: Array<[string, string]> = keyValuePairs.map(
-        ([key, value]) => [key, JSON.stringify(value)]
+        ([key, value]) => [key, JSON.stringify(value)],
       );
       await AsyncStorage.multiSet(stringifiedPairs);
       return true;
     } catch (error) {
-      logger.error('Error setting multiple items in storage:', error);
+      logger.error('Error setting multiple items in storage:', {error});
       return false;
     }
   }

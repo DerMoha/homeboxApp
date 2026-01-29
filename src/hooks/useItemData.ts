@@ -1,29 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import {useState, useEffect, useCallback} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Alert } from 'react-native';
+import {Alert} from 'react-native';
 import ServerService from '../services/serverService';
-import { logger } from '../utils/logger';
-
-export interface Location {
-  id: string;
-  name: string;
-  description: string;
-}
-
-export interface Label {
-  id: string;
-  name: string;
-  description: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface EnabledFields {
-  description: boolean;
-  purchasePrice: boolean;
-  insured: boolean;
-  labels: boolean;
-}
+import {logger} from '../utils/logger';
+import {Location, Label, EnabledFields} from '../types';
 
 export const useItemData = () => {
   const [locations, setLocations] = useState<Location[]>([]);
@@ -41,11 +21,14 @@ export const useItemData = () => {
       const savedFields = await AsyncStorage.getItem('@add_item_fields');
       if (savedFields) {
         const fields = JSON.parse(savedFields);
-        const enabledMap = fields.reduce((acc: Record<string, boolean>, field: any) => {
-          acc[field.id] = field.enabled;
-          return acc;
-        }, {});
-        setEnabledFields(prev => ({ ...prev, ...enabledMap }));
+        const enabledMap = fields.reduce(
+          (acc: Record<string, boolean>, field: any) => {
+            acc[field.id] = field.enabled;
+            return acc;
+          },
+          {},
+        );
+        setEnabledFields(prev => ({...prev, ...enabledMap}));
       }
     } catch (error) {
       logger.error('Error loading enabled fields:', error);
@@ -85,7 +68,10 @@ export const useItemData = () => {
       const response = await service.autoConnect();
 
       if (!response.success) {
-        Alert.alert('Error', 'Failed to connect to server. Please check your connection settings.');
+        Alert.alert(
+          'Error',
+          'Failed to connect to server. Please check your connection settings.',
+        );
         return false;
       }
 

@@ -2,13 +2,11 @@ import React, {useState, useEffect} from 'react';
 import {View, Text, Switch, StyleSheet, Alert, ScrollView} from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Slider from '@react-native-community/slider';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useTheme} from '../theme/ThemeContext';
 import {Button} from '../components/common/Button';
 import {logger} from '../utils/logger';
+import {storageService, STORAGE_KEYS} from '../services/storageService';
 
-const STORAGE_KEY = '@add_item_fields';
-const IMAGE_QUALITY_KEY = '@image_quality';
 const DEFAULT_IMAGE_QUALITY = 0.8;
 
 interface FieldConfig {

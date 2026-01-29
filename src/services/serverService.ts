@@ -1,19 +1,16 @@
-import axios, { AxiosInstance, AxiosError } from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-export interface ServerConfig {
-  id: string;
-  host: string;
-  username: string;
-  password: string;
-  name?: string;
-}
-
-export interface ServerResponse {
-  success: boolean;
-  data?: any;
-  error?: string;
-}
+import axios, {AxiosInstance, AxiosError} from 'axios';
+import {storageService, STORAGE_KEYS} from './storageService';
+import {
+  ServerConfig,
+  ServerResponse,
+  ApiResponse,
+  Location,
+  LocationResponse,
+  Label,
+  InventoryResponse,
+  CreateItemRequest,
+  Item,
+} from '../types';
 
 export interface InventoryItem {
   id: string;
@@ -39,85 +36,12 @@ export interface InventoryItem {
 
 interface ErrorResponse {
   message?: string;
-  [key: string]: any;
-}
-
-interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-}
-
-interface Location {
-  id: string;
-  name: string;
-  description: string;
-  itemCount: number;
-  imageId: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface LocationResponse {
-  locations: Location[];
-  page: number;
-  pageSize: number;
-  total: number;
-}
-
-interface InventoryResponse {
-  items: Array<{
-    id: string;
-    name: string;
-    description: string;
-    quantity: number;
-    imageId: string | null;
-    insured: boolean;
-    purchasePrice: number;
-    archived: boolean;
-    createdAt: string;
-    updatedAt: string;
-  }>;
-  page: number;
-  pageSize: number;
-  total: number;
-}
-
-interface Label {
-  id: string;
-  name: string;
-  description: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface CreateItemRequest {
-  name: string;
-  description?: string;
-  quantity: number;
-  locationId?: string;
-  labels?: string[];
-  purchasePrice?: number;
-  insured?: boolean;
+  [key: string]: unknown;
 }
 
 interface CreateItemResponse {
   success: boolean;
-  data?: {
-    id: string;
-    name: string;
-    description: string;
-    quantity: number;
-    location: Location | null;
-    labels: Label[];
-    archived: boolean;
-    assetId: string;
-    createdAt: string;
-    updatedAt: string;
-    imageId: string | null;
-    insured: boolean;
-    purchasePrice: number;
-  };
+  data?: Item;
   error?: string;
 }
 
@@ -151,17 +75,17 @@ class ServerService {
     } catch (error) {
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 401) {
-          return { success: false, error: 'Authentication required' };
+          return {success: false, error: 'Authentication required'};
         }
         if (error.response?.status === 403) {
-          return { success: false, error: 'Access denied' };
+          return {success: false, error: 'Access denied'};
         }
         return {
           success: false,
           error: error.response?.data?.message || 'Failed to get item',
         };
       }
-      return { success: false, error: 'An unexpected error occurred' };
+      return {success: false, error: 'An unexpected error occurred'};
     }
   }
 
@@ -192,15 +116,21 @@ class ServerService {
       });
 
       // First authenticate to get token
-      const loginResponse = await this.axiosInstance.post('/api/v1/users/login', {
-        username: config.username,
-        password: config.password,
-      });
+      const loginResponse = await this.axiosInstance.post(
+        '/api/v1/users/login',
+        {
+          username: config.username,
+          password: config.password,
+        },
+      );
 
       if (loginResponse.data && loginResponse.data.token) {
         this.token = loginResponse.data.token;
         // Ensure we don't have duplicate 'Bearer' in the token
-        const cleanToken = this.token && this.token.startsWith('Bearer ') ? this.token.substring(7) : this.token;
+        const cleanToken =
+          this.token && this.token.startsWith('Bearer ')
+            ? this.token.substring(7)
+            : this.token;
         this.axiosInstance.defaults.headers.common.Authorization = `Bearer ${cleanToken}`;
         return {
           success: true,
@@ -252,8 +182,10 @@ class ServerService {
 
   public async getServers(): Promise<ServerConfig[]> {
     try {
-      const serversJson = await AsyncStorage.getItem('servers');
-      return serversJson ? JSON.parse(serversJson) : [];
+      const servers = await storageService.getItem<ServerConfig[]>(
+        STORAGE_KEYS.SERVERS,
+      );
+      return servers || [];
     } catch (error) {
       console.error('Error getting servers:', error);
       return [];
@@ -271,8 +203,7 @@ class ServerService {
         servers.push(config);
       }
 
-      await AsyncStorage.setItem('servers', JSON.stringify(servers));
-      return true;
+      return await storageService.setItem(STORAGE_KEYS.SERVERS, servers);
     } catch (error) {
       console.error('Error saving server:', error);
       return false;
@@ -283,8 +214,7 @@ class ServerService {
     try {
       const servers = await this.getServers();
       const updatedServers = servers.filter(s => s.id !== serverId);
-      await AsyncStorage.setItem('servers', JSON.stringify(updatedServers));
-      return true;
+      return await storageService.setItem(STORAGE_KEYS.SERVERS, updatedServers);
     } catch (error) {
       console.error('Error deleting server:', error);
       return false;
@@ -299,7 +229,9 @@ class ServerService {
     if (!this.currentConfig) {
       throw new Error('No active server configuration');
     }
-    const protocol = this.currentConfig.host.startsWith('http') ? '' : 'http://';
+    const protocol = this.currentConfig.host.startsWith('http')
+      ? ''
+      : 'http://';
     return `${protocol}${this.currentConfig.host}`;
   }
 
@@ -307,7 +239,10 @@ class ServerService {
     return this.axiosInstance;
   }
 
-  public async getInventory(page: number = 1, pageSize: number = 50): Promise<ServerResponse> {
+  public async getInventory(
+    page: number = 1,
+    pageSize: number = 50,
+  ): Promise<ServerResponse<InventoryResponse>> {
     try {
       if (!this.axiosInstance || !this.token) {
         return {
@@ -337,24 +272,28 @@ class ServerService {
     } catch (error) {
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 401) {
-          return { success: false, error: 'Authentication required' };
+          return {success: false, error: 'Authentication required'};
         }
         if (error.response?.status === 403) {
-          return { success: false, error: 'Access denied' };
+          return {success: false, error: 'Access denied'};
         }
         return {
           success: false,
           error: error.response?.data?.message || 'Failed to get inventory',
         };
       }
-      return { success: false, error: 'An unexpected error occurred' };
+      return {success: false, error: 'An unexpected error occurred'};
     }
   }
 
   public async getLastUsedServer(): Promise<ServerConfig | null> {
     try {
-      const lastUsedId = await AsyncStorage.getItem('lastUsedServerId');
-      if (!lastUsedId) {return null;}
+      const lastUsedId = await storageService.getItem<string>(
+        STORAGE_KEYS.LAST_USED_SERVER_ID,
+      );
+      if (!lastUsedId) {
+        return null;
+      }
 
       const servers = await this.getServers();
       return servers.find(server => server.id === lastUsedId) || null;
@@ -366,7 +305,7 @@ class ServerService {
 
   public async setLastUsedServer(serverId: string): Promise<void> {
     try {
-      await AsyncStorage.setItem('lastUsedServerId', serverId);
+      await storageService.setItem(STORAGE_KEYS.LAST_USED_SERVER_ID, serverId);
     } catch (error) {
       console.error('Error setting last used server:', error);
     }
@@ -394,7 +333,9 @@ class ServerService {
       const errorData = error.response.data as ErrorResponse;
       return {
         success: false,
-        error: `Server error: ${error.response.status} - ${errorData.message || 'Unknown error'}`,
+        error: `Server error: ${error.response.status} - ${
+          errorData.message || 'Unknown error'
+        }`,
       };
     } else if (error.request) {
       // Request was made but no response received
@@ -444,7 +385,9 @@ class ServerService {
         data: this.transformLocationsResponse(response.data),
       };
     } catch (error) {
-      return this.handleError(error as AxiosError);
+      return this.handleError(
+        error as AxiosError,
+      ) as ApiResponse<LocationResponse>;
     }
   }
 
@@ -463,51 +406,78 @@ class ServerService {
         data: response.data,
       };
     } catch (error) {
-      return this.handleError(error as AxiosError);
+      return this.handleError(error as AxiosError) as ApiResponse<Label[]>;
     }
   }
 
-  async getLocationItems(locationId: string): Promise<ApiResponse<InventoryResponse>> {
+  async getLocationItems(
+    locationId: string,
+  ): Promise<ApiResponse<InventoryResponse>> {
     try {
       const axiosInstance = this.getAxiosInstance();
       if (!axiosInstance) {
-        return { success: false, error: 'No active server connection' };
+        return {success: false, error: 'No active server connection'};
       }
-      // Fetch the full location tree
       const response = await axiosInstance.get('/api/v1/locations/tree');
       const tree = response.data;
-      console.log('[getLocationItems] /api/v1/locations/tree response:', JSON.stringify(tree, null, 2));
+      console.log(
+        '[getLocationItems] /api/v1/locations/tree response:',
+        JSON.stringify(tree, null, 2),
+      );
       // Helper to recursively search for the location
-      function findLocation(node: any, id: string): any | null {
-        if (node.id === id) {return node;}
+      interface TreeNode {
+        id: string;
+        children?: TreeNode[];
+        items?: Item[];
+        [key: string]: unknown;
+      }
+
+      function findLocation(node: TreeNode, id: string): TreeNode | null {
+        if (node.id === id) {
+          return node;
+        }
         if (node.children && Array.isArray(node.children)) {
           for (const child of node.children) {
             const found = findLocation(child, id);
-            if (found) {return found;}
+            if (found) {
+              return found;
+            }
           }
         }
         return null;
       }
-      let locationNode = null;
+      let locationNode: TreeNode | null = null;
       if (Array.isArray(tree)) {
         // If root is array, search each root node
         for (const node of tree) {
           locationNode = findLocation(node, locationId);
-          if (locationNode) {break;}
+          if (locationNode) {
+            break;
+          }
         }
       } else {
         // If root is object, search from root
         locationNode = findLocation(tree, locationId);
       }
-      console.log('[getLocationItems] Found location node:', JSON.stringify(locationNode, null, 2));
+      console.log(
+        '[getLocationItems] Found location node:',
+        JSON.stringify(locationNode, null, 2),
+      );
       // Try to get items from the node
-      let items = locationNode && locationNode.items ? locationNode.items : [];
+      let items: Item[] =
+        locationNode && locationNode.items ? locationNode.items : [];
       if (!items.length) {
         // Workaround: fetch all items and filter by locationId
-        console.log('[getLocationItems] No items in tree node, fetching all items and filtering by location');
-        const itemsResponse = await axiosInstance.get('/api/v1/items', { params: { page: 1, pageSize: 1000 } });
+        console.log(
+          '[getLocationItems] No items in tree node, fetching all items and filtering by location',
+        );
+        const itemsResponse = await axiosInstance.get('/api/v1/items', {
+          params: {page: 1, pageSize: 1000},
+        });
         const allItems = itemsResponse.data.items || [];
-        items = allItems.filter((item: any) => item.location && item.location.id === locationId);
+        items = allItems.filter(
+          (item: Item) => item.location && item.location.id === locationId,
+        );
       }
       console.log('[getLocationItems] Items for location:', items);
       // Format as InventoryResponse for compatibility
@@ -517,10 +487,10 @@ class ServerService {
         pageSize: items.length,
         total: items.length,
       };
-      return { success: true, data: inventoryResponse };
+      return {success: true, data: inventoryResponse};
     } catch (error) {
       console.error('Error getting location items:', error);
-      return { success: false, error: 'Failed to get location items' };
+      return {success: false, error: 'Failed to get location items'};
     }
   }
 
@@ -535,38 +505,53 @@ class ServerService {
         success: true,
         data: response.data,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating item:', error);
       return {
         success: false,
-        error: error.message || 'Failed to create item',
+        error: error instanceof Error ? error.message : 'Failed to create item',
       };
     }
   }
 
-  async uploadItemImage(itemId: string, formData: FormData): Promise<{ success: boolean; data?: any; error?: string }> {
+  async uploadItemImage(
+    itemId: string,
+    formData: FormData,
+  ): Promise<ServerResponse> {
     try {
       const axiosInstance = this.getAxiosInstance();
       if (!axiosInstance) {
         throw new Error('No active server connection');
       }
       console.log('Uploading image to:', `/api/v1/items/${itemId}/attachments`);
-      const response = await axiosInstance.post(`/api/v1/items/${itemId}/attachments`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
+      const response = await axiosInstance.post(
+        `/api/v1/items/${itemId}/attachments`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
         },
-      });
+      );
       console.log('Server response:', response.data);
-      return { success: true, data: response.data };
-    } catch (error: any) {
+      return {success: true, data: response.data};
+    } catch (error: unknown) {
       console.error('Error uploading image:', error);
-      if (error.response) {
-        console.error('Error response data:', error.response.data);
-        console.error('Error response status:', error.response.status);
+      if (axios.isAxiosError(error)) {
+        console.error('Error response data:', error.response?.data);
+        console.error('Error response status:', error.response?.status);
+        return {
+          success: false,
+          error:
+            error.response?.data?.message ||
+            error.message ||
+            'Failed to upload image',
+        };
       }
       return {
         success: false,
-        error: error.response?.data?.message || error.message || 'Failed to upload image',
+        error:
+          error instanceof Error ? error.message : 'Failed to upload image',
       };
     }
   }

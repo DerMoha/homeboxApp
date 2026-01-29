@@ -1,6 +1,6 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
-import { useTheme } from '../../theme/ThemeContext';
+import React, {useEffect, useRef} from 'react';
+import {View, Text, StyleSheet, Animated} from 'react-native';
+import {useTheme} from '../../theme/ThemeContext';
 
 interface LoadingStateProps {
   message?: string;
@@ -11,7 +11,7 @@ const PulsingDot: React.FC<{
   delay: number;
   color: string;
   size: number;
-}> = ({ delay, color, size }) => {
+}> = ({delay, color, size}) => {
   const scaleAnim = useRef(new Animated.Value(0.6)).current;
   const opacityAnim = useRef(new Animated.Value(0.4)).current;
 
@@ -43,7 +43,7 @@ const PulsingDot: React.FC<{
             useNativeDriver: true,
           }),
         ]),
-      ])
+      ]),
     );
     animation.start();
     return () => animation.stop();
@@ -58,7 +58,7 @@ const PulsingDot: React.FC<{
           width: size,
           height: size,
           borderRadius: size / 2,
-          transform: [{ scale: scaleAnim }],
+          transform: [{scale: scaleAnim}],
           opacity: opacityAnim,
         },
       ]}
@@ -70,7 +70,7 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
   message,
   size = 'large',
 }) => {
-  const { theme } = useTheme();
+  const {theme} = useTheme();
   const dotSize = size === 'large' ? 12 : 8;
   const gradientOpacity = useRef(new Animated.Value(0.3)).current;
 
@@ -87,14 +87,18 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
           duration: 2000,
           useNativeDriver: true,
         }),
-      ])
+      ]),
     );
     animation.start();
     return () => animation.stop();
   }, [gradientOpacity]);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
+    <View
+      style={[
+        styles.container,
+        {backgroundColor: theme.colors.background.primary},
+      ]}>
       <Animated.View
         style={[
           styles.backgroundPattern,
@@ -105,9 +109,21 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
         ]}
       />
       <View style={styles.dotsContainer}>
-        <PulsingDot delay={0} color={theme.colors.accent.primary} size={dotSize} />
-        <PulsingDot delay={150} color={theme.colors.accent.primary} size={dotSize} />
-        <PulsingDot delay={300} color={theme.colors.accent.primary} size={dotSize} />
+        <PulsingDot
+          delay={0}
+          color={theme.colors.accent.primary}
+          size={dotSize}
+        />
+        <PulsingDot
+          delay={150}
+          color={theme.colors.accent.primary}
+          size={dotSize}
+        />
+        <PulsingDot
+          delay={300}
+          color={theme.colors.accent.primary}
+          size={dotSize}
+        />
       </View>
       {message && (
         <Text
@@ -116,11 +132,10 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
             {
               color: theme.colors.text.secondary,
               fontSize: theme.typography.sizes.md,
-              fontWeight: theme.typography.weights.medium as any,
+              fontWeight: theme.typography.weights.medium,
               letterSpacing: theme.typography.letterSpacing.wide,
             },
-          ]}
-        >
+          ]}>
           {message}
         </Text>
       )}

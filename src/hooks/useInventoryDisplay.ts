@@ -1,6 +1,6 @@
-import { useState, useCallback, useEffect } from 'react';
-import { storageService, STORAGE_KEYS } from '../services/storageService';
-import { logger } from '../utils/logger';
+import {useState, useCallback, useEffect} from 'react';
+import {storageService, STORAGE_KEYS} from '../services/storageService';
+import {logger} from '../utils/logger';
 
 type ViewMode = 'list' | 'grid';
 
@@ -11,26 +11,31 @@ export const useInventoryDisplay = () => {
   const [sortModalVisible, setSortModalVisible] = useState(false);
   const [gridConfigVisible, setGridConfigVisible] = useState(false);
 
-  // Load saved display settings
   useEffect(() => {
     const loadSettings = async () => {
       try {
         const savedViewMode = await storageService.getItem<ViewMode>(
           STORAGE_KEYS.INVENTORY_VIEW_MODE,
-          'list'
+          'list',
         );
         const savedItemsPerRow = await storageService.getItem<number>(
           STORAGE_KEYS.INVENTORY_ITEMS_PER_ROW,
-          2
+          2,
         );
         const savedListZoom = await storageService.getItem<number>(
           STORAGE_KEYS.INVENTORY_LIST_ZOOM,
-          1
+          1,
         );
 
-        if (savedViewMode) {setViewMode(savedViewMode);}
-        if (savedItemsPerRow) {setItemsPerRow(savedItemsPerRow);}
-        if (savedListZoom) {setListZoom(savedListZoom);}
+        if (savedViewMode) {
+          setViewMode(savedViewMode);
+        }
+        if (savedItemsPerRow) {
+          setItemsPerRow(savedItemsPerRow);
+        }
+        if (savedListZoom) {
+          setListZoom(savedListZoom);
+        }
       } catch (error) {
         logger.error('Error loading display settings:', error);
       }
@@ -39,7 +44,6 @@ export const useInventoryDisplay = () => {
     loadSettings();
   }, []);
 
-  // Save settings when they change
   const saveViewMode = useCallback(async (mode: ViewMode) => {
     setViewMode(mode);
     await storageService.setItem(STORAGE_KEYS.INVENTORY_VIEW_MODE, mode);

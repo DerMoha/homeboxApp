@@ -15,6 +15,7 @@ import {useTheme} from '../theme/ThemeContext';
 import {SettingsStackParamList} from '../types/navigation';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {logger} from '../utils/logger';
+import {SectionHeader} from '../components/SectionHeader';
 
 type SettingsScreenNavigationProp = NativeStackNavigationProp<
   SettingsStackParamList,
@@ -29,11 +30,6 @@ interface SettingsItemProps {
   icon: string;
   title: string;
   onPress: () => void;
-  theme: ReturnType<typeof useTheme>['theme'];
-}
-
-interface SectionHeaderProps {
-  title: string;
   theme: ReturnType<typeof useTheme>['theme'];
 }
 
@@ -84,29 +80,6 @@ const SettingsItem: React.FC<SettingsItemProps> = ({
       color={theme.colors.text.tertiary}
     />
   </TouchableOpacity>
-);
-
-const SectionHeader: React.FC<SectionHeaderProps> = ({title, theme}) => (
-  <View style={styles.sectionHeader}>
-    <Text
-      style={[
-        styles.sectionHeaderText,
-        {
-          color: theme.colors.text.secondary,
-          fontSize: theme.typography.sizes.sm,
-          fontWeight: theme.typography.weights.semibold,
-          letterSpacing: theme.typography.letterSpacing.wide,
-        },
-      ]}>
-      {title.toUpperCase()}
-    </Text>
-    <View
-      style={[
-        styles.sectionHeaderLine,
-        {backgroundColor: theme.colors.accent.primary},
-      ]}
-    />
-  </View>
 );
 
 const SettingsScreen: React.FC = () => {
@@ -219,7 +192,7 @@ const SettingsScreen: React.FC = () => {
         {backgroundColor: theme.colors.background.primary},
       ]}
       contentContainerStyle={styles.contentContainer}>
-      <SectionHeader title="Server" theme={theme} />
+      <SectionHeader title="Server" variant="withLine" />
 
       <View
         style={[
@@ -284,7 +257,7 @@ const SettingsScreen: React.FC = () => {
         </View>
       </View>
 
-      <SectionHeader title="Configuration" theme={theme} />
+      <SectionHeader title="Configuration" variant="withLine" />
 
       <View style={styles.settingsGroup}>
         <SettingsItem
@@ -303,7 +276,7 @@ const SettingsScreen: React.FC = () => {
         />
       </View>
 
-      <SectionHeader title="Preferences" theme={theme} />
+      <SectionHeader title="Preferences" variant="withLine" />
 
       <View style={styles.settingsGroup}>
         <SettingsItem
@@ -331,18 +304,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 32,
-  },
-  sectionHeader: {
-    marginTop: 24,
-    marginBottom: 12,
-  },
-  sectionHeaderText: {
-    marginBottom: 8,
-  },
-  sectionHeaderLine: {
-    height: 2,
-    width: 32,
-    borderRadius: 1,
   },
   serverPickerCard: {
     borderRadius: 16,

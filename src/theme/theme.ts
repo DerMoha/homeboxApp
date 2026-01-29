@@ -61,10 +61,10 @@ export type Theme = {
       display: number;
     };
     weights: {
-      regular: '400';
-      medium: '500';
-      semibold: '600';
-      bold: '700';
+      regular: '400' | 400;
+      medium: '500' | 500;
+      semibold: '600' | 600;
+      bold: '700' | 700;
     };
     letterSpacing: {
       tight: number;
@@ -75,21 +75,21 @@ export type Theme = {
   shadows: {
     sm: {
       shadowColor: string;
-      shadowOffset: { width: number; height: number };
+      shadowOffset: {width: number; height: number};
       shadowOpacity: number;
       shadowRadius: number;
       elevation: number;
     };
     md: {
       shadowColor: string;
-      shadowOffset: { width: number; height: number };
+      shadowOffset: {width: number; height: number};
       shadowOpacity: number;
       shadowRadius: number;
       elevation: number;
     };
     lg: {
       shadowColor: string;
-      shadowOffset: { width: number; height: number };
+      shadowOffset: {width: number; height: number};
       shadowOpacity: number;
       shadowRadius: number;
       elevation: number;
@@ -175,21 +175,21 @@ export const darkTheme: Theme = {
   shadows: {
     sm: {
       shadowColor: '#000000',
-      shadowOffset: { width: 0, height: 2 },
+      shadowOffset: {width: 0, height: 2},
       shadowOpacity: 0.25,
       shadowRadius: 4,
       elevation: 2,
     },
     md: {
       shadowColor: '#000000',
-      shadowOffset: { width: 0, height: 4 },
+      shadowOffset: {width: 0, height: 4},
       shadowOpacity: 0.3,
       shadowRadius: 8,
       elevation: 4,
     },
     lg: {
       shadowColor: '#000000',
-      shadowOffset: { width: 0, height: 8 },
+      shadowOffset: {width: 0, height: 8},
       shadowOpacity: 0.4,
       shadowRadius: 16,
       elevation: 8,
@@ -275,21 +275,21 @@ export const lightTheme: Theme = {
   shadows: {
     sm: {
       shadowColor: '#1A1A1A',
-      shadowOffset: { width: 0, height: 1 },
+      shadowOffset: {width: 0, height: 1},
       shadowOpacity: 0.06,
       shadowRadius: 3,
       elevation: 1,
     },
     md: {
       shadowColor: '#1A1A1A',
-      shadowOffset: { width: 0, height: 2 },
+      shadowOffset: {width: 0, height: 2},
       shadowOpacity: 0.08,
       shadowRadius: 6,
       elevation: 3,
     },
     lg: {
       shadowColor: '#1A1A1A',
-      shadowOffset: { width: 0, height: 4 },
+      shadowOffset: {width: 0, height: 4},
       shadowOpacity: 0.1,
       shadowRadius: 12,
       elevation: 6,
@@ -375,21 +375,21 @@ export const oledTheme: Theme = {
   shadows: {
     sm: {
       shadowColor: '#000000',
-      shadowOffset: { width: 0, height: 2 },
+      shadowOffset: {width: 0, height: 2},
       shadowOpacity: 0.5,
       shadowRadius: 4,
       elevation: 2,
     },
     md: {
       shadowColor: '#000000',
-      shadowOffset: { width: 0, height: 4 },
+      shadowOffset: {width: 0, height: 4},
       shadowOpacity: 0.6,
       shadowRadius: 8,
       elevation: 4,
     },
     lg: {
       shadowColor: '#000000',
-      shadowOffset: { width: 0, height: 8 },
+      shadowOffset: {width: 0, height: 8},
       shadowOpacity: 0.7,
       shadowRadius: 16,
       elevation: 8,

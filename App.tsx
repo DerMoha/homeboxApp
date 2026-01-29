@@ -1,12 +1,13 @@
-import React, { useCallback, useEffect, useMemo } from 'react';
-import { TextStyle } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import React, {useCallback, useMemo} from 'react';
+import {TextStyle} from 'react-native';
+import {NavigationContainer} from '@react-navigation/native';
+import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import type {BottomTabBarProps} from '@react-navigation/bottom-tabs';
+import {SafeAreaProvider} from 'react-native-safe-area-context';
 
-import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
-import { CustomTabBar } from './src/components/navigation/CustomTabBar';
+import {ThemeProvider, useTheme} from './src/theme/ThemeContext';
+import {CustomTabBar} from './src/components/navigation/CustomTabBar';
+import {LoadingState} from './src/components/common';
 import {
   SettingsStackScreen,
   LocationsStackScreen,
@@ -14,18 +15,15 @@ import {
   AddItemStackScreen,
 } from './src/navigation/stacks';
 import HomeScreen from './src/screens/HomeScreen';
-import ServerService from './src/services/serverService';
+import {useServerConnection} from './src/hooks/useServerConnection';
 
 type FontWeight = TextStyle['fontWeight'];
 
 const Tab = createBottomTabNavigator();
 
 const AppContent: React.FC = () => {
-  const { theme, isDarkMode } = useTheme();
-
-  useEffect(() => {
-    ServerService.getInstance().autoConnect();
-  }, []);
+  const {theme, isDarkMode} = useTheme();
+  const {isConnecting} = useServerConnection();
 
   const navigationTheme = useMemo(
     () => ({
@@ -39,18 +37,18 @@ const AppContent: React.FC = () => {
         notification: theme.colors.error,
       },
       fonts: {
-        regular: { fontFamily: 'System', fontWeight: '400' as const },
-        medium: { fontFamily: 'System', fontWeight: '500' as const },
-        bold: { fontFamily: 'System', fontWeight: '700' as const },
-        heavy: { fontFamily: 'System', fontWeight: '800' as const },
+        regular: {fontFamily: 'System', fontWeight: '400' as const},
+        medium: {fontFamily: 'System', fontWeight: '500' as const},
+        bold: {fontFamily: 'System', fontWeight: '700' as const},
+        heavy: {fontFamily: 'System', fontWeight: '800' as const},
       },
     }),
-    [isDarkMode, theme]
+    [isDarkMode, theme],
   );
 
   const screenOptions = useMemo(
     () => ({
-      headerStyle: { backgroundColor: theme.colors.background.primary },
+      headerStyle: {backgroundColor: theme.colors.background.primary},
       headerTintColor: theme.colors.text.primary,
       headerTitleStyle: {
         color: theme.colors.text.primary,
@@ -59,13 +57,17 @@ const AppContent: React.FC = () => {
       },
       headerShadowVisible: false,
     }),
-    [theme]
+    [theme],
   );
 
   const renderTabBar = useCallback(
     (props: BottomTabBarProps) => <CustomTabBar {...props} />,
-    []
+    [],
   );
+
+  if (isConnecting) {
+    return <LoadingState message="Connecting..." />;
+  }
 
   return (
     <NavigationContainer theme={navigationTheme}>
@@ -74,22 +76,22 @@ const AppContent: React.FC = () => {
         <Tab.Screen
           name="InventoryTab"
           component={InventoryStackScreen}
-          options={{ headerShown: false }}
+          options={{headerShown: false}}
         />
         <Tab.Screen
           name="AddItemTab"
           component={AddItemStackScreen}
-          options={{ headerShown: false }}
+          options={{headerShown: false}}
         />
         <Tab.Screen
           name="Locations"
           component={LocationsStackScreen}
-          options={{ headerShown: false }}
+          options={{headerShown: false}}
         />
         <Tab.Screen
           name="SettingsTab"
           component={SettingsStackScreen}
-          options={{ headerShown: false }}
+          options={{headerShown: false}}
         />
       </Tab.Navigator>
     </NavigationContainer>

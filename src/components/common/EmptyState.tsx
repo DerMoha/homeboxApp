@@ -1,8 +1,8 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import React, {useEffect, useRef} from 'react';
+import {View, Text, StyleSheet, Animated} from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import { useTheme } from '../../theme/ThemeContext';
-import { Button } from './Button';
+import {useTheme} from '../../theme/ThemeContext';
+import {Button} from './Button';
 
 interface EmptyStateProps {
   message: string;
@@ -19,7 +19,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   onAction,
   subtitle,
 }) => {
-  const { theme } = useTheme();
+  const {theme} = useTheme();
   const glowAnim = useRef(new Animated.Value(0.3)).current;
   const floatAnim = useRef(new Animated.Value(0)).current;
   const bgRotation = useRef(new Animated.Value(0)).current;
@@ -37,7 +37,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           duration: 2000,
           useNativeDriver: true,
         }),
-      ])
+      ]),
     );
 
     const floatAnimation = Animated.loop(
@@ -52,7 +52,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           duration: 2500,
           useNativeDriver: true,
         }),
-      ])
+      ]),
     );
 
     const bgAnimation = Animated.loop(
@@ -60,7 +60,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         toValue: 1,
         duration: 20000,
         useNativeDriver: true,
-      })
+      }),
     );
 
     glowAnimation.start();
@@ -80,13 +80,17 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   });
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
+    <View
+      style={[
+        styles.container,
+        {backgroundColor: theme.colors.background.primary},
+      ]}>
       <Animated.View
         style={[
           styles.backgroundElement,
           {
             borderColor: theme.colors.accent.muted,
-            transform: [{ rotate: rotation }],
+            transform: [{rotate: rotation}],
           },
         ]}
       />
@@ -94,10 +98,9 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         style={[
           styles.iconContainer,
           {
-            transform: [{ translateY: floatAnim }],
+            transform: [{translateY: floatAnim}],
           },
-        ]}
-      >
+        ]}>
         <Animated.View
           style={[
             styles.glow,
@@ -114,8 +117,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
               backgroundColor: theme.colors.accent.muted,
               borderRadius: theme.borderRadius.xl,
             },
-          ]}
-        >
+          ]}>
           <MaterialIcons
             name={icon}
             size={48}
@@ -129,11 +131,10 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           {
             color: theme.colors.text.primary,
             fontSize: theme.typography.sizes.xl,
-            fontWeight: theme.typography.weights.bold as any,
+            fontWeight: theme.typography.weights.bold,
             letterSpacing: theme.typography.letterSpacing.tight,
           },
-        ]}
-      >
+        ]}>
         {message}
       </Text>
       {subtitle && (
@@ -143,10 +144,9 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
             {
               color: theme.colors.text.secondary,
               fontSize: theme.typography.sizes.md,
-              fontWeight: theme.typography.weights.regular as any,
+              fontWeight: theme.typography.weights.regular,
             },
-          ]}
-        >
+          ]}>
           {subtitle}
         </Text>
       )}

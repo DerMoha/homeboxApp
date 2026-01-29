@@ -10,8 +10,11 @@ import {
 } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useTheme} from '../../theme/ThemeContext';
-import {InventoryItem} from '../../hooks/useInventoryData';
-import {DisplayPreference} from '../../hooks/useDisplayPreferences';
+import {InventoryItem} from '../../types';
+import {
+  DisplayPreference,
+  isPreferenceEnabled,
+} from '../../hooks/useDisplayPreferences';
 import {getImageSource} from '../../utils/imageUtils';
 
 interface InventoryGridItemProps {
@@ -29,14 +32,6 @@ const InventoryGridItemComponent: React.FC<InventoryGridItemProps> = ({
 }) => {
   const {theme} = useTheme();
   const scaleAnim = useRef(new Animated.Value(1)).current;
-
-  const getPreference = useCallback(
-    (id: string): boolean => {
-      const preference = displayPreferences.find(p => p.id === id);
-      return preference?.enabled ?? false;
-    },
-    [displayPreferences],
-  );
 
   const itemWidth = useMemo(() => {
     const screenWidth = Dimensions.get('window').width;
@@ -208,7 +203,7 @@ const InventoryGridItemComponent: React.FC<InventoryGridItemProps> = ({
             </Text>
           )}
 
-          {getPreference('quantity') && (
+          {isPreferenceEnabled(displayPreferences, 'quantity') && (
             <View style={quantityBadgeStyle}>
               <Text style={quantityTextStyle}>{item.quantity}</Text>
             </View>

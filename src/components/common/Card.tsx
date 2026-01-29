@@ -92,7 +92,7 @@ export const Card: React.FC<CardProps> = ({
       {
         color: theme.colors.text.primary,
         fontSize: theme.typography.sizes.lg,
-        fontWeight: theme.typography.weights.bold as any,
+        fontWeight: theme.typography.weights.bold,
         letterSpacing: theme.typography.letterSpacing.tight,
       },
     ],
