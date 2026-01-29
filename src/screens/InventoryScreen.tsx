@@ -1,20 +1,25 @@
-import React, {useEffect, useCallback} from 'react';
-import {View, StyleSheet, FlatList, RefreshControl} from 'react-native';
+import React, {useEffect, useCallback, useMemo} from 'react';
+import {View, StyleSheet, FlatList, RefreshControl, TouchableOpacity, Text} from 'react-native';
 import {useTheme} from '../theme/ThemeContext';
 import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useInventoryData} from '../hooks/useInventoryData';
 import {useInventoryDisplay} from '../hooks/useInventoryDisplay';
 import {useDisplayPreferences} from '../hooks/useDisplayPreferences';
+import {useInventoryFilters} from '../hooks/useInventoryFilters';
+import {useItemData} from '../hooks/useItemData';
 import {
   InventoryHeader,
   SortModal,
   InventoryListItem,
   InventoryGridItem,
+  SearchBar,
+  FilterModal,
 } from '../components/Inventory';
 import {LoadingState} from '../components/common/LoadingState';
 import {EmptyState} from '../components/common/EmptyState';
 import {InventoryItem} from '../types';
+import {matchesSearch, applyFilters} from '../utils/inventoryFilters';
 
 type RootStackParamList = {
   InventoryTab: undefined;
@@ -51,7 +56,9 @@ const InventoryScreen: React.FC = () => {
     itemsPerRow,
     listZoom,
     sortModalVisible,
+    filterModalVisible,
     setSortModalVisible,
+    setFilterModalVisible,
     toggleViewMode,
     increaseItemsPerRow,
     decreaseItemsPerRow,
@@ -61,6 +68,22 @@ const InventoryScreen: React.FC = () => {
 
   const {displayPreferences, loadDisplayPreferences} = useDisplayPreferences();
 
+  const {
+    searchQuery,
+    debouncedQuery,
+    setSearchQuery,
+    clearSearch,
+    filters,
+    tempFilters,
+    updateTempFilters,
+    applyFilters: applyFilterChanges,
+    clearAllFilters,
+    resetTempFilters,
+    activeFilterCount,
+  } = useInventoryFilters();
+
+  const {locations, labels} = useItemData();
+
   const initializeScreen = useCallback(async () => {
     await loadDisplayPreferences();
     await loadInventory();
@@ -69,6 +92,21 @@ const InventoryScreen: React.FC = () => {
   useEffect(() => {
     initializeScreen();
   }, [initializeScreen]);
+
+  // Apply search and filters to inventory
+  const filteredInventory = useMemo(() => {
+    let result = [...inventory];
+
+    // Apply search
+    if (debouncedQuery.trim()) {
+      result = result.filter(item => matchesSearch(item, debouncedQuery));
+    }
+
+    // Apply filters
+    result = applyFilters(result, filters);
+
+    return result;
+  }, [inventory, debouncedQuery, filters]);
 
   const renderHeaderRight = useCallback(
     () => (
@@ -82,6 +120,8 @@ const InventoryScreen: React.FC = () => {
         onIncreaseZoom={increaseListZoom}
         onDecreaseZoom={decreaseListZoom}
         onOpenSort={() => setSortModalVisible(true)}
+        onOpenFilter={() => setFilterModalVisible(true)}
+        activeFilterCount={activeFilterCount}
       />
     ),
     [
@@ -94,6 +134,8 @@ const InventoryScreen: React.FC = () => {
       increaseListZoom,
       decreaseListZoom,
       setSortModalVisible,
+      setFilterModalVisible,
+      activeFilterCount,
     ],
   );
 
@@ -135,12 +177,100 @@ const InventoryScreen: React.FC = () => {
     [viewMode, displayPreferences, listZoom, itemsPerRow, handleItemPress],
   );
 
+  // Memoized styles (must be before early returns)
+  const emptyStateStyle = useMemo(
+    () => [
+      styles.emptyStateContainer,
+      {backgroundColor: theme.colors.background.primary},
+    ],
+    [theme.colors.background.primary],
+  );
+
+  const emptyStateTextStyle = useMemo(
+    () => [
+      styles.emptyStateText,
+      {
+        color: theme.colors.text.secondary,
+        fontSize: theme.typography.sizes.lg,
+        marginBottom: theme.spacing.md,
+      },
+    ],
+    [
+      theme.colors.text.secondary,
+      theme.spacing.md,
+      theme.typography.sizes.lg,
+    ],
+  );
+
+  const clearButtonStyle = useMemo(
+    () => [
+      styles.clearButton,
+      {
+        backgroundColor: theme.colors.accent.primary,
+        borderRadius: theme.borderRadius.md,
+        paddingHorizontal: theme.spacing.lg,
+        paddingVertical: theme.spacing.md,
+      },
+    ],
+    [
+      theme.borderRadius.md,
+      theme.colors.accent.primary,
+      theme.spacing.lg,
+      theme.spacing.md,
+    ],
+  );
+
+  const clearButtonTextStyle = useMemo(
+    () => [
+      styles.clearButtonText,
+      {
+        color: theme.colors.text.inverse,
+        fontSize: theme.typography.sizes.md,
+        fontWeight: theme.typography.weights.semibold,
+      },
+    ],
+    [
+      theme.colors.text.inverse,
+      theme.typography.sizes.md,
+      theme.typography.weights.semibold,
+    ],
+  );
+
+  // Early returns after all hooks
   if (isLoading && inventory.length === 0) {
     return <LoadingState message="Loading inventory..." />;
   }
 
+  const hasSearchOrFilters =
+    debouncedQuery.trim() !== '' || activeFilterCount > 0;
+
   if (!isLoading && inventory.length === 0) {
     return <EmptyState message="No items in inventory" icon="inventory" />;
+  }
+
+  if (!isLoading && filteredInventory.length === 0 && hasSearchOrFilters) {
+    return (
+      <View style={emptyStateStyle}>
+        <SearchBar
+          query={searchQuery}
+          onChangeQuery={setSearchQuery}
+          onClear={clearSearch}
+          resultCount={filteredInventory.length}
+          totalCount={inventory.length}
+        />
+        <View style={styles.emptyContent}>
+          <Text style={emptyStateTextStyle}>No matching items</Text>
+          <TouchableOpacity
+            style={clearButtonStyle}
+            onPress={() => {
+              clearSearch();
+              clearAllFilters();
+            }}>
+            <Text style={clearButtonTextStyle}>Clear Filters</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
   }
 
   return (
@@ -149,8 +279,15 @@ const InventoryScreen: React.FC = () => {
         styles.container,
         {backgroundColor: theme.colors.background.primary},
       ]}>
+      <SearchBar
+        query={searchQuery}
+        onChangeQuery={setSearchQuery}
+        onClear={clearSearch}
+        resultCount={filteredInventory.length}
+        totalCount={inventory.length}
+      />
       <FlatList
-        data={inventory}
+        data={filteredInventory}
         renderItem={renderItem}
         keyExtractor={item => item.id}
         key={viewMode === 'grid' ? `grid-${itemsPerRow}` : 'list'}
@@ -180,6 +317,20 @@ const InventoryScreen: React.FC = () => {
           setSortModalVisible(false);
         }}
       />
+
+      <FilterModal
+        visible={filterModalVisible}
+        filters={tempFilters}
+        locations={locations}
+        labels={labels}
+        onUpdateFilters={updateTempFilters}
+        onApply={applyFilterChanges}
+        onClear={clearAllFilters}
+        onClose={() => {
+          resetTempFilters();
+          setFilterModalVisible(false);
+        }}
+      />
     </View>
   );
 };
@@ -192,6 +343,21 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 16,
   },
+  emptyStateContainer: {
+    flex: 1,
+  },
+  emptyContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyStateText: {
+    textAlign: 'center',
+  },
+  clearButton: {
+    alignItems: 'center',
+  },
+  clearButtonText: {},
 });
 
 export default InventoryScreen;

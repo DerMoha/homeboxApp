@@ -1,5 +1,5 @@
 import React, {useCallback, useMemo, useRef} from 'react';
-import {View, TouchableOpacity, StyleSheet, Animated} from 'react-native';
+import {View, Text, TouchableOpacity, StyleSheet, Animated} from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useTheme} from '../../theme/ThemeContext';
 
@@ -15,6 +15,8 @@ interface InventoryHeaderProps {
   onIncreaseZoom: () => void;
   onDecreaseZoom: () => void;
   onOpenSort: () => void;
+  onOpenFilter: () => void;
+  activeFilterCount?: number;
 }
 
 interface AnimatedButtonProps {
@@ -111,12 +113,41 @@ export const InventoryHeader: React.FC<InventoryHeaderProps> = ({
   onIncreaseZoom,
   onDecreaseZoom,
   onOpenSort,
+  onOpenFilter,
+  activeFilterCount = 0,
 }) => {
   const {theme} = useTheme();
 
   const headerControlsStyle = useMemo(
     () => [styles.headerControls, {gap: theme.spacing.sm}],
     [theme.spacing.sm],
+  );
+
+  const badgeStyle = useMemo(
+    () => [
+      styles.badge,
+      {
+        backgroundColor: theme.colors.accent.primary,
+        borderRadius: theme.borderRadius.full,
+      },
+    ],
+    [theme.borderRadius.full, theme.colors.accent.primary],
+  );
+
+  const badgeTextStyle = useMemo(
+    () => [
+      styles.badgeText,
+      {
+        color: theme.colors.text.inverse,
+        fontSize: theme.typography.sizes.xs,
+        fontWeight: theme.typography.weights.bold,
+      },
+    ],
+    [
+      theme.colors.text.inverse,
+      theme.typography.sizes.xs,
+      theme.typography.weights.bold,
+    ],
   );
 
   return (
@@ -158,6 +189,21 @@ export const InventoryHeader: React.FC<InventoryHeaderProps> = ({
         isActive={false}
         theme={theme}
       />
+      <View>
+        <AnimatedHeaderButton
+          onPress={onOpenFilter}
+          icon="filter-list"
+          isActive={activeFilterCount > 0}
+          theme={theme}
+        />
+        {activeFilterCount > 0 && (
+          <View style={badgeStyle}>
+            <Text style={badgeTextStyle}>
+              {activeFilterCount > 9 ? '9+' : activeFilterCount}
+            </Text>
+          </View>
+        )}
+      </View>
       <AnimatedHeaderButton
         onPress={onOpenSort}
         icon="sort"
@@ -179,5 +225,19 @@ const styles = StyleSheet.create({
     height: 38,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  badgeText: {
+    lineHeight: 18,
   },
 });

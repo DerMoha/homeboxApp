@@ -124,3 +124,16 @@ export interface FormDataFile {
   type: string;
   name: string;
 }
+
+// Filter types
+export type InsuranceFilter = 'all' | 'insured' | 'uninsured';
+export type DateRangeFilter = 'all' | 'week' | 'month' | 'quarter';
+
+export interface FilterState {
+  locationId: string | null;
+  labelIds: string[];
+  insuranceStatus: InsuranceFilter;
+  quantityMin: number | null;
+  quantityMax: number | null;
+  dateRange: DateRangeFilter;
+}

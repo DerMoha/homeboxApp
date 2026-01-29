@@ -23,6 +23,7 @@ export const STORAGE_KEYS = {
   INVENTORY_SORT_BY: '@inventory_sortBy',
   INVENTORY_GROUP_BY: '@inventory_groupBy',
   INVENTORY_SHOW_ARCHIVED: '@inventory_showArchived',
+  INVENTORY_FILTERS: '@inventory_filters',
 
   ADD_ITEM_FIELDS: '@add_item_fields',
   IMAGE_QUALITY: '@image_quality',

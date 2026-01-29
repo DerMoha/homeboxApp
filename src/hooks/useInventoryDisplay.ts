@@ -9,6 +9,7 @@ export const useInventoryDisplay = () => {
   const [itemsPerRow, setItemsPerRow] = useState(2);
   const [listZoom, setListZoom] = useState(1);
   const [sortModalVisible, setSortModalVisible] = useState(false);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [gridConfigVisible, setGridConfigVisible] = useState(false);
 
   useEffect(() => {
@@ -93,8 +94,10 @@ export const useInventoryDisplay = () => {
     itemsPerRow,
     listZoom,
     sortModalVisible,
+    filterModalVisible,
     gridConfigVisible,
     setSortModalVisible,
+    setFilterModalVisible,
     setGridConfigVisible,
     toggleViewMode,
     increaseItemsPerRow,
