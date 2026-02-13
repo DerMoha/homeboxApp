@@ -1,5 +1,6 @@
 import axios, {AxiosInstance, AxiosError} from 'axios';
 import {storageService, STORAGE_KEYS} from './storageService';
+import {logger} from '../utils/logger';
 import {
   ServerConfig,
   ServerResponse,
@@ -165,7 +166,7 @@ class ServerService {
       );
       return servers || [];
     } catch (error) {
-      console.error('Error getting servers:', error);
+      logger.error('Error getting servers', {error});
       return [];
     }
   }
@@ -183,7 +184,7 @@ class ServerService {
 
       return await storageService.setItem(STORAGE_KEYS.SERVERS, servers);
     } catch (error) {
-      console.error('Error saving server:', error);
+      logger.error('Error saving server', {error});
       return false;
     }
   }
@@ -194,7 +195,7 @@ class ServerService {
       const updatedServers = servers.filter(s => s.id !== serverId);
       return await storageService.setItem(STORAGE_KEYS.SERVERS, updatedServers);
     } catch (error) {
-      console.error('Error deleting server:', error);
+      logger.error('Error deleting server', {error});
       return false;
     }
   }
@@ -276,7 +277,7 @@ class ServerService {
       const servers = await this.getServers();
       return servers.find(server => server.id === lastUsedId) || null;
     } catch (error) {
-      console.error('Error getting last used server:', error);
+      logger.error('Error getting last used server', {error});
       return null;
     }
   }
@@ -285,7 +286,7 @@ class ServerService {
     try {
       await storageService.setItem(STORAGE_KEYS.LAST_USED_SERVER_ID, serverId);
     } catch (error) {
-      console.error('Error setting last used server:', error);
+      logger.error('Error setting last used server', {error});
     }
   }
 
@@ -398,10 +399,6 @@ class ServerService {
       }
       const response = await axiosInstance.get('/api/v1/locations/tree');
       const tree = response.data;
-      console.log(
-        '[getLocationItems] /api/v1/locations/tree response:',
-        JSON.stringify(tree, null, 2),
-      );
       // Helper to recursively search for the location
       interface TreeNode {
         id: string;
@@ -437,18 +434,10 @@ class ServerService {
         // If root is object, search from root
         locationNode = findLocation(tree, locationId);
       }
-      console.log(
-        '[getLocationItems] Found location node:',
-        JSON.stringify(locationNode, null, 2),
-      );
       // Try to get items from the node
       let items: Item[] =
         locationNode && locationNode.items ? locationNode.items : [];
       if (!items.length) {
-        // Workaround: fetch all items and filter by locationId
-        console.log(
-          '[getLocationItems] No items in tree node, fetching all items and filtering by location',
-        );
         const itemsResponse = await axiosInstance.get('/api/v1/items', {
           params: {page: 1, pageSize: 1000},
         });
@@ -457,8 +446,6 @@ class ServerService {
           (item: Item) => item.location && item.location.id === locationId,
         );
       }
-      console.log('[getLocationItems] Items for location:', items);
-      // Format as InventoryResponse for compatibility
       const inventoryResponse: InventoryResponse = {
         items: items,
         page: 1,
@@ -467,7 +454,7 @@ class ServerService {
       };
       return {success: true, data: inventoryResponse};
     } catch (error) {
-      console.error('Error getting location items:', error);
+      logger.error('Error getting location items', {error});
       return {success: false, error: 'Failed to get location items'};
     }
   }
@@ -484,7 +471,7 @@ class ServerService {
         data: response.data,
       };
     } catch (error: unknown) {
-      console.error('Error creating item:', error);
+      logger.error('Error creating item', {error});
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to create item',
@@ -501,7 +488,9 @@ class ServerService {
       if (!axiosInstance) {
         throw new Error('No active server connection');
       }
-      console.log('Uploading image to:', `/api/v1/items/${itemId}/attachments`);
+      logger.log('Uploading image', {
+        path: `/api/v1/items/${itemId}/attachments`,
+      });
       const response = await axiosInstance.post(
         `/api/v1/items/${itemId}/attachments`,
         formData,
@@ -511,13 +500,11 @@ class ServerService {
           },
         },
       );
-      console.log('Server response:', response.data);
+      logger.log('Upload response received');
       return {success: true, data: response.data};
     } catch (error: unknown) {
-      console.error('Error uploading image:', error);
+      logger.error('Error uploading image', {error});
       if (axios.isAxiosError(error)) {
-        console.error('Error response data:', error.response?.data);
-        console.error('Error response status:', error.response?.status);
         return {
           success: false,
           error:
