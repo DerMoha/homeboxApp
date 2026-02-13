@@ -3,7 +3,6 @@ import {storageService, STORAGE_KEYS} from './storageService';
 import {logger} from '../utils/logger';
 import {
   ServerConfig,
-  ServerResponse,
   ApiResponse,
   Location,
   LocationResponse,
@@ -30,9 +29,9 @@ class ServerService {
   /**
    * Fetch a single inventory item by its ID
    * @param id The item ID
-   * @returns ServerResponse with the item details
+   * @returns ApiResponse with the item details
    */
-  public async getItemById(id: string): Promise<ServerResponse> {
+  public async getItemById(id: string): Promise<ApiResponse> {
     try {
       if (!this.axiosInstance || !this.token) {
         return {
@@ -82,7 +81,7 @@ class ServerService {
     return ServerService.instance;
   }
 
-  public async initialize(config: ServerConfig): Promise<ServerResponse> {
+  public async initialize(config: ServerConfig): Promise<ApiResponse> {
     try {
       this.currentConfig = config;
       const protocol = config.host.startsWith('http') ? '' : 'http://';
@@ -126,7 +125,7 @@ class ServerService {
     }
   }
 
-  public async testConnection(config: ServerConfig): Promise<ServerResponse> {
+  public async testConnection(config: ServerConfig): Promise<ApiResponse> {
     try {
       const protocol = config.host.startsWith('http') ? '' : 'http://';
       const testInstance = axios.create({
@@ -221,7 +220,7 @@ class ServerService {
   public async getInventory(
     page: number = 1,
     pageSize: number = 50,
-  ): Promise<ServerResponse<InventoryResponse>> {
+  ): Promise<ApiResponse<InventoryResponse>> {
     try {
       if (!this.axiosInstance || !this.token) {
         return {
@@ -290,7 +289,7 @@ class ServerService {
     }
   }
 
-  public async autoConnect(): Promise<ServerResponse> {
+  public async autoConnect(): Promise<ApiResponse> {
     try {
       const lastUsedServer = await this.getLastUsedServer();
       if (!lastUsedServer) {
@@ -306,7 +305,7 @@ class ServerService {
     }
   }
 
-  private handleError(error: AxiosError): ServerResponse {
+  private handleError(error: AxiosError): ApiResponse {
     if (error.response) {
       // Server responded with a status code outside 2xx
       const errorData = error.response.data as ErrorResponse;
@@ -482,7 +481,7 @@ class ServerService {
   async uploadItemImage(
     itemId: string,
     formData: FormData,
-  ): Promise<ServerResponse> {
+  ): Promise<ApiResponse> {
     try {
       const axiosInstance = this.getAxiosInstance();
       if (!axiosInstance) {

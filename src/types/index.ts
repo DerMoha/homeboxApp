@@ -44,18 +44,15 @@ export interface Item {
 // Inventory item (alias for backward compatibility)
 export type InventoryItem = Item;
 
-// Server response types
-export interface ServerResponse<T = unknown> {
-  success: boolean;
-  data?: T;
-  error?: string;
-}
-
+// API response types
 export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
 }
+
+// Alias for backward compatibility
+export type ServerResponse<T = unknown> = ApiResponse<T>;
 
 // Paginated response types
 export interface PaginatedResponse<T> {
