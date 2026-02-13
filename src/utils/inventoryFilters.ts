@@ -27,12 +27,14 @@ export const matchesSearch = (item: Item, query: string): boolean => {
   }
 
   // Search in location name
-  if (item.location?.name.toLowerCase().includes(searchTerm)) {
+  if (item.location?.name?.toLowerCase().includes(searchTerm)) {
     return true;
   }
 
   // Search in label names
-  if (item.labels?.some(label => label.name.toLowerCase().includes(searchTerm))) {
+  if (
+    item.labels?.some(label => label.name?.toLowerCase().includes(searchTerm))
+  ) {
     return true;
   }
 
