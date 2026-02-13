@@ -1,5 +1,5 @@
 import React, {useCallback, useMemo} from 'react';
-import {TextStyle} from 'react-native';
+import {Text, TextStyle} from 'react-native';
 import {NavigationContainer} from '@react-navigation/native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import type {BottomTabBarProps} from '@react-navigation/bottom-tabs';
@@ -21,6 +21,22 @@ type FontWeight = TextStyle['fontWeight'];
 
 const Tab = createBottomTabNavigator();
 
+const defaultFontFamily = 'Sora';
+const TextComponent = Text as unknown as {
+  defaultProps?: {style?: TextStyle | TextStyle[]};
+};
+const existingDefaultStyle = TextComponent.defaultProps?.style;
+const baseTextStyle: TextStyle = {fontFamily: defaultFontFamily};
+const mergedTextStyle = Array.isArray(existingDefaultStyle)
+  ? [baseTextStyle, ...existingDefaultStyle]
+  : existingDefaultStyle
+  ? [baseTextStyle, existingDefaultStyle]
+  : [baseTextStyle];
+TextComponent.defaultProps = {
+  ...TextComponent.defaultProps,
+  style: mergedTextStyle,
+};
+
 const AppContent: React.FC = () => {
   const {theme, isDarkMode} = useTheme();
   const {isConnecting} = useServerConnection();
@@ -37,10 +53,22 @@ const AppContent: React.FC = () => {
         notification: theme.colors.error,
       },
       fonts: {
-        regular: {fontFamily: 'System', fontWeight: '400' as const},
-        medium: {fontFamily: 'System', fontWeight: '500' as const},
-        bold: {fontFamily: 'System', fontWeight: '700' as const},
-        heavy: {fontFamily: 'System', fontWeight: '800' as const},
+        regular: {
+          fontFamily: theme.typography.fonts.regular,
+          fontWeight: '400' as const,
+        },
+        medium: {
+          fontFamily: theme.typography.fonts.medium,
+          fontWeight: '500' as const,
+        },
+        bold: {
+          fontFamily: theme.typography.fonts.bold,
+          fontWeight: '700' as const,
+        },
+        heavy: {
+          fontFamily: theme.typography.fonts.bold,
+          fontWeight: '800' as const,
+        },
       },
     }),
     [isDarkMode, theme],
@@ -54,6 +82,7 @@ const AppContent: React.FC = () => {
         color: theme.colors.text.primary,
         fontSize: theme.typography.sizes.xl,
         fontWeight: theme.typography.weights.semibold as FontWeight,
+        fontFamily: theme.typography.fonts.semibold,
       },
       headerShadowVisible: false,
     }),

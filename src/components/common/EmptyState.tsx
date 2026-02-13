@@ -20,64 +20,29 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   subtitle,
 }) => {
   const {theme} = useTheme();
-  const glowAnim = useRef(new Animated.Value(0.3)).current;
   const floatAnim = useRef(new Animated.Value(0)).current;
-  const bgRotation = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const glowAnimation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(glowAnim, {
-          toValue: 0.7,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(glowAnim, {
-          toValue: 0.3,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-      ]),
-    );
-
     const floatAnimation = Animated.loop(
       Animated.sequence([
         Animated.timing(floatAnim, {
-          toValue: -8,
-          duration: 2500,
+          toValue: -6,
+          duration: 2600,
           useNativeDriver: true,
         }),
         Animated.timing(floatAnim, {
           toValue: 0,
-          duration: 2500,
+          duration: 2600,
           useNativeDriver: true,
         }),
       ]),
     );
-
-    const bgAnimation = Animated.loop(
-      Animated.timing(bgRotation, {
-        toValue: 1,
-        duration: 20000,
-        useNativeDriver: true,
-      }),
-    );
-
-    glowAnimation.start();
     floatAnimation.start();
-    bgAnimation.start();
 
     return () => {
-      glowAnimation.stop();
       floatAnimation.stop();
-      bgAnimation.stop();
     };
-  }, [glowAnim, floatAnim, bgRotation]);
-
-  const rotation = bgRotation.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
+  }, [floatAnim]);
 
   return (
     <View
@@ -85,13 +50,10 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         styles.container,
         {backgroundColor: theme.colors.background.primary},
       ]}>
-      <Animated.View
+      <View
         style={[
-          styles.backgroundElement,
-          {
-            borderColor: theme.colors.accent.muted,
-            transform: [{rotate: rotation}],
-          },
+          styles.backgroundHalo,
+          {backgroundColor: theme.colors.accent.muted},
         ]}
       />
       <Animated.View
@@ -101,21 +63,14 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
             transform: [{translateY: floatAnim}],
           },
         ]}>
-        <Animated.View
-          style={[
-            styles.glow,
-            {
-              backgroundColor: theme.colors.accent.primary,
-              opacity: glowAnim,
-            },
-          ]}
-        />
         <View
           style={[
             styles.iconBackground,
             {
-              backgroundColor: theme.colors.accent.muted,
-              borderRadius: theme.borderRadius.xl,
+              backgroundColor: theme.colors.background.secondary,
+              borderRadius: theme.borderRadius.lg,
+              borderColor: theme.colors.borderSubtle,
+              borderWidth: 1,
             },
           ]}>
           <MaterialIcons
@@ -131,8 +86,9 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           {
             color: theme.colors.text.primary,
             fontSize: theme.typography.sizes.xl,
-            fontWeight: theme.typography.weights.bold,
-            letterSpacing: theme.typography.letterSpacing.tight,
+            fontWeight: theme.typography.weights.semibold,
+            fontFamily: theme.typography.fonts.semibold,
+            letterSpacing: theme.typography.letterSpacing.normal,
           },
         ]}>
         {message}
@@ -143,8 +99,9 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
             styles.subtitle,
             {
               color: theme.colors.text.secondary,
-              fontSize: theme.typography.sizes.md,
+              fontSize: theme.typography.sizes.sm,
               fontWeight: theme.typography.weights.regular,
+              fontFamily: theme.typography.fonts.regular,
             },
           ]}>
           {subtitle}
@@ -171,28 +128,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 32,
   },
-  backgroundElement: {
+  backgroundHalo: {
     position: 'absolute',
-    width: 280,
-    height: 280,
-    borderWidth: 1,
-    borderRadius: 140,
-    borderStyle: 'dashed',
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    opacity: 0.45,
   },
   iconContainer: {
-    marginBottom: 32,
+    marginBottom: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  glow: {
-    position: 'absolute',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-  },
   iconBackground: {
-    width: 96,
-    height: 96,
+    width: 88,
+    height: 88,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -202,9 +152,9 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     textAlign: 'center',
-    marginBottom: 32,
-    maxWidth: 280,
-    lineHeight: 22,
+    marginBottom: 24,
+    maxWidth: 300,
+    lineHeight: 20,
   },
   actionContainer: {
     marginTop: 8,

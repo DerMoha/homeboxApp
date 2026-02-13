@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useTheme} from '../../theme/ThemeContext';
-import {FilterState, InsuranceFilter, Location, Label} from '../../types';
+import type {FilterState, InsuranceFilter, Location, Label} from '../../types';
 
 interface FilterModalProps {
   visible: boolean;
@@ -115,18 +115,21 @@ export const FilterModal: React.FC<FilterModalProps> = ({
       {
         backgroundColor: theme.colors.card.background,
         borderRadius: theme.borderRadius.xl,
+        borderColor: theme.colors.borderSubtle,
+        borderWidth: StyleSheet.hairlineWidth,
         padding: theme.spacing.lg,
         transform: [{translateY}, {scale}],
         opacity: slideAnim,
       },
-      theme.shadows.lg,
+      theme.shadows.md,
     ],
     [
       scale,
       slideAnim,
       theme.borderRadius.xl,
       theme.colors.card.background,
-      theme.shadows.lg,
+      theme.colors.borderSubtle,
+      theme.shadows.md,
       theme.spacing.lg,
       translateY,
     ],
@@ -136,19 +139,21 @@ export const FilterModal: React.FC<FilterModalProps> = ({
     () => [
       styles.sectionTitle,
       {
-        color: theme.colors.text.primary,
-        fontSize: theme.typography.sizes.md,
+        color: theme.colors.text.secondary,
+        fontSize: theme.typography.sizes.sm,
         fontWeight: theme.typography.weights.semibold,
-        marginBottom: theme.spacing.sm,
-        marginTop: theme.spacing.md,
+        fontFamily: theme.typography.fonts.semibold,
+        marginBottom: theme.spacing.xs,
+        marginTop: theme.spacing.lg,
       },
     ],
     [
-      theme.colors.text.primary,
-      theme.spacing.md,
-      theme.spacing.sm,
-      theme.typography.sizes.md,
+      theme.colors.text.secondary,
+      theme.spacing.lg,
+      theme.spacing.xs,
+      theme.typography.sizes.sm,
       theme.typography.weights.semibold,
+      theme.typography.fonts.semibold,
     ],
   );
 
@@ -156,21 +161,26 @@ export const FilterModal: React.FC<FilterModalProps> = ({
     () => [
       styles.searchInput,
       {
-        backgroundColor: theme.colors.background.secondary,
+        backgroundColor: theme.colors.background.tertiary,
         color: theme.colors.text.primary,
-        borderColor: theme.colors.border,
+        borderColor: theme.colors.borderSubtle,
         borderRadius: theme.borderRadius.md,
-        padding: theme.spacing.sm,
+        borderWidth: StyleSheet.hairlineWidth,
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.sm,
         fontSize: theme.typography.sizes.sm,
+        fontFamily: theme.typography.fonts.regular,
       },
     ],
     [
       theme.borderRadius.md,
-      theme.colors.background.secondary,
-      theme.colors.border,
+      theme.colors.background.tertiary,
+      theme.colors.borderSubtle,
       theme.colors.text.primary,
+      theme.spacing.md,
       theme.spacing.sm,
       theme.typography.sizes.sm,
+      theme.typography.fonts.regular,
     ],
   );
 
@@ -179,11 +189,20 @@ export const FilterModal: React.FC<FilterModalProps> = ({
       styles.scrollView,
       {
         backgroundColor: theme.colors.background.secondary,
-        borderColor: theme.colors.border,
+        borderColor: theme.colors.borderSubtle,
         borderRadius: theme.borderRadius.md,
       },
     ],
-    [theme.borderRadius.md, theme.colors.background.secondary, theme.colors.border],
+    [
+      theme.borderRadius.md,
+      theme.colors.background.secondary,
+      theme.colors.borderSubtle,
+    ],
+  );
+
+  const filterOptionStyle = useMemo(
+    () => [styles.filterOption, {borderBottomColor: theme.colors.borderSubtle}],
+    [theme.colors.borderSubtle],
   );
 
   const primaryButtonStyle = useMemo(
@@ -191,22 +210,32 @@ export const FilterModal: React.FC<FilterModalProps> = ({
       styles.primaryButton,
       {
         backgroundColor: theme.colors.accent.primary,
-        borderRadius: theme.borderRadius.md,
-        padding: theme.spacing.md,
+        borderRadius: theme.borderRadius.lg,
+        paddingVertical: theme.spacing.md,
+        paddingHorizontal: theme.spacing.md,
       },
     ],
-    [theme.borderRadius.md, theme.colors.accent.primary, theme.spacing.md],
+    [theme.borderRadius.lg, theme.colors.accent.primary, theme.spacing.md],
   );
 
   const secondaryButtonStyle = useMemo(
     () => [
       styles.secondaryButton,
       {
-        borderRadius: theme.borderRadius.md,
-        padding: theme.spacing.md,
+        borderRadius: theme.borderRadius.lg,
+        paddingVertical: theme.spacing.md,
+        paddingHorizontal: theme.spacing.md,
+        borderColor: theme.colors.borderSubtle,
+        borderWidth: StyleSheet.hairlineWidth,
+        backgroundColor: theme.colors.background.secondary,
       },
     ],
-    [theme.borderRadius.md, theme.spacing.md],
+    [
+      theme.borderRadius.lg,
+      theme.colors.background.secondary,
+      theme.colors.borderSubtle,
+      theme.spacing.md,
+    ],
   );
 
   return (
@@ -229,6 +258,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                 color: theme.colors.text.primary,
                 fontSize: theme.typography.sizes.xl,
                 fontWeight: theme.typography.weights.semibold,
+                fontFamily: theme.typography.fonts.semibold,
                 marginBottom: theme.spacing.md,
               },
             ]}>
@@ -253,7 +283,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
               showsVerticalScrollIndicator={false}>
               <TouchableOpacity
                 style={[
-                  styles.filterOption,
+                  filterOptionStyle,
                   filters.locationId === null && {
                     backgroundColor: theme.colors.accent.muted,
                   },
@@ -268,6 +298,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                           ? theme.colors.accent.primary
                           : theme.colors.text.primary,
                       fontSize: theme.typography.sizes.sm,
+                      fontFamily: theme.typography.fonts.medium,
                     },
                   ]}>
                   All Locations
@@ -284,7 +315,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                 <TouchableOpacity
                   key={location.id}
                   style={[
-                    styles.filterOption,
+                    filterOptionStyle,
                     filters.locationId === location.id && {
                       backgroundColor: theme.colors.accent.muted,
                     },
@@ -299,6 +330,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                             ? theme.colors.accent.primary
                             : theme.colors.text.primary,
                         fontSize: theme.typography.sizes.sm,
+                        fontFamily: theme.typography.fonts.medium,
                       },
                     ]}>
                     {location.name}
@@ -333,14 +365,16 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                   <TouchableOpacity
                     key={label.id}
                     style={[
-                      styles.filterOption,
+                      filterOptionStyle,
                       isSelected && {
                         backgroundColor: theme.colors.accent.muted,
                       },
                     ]}
                     onPress={() => {
                       const newLabelIds = isSelected
-                        ? filters.labelIds.filter(id => id !== label.id)
+                        ? filters.labelIds.filter(
+                            (id: string) => id !== label.id,
+                          )
                         : [...filters.labelIds, label.id];
                       onUpdateFilters({labelIds: newLabelIds});
                     }}>
@@ -352,6 +386,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                             ? theme.colors.accent.primary
                             : theme.colors.text.primary,
                           fontSize: theme.typography.sizes.sm,
+                          fontFamily: theme.typography.fonts.medium,
                         },
                       ]}>
                       {label.name}
@@ -374,7 +409,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
               {(['all', 'insured', 'uninsured'] as InsuranceFilter[]).map(
                 status => {
                   const isSelected = filters.insuranceStatus === status;
-                  const statusLabels = {
+                  const statusLabels: Record<InsuranceFilter, string> = {
                     all: 'All Items',
                     insured: 'Insured Only',
                     uninsured: 'Uninsured Only',
@@ -385,7 +420,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                       style={[
                         styles.radioOption,
                         {
-                          borderColor: theme.colors.border,
+                          borderColor: theme.colors.borderSubtle,
                           borderRadius: theme.borderRadius.md,
                         },
                         isSelected && {
@@ -399,7 +434,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                       <View
                         style={[
                           styles.radio,
-                          {borderColor: theme.colors.border},
+                          {borderColor: theme.colors.borderSubtle},
                           isSelected && {
                             borderColor: theme.colors.accent.primary,
                             backgroundColor: theme.colors.accent.primary,
@@ -422,6 +457,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                               ? theme.colors.accent.primary
                               : theme.colors.text.primary,
                             fontSize: theme.typography.sizes.sm,
+                            fontFamily: theme.typography.fonts.medium,
                           },
                         ]}>
                         {statusLabels[status]}
@@ -442,6 +478,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                     {
                       color: theme.colors.text.secondary,
                       fontSize: theme.typography.sizes.xs,
+                      fontFamily: theme.typography.fonts.regular,
                     },
                   ]}>
                   Min
@@ -475,6 +512,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                     {
                       color: theme.colors.text.secondary,
                       fontSize: theme.typography.sizes.xs,
+                      fontFamily: theme.typography.fonts.regular,
                     },
                   ]}>
                   Max
@@ -517,6 +555,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                     color: theme.colors.text.inverse,
                     fontSize: theme.typography.sizes.md,
                     fontWeight: theme.typography.weights.semibold,
+                    fontFamily: theme.typography.fonts.semibold,
                   },
                 ]}>
                 Apply Filters
@@ -532,6 +571,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                   {
                     color: theme.colors.text.secondary,
                     fontSize: theme.typography.sizes.md,
+                    fontFamily: theme.typography.fonts.medium,
                   },
                 ]}>
                 Clear All
@@ -549,7 +589,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   backdropTouchable: {
     ...StyleSheet.absoluteFillObject,
@@ -560,28 +600,28 @@ const styles = StyleSheet.create({
     maxHeight: '80%',
   },
   modalTitle: {
-    textAlign: 'center',
+    textAlign: 'left',
   },
   contentScroll: {
     maxHeight: 450,
   },
   sectionTitle: {},
   searchInput: {
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     marginBottom: 8,
   },
   scrollView: {
     maxHeight: 120,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     marginBottom: 8,
   },
   filterOption: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.05)',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   filterOptionText: {},
   radioGroup: {
@@ -590,28 +630,29 @@ const styles = StyleSheet.create({
   radioOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     marginBottom: 6,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   radio: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 1,
     marginRight: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
   radioInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   radioLabel: {},
   rangeInputs: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
     marginBottom: 8,
   },
   rangeInputContainer: {

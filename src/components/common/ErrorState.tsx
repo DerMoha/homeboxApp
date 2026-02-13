@@ -18,56 +18,25 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
 }) => {
   const {theme} = useTheme();
   const pulseAnim = useRef(new Animated.Value(1)).current;
-  const shakeAnim = useRef(new Animated.Value(0)).current;
 
   const errorMessage = error instanceof Error ? error.message : error;
 
   useEffect(() => {
-    // Subtle pulse animation for the icon
     Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
-          toValue: 1.05,
-          duration: 1500,
+          toValue: 1.04,
+          duration: 1800,
           useNativeDriver: true,
         }),
         Animated.timing(pulseAnim, {
           toValue: 1,
-          duration: 1500,
+          duration: 1800,
           useNativeDriver: true,
         }),
       ]),
     ).start();
-
-    // Initial shake animation
-    Animated.sequence([
-      Animated.timing(shakeAnim, {
-        toValue: 10,
-        duration: 50,
-        useNativeDriver: true,
-      }),
-      Animated.timing(shakeAnim, {
-        toValue: -10,
-        duration: 50,
-        useNativeDriver: true,
-      }),
-      Animated.timing(shakeAnim, {
-        toValue: 8,
-        duration: 50,
-        useNativeDriver: true,
-      }),
-      Animated.timing(shakeAnim, {
-        toValue: -8,
-        duration: 50,
-        useNativeDriver: true,
-      }),
-      Animated.timing(shakeAnim, {
-        toValue: 0,
-        duration: 50,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [pulseAnim, shakeAnim]);
+  }, [pulseAnim]);
 
   return (
     <View
@@ -75,18 +44,18 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
         styles.container,
         {backgroundColor: theme.colors.background.primary},
       ]}>
-      {/* Error glow effect */}
       <View
         style={[
           styles.glowContainer,
-          {backgroundColor: `${theme.colors.error}15`},
+          {backgroundColor: `${theme.colors.error}12`},
         ]}>
         <Animated.View
           style={[
             styles.iconContainer,
             {
-              backgroundColor: `${theme.colors.error}20`,
-              transform: [{scale: pulseAnim}, {translateX: shakeAnim}],
+              backgroundColor: theme.colors.background.secondary,
+              borderColor: theme.colors.borderSubtle,
+              transform: [{scale: pulseAnim}],
             },
           ]}>
           <MaterialIcons name={icon} size={48} color={theme.colors.error} />
@@ -100,6 +69,7 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
             color: theme.colors.text.primary,
             fontSize: theme.typography.sizes.xl,
             fontWeight: theme.typography.weights.semibold,
+            fontFamily: theme.typography.fonts.semibold,
           },
         ]}>
         Something went wrong
@@ -111,6 +81,7 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
           {
             color: theme.colors.text.secondary,
             fontSize: theme.typography.sizes.md,
+            fontFamily: theme.typography.fonts.regular,
           },
         ]}>
         {errorMessage}
@@ -124,7 +95,7 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
               backgroundColor: theme.colors.accent.primary,
               borderRadius: theme.borderRadius.md,
             },
-            theme.shadows.md,
+            theme.shadows.sm,
           ]}
           onPress={onRetry}
           activeOpacity={0.8}>
@@ -140,6 +111,7 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
                 color: theme.colors.text.inverse,
                 fontSize: theme.typography.sizes.md,
                 fontWeight: theme.typography.weights.semibold,
+                fontFamily: theme.typography.fonts.semibold,
               },
             ]}>
             {retryText}
@@ -158,24 +130,25 @@ const styles = StyleSheet.create({
     padding: 32,
   },
   glowContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 112,
+    height: 112,
+    borderRadius: 56,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
   },
   iconContainer: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   title: {
     textAlign: 'center',
     marginBottom: 8,
-    letterSpacing: -0.5,
+    letterSpacing: 0,
   },
   errorText: {
     textAlign: 'center',
@@ -191,7 +164,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   retryButtonText: {
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
+    letterSpacing: 0,
+    textTransform: 'none',
   },
 });

@@ -59,7 +59,7 @@ export const Button: React.FC<ButtonProps> = ({
 
   const backgroundColor = useMemo((): string => {
     if (disabled) {
-      return theme.colors.text.tertiary;
+      return theme.colors.background.tertiary;
     }
 
     switch (variant) {
@@ -92,7 +92,7 @@ export const Button: React.FC<ButtonProps> = ({
       case 'primary':
         return theme.colors.text.inverse;
       case 'danger':
-        return theme.colors.button.text;
+        return theme.colors.text.inverse;
       case 'secondary':
       case 'ghost':
         return theme.colors.text.primary;
@@ -197,8 +197,8 @@ export const Button: React.FC<ButtonProps> = ({
       height: buttonHeight,
       paddingHorizontal: buttonPaddingHorizontal,
       borderRadius: buttonBorderRadius,
-      borderWidth: variant === 'ghost' || variant === 'secondary' ? 1.5 : 0,
-      borderColor: theme.colors.border,
+      borderWidth: variant === 'ghost' || variant === 'secondary' ? 1 : 0,
+      borderColor: theme.colors.borderSubtle,
       opacity: disabled ? 0.5 : 1,
     }),
     [
@@ -207,7 +207,7 @@ export const Button: React.FC<ButtonProps> = ({
       buttonHeight,
       buttonPaddingHorizontal,
       disabled,
-      theme.colors.border,
+      theme.colors.borderSubtle,
       variant,
     ],
   );
@@ -234,13 +234,15 @@ export const Button: React.FC<ButtonProps> = ({
         color: textColor,
         fontSize: buttonFontSize,
         fontWeight: theme.typography.weights.semibold,
-        letterSpacing: theme.typography.letterSpacing.wide,
+        fontFamily: theme.typography.fonts.semibold,
+        letterSpacing: theme.typography.letterSpacing.normal,
       },
     ],
     [
       buttonFontSize,
       textColor,
-      theme.typography.letterSpacing.wide,
+      theme.typography.fonts.semibold,
+      theme.typography.letterSpacing.normal,
       theme.typography.weights.semibold,
     ],
   );
@@ -275,7 +277,7 @@ export const Button: React.FC<ButtonProps> = ({
                 style={styles.icon}
               />
             )}
-            <Text style={textStyle}>{title.toUpperCase()}</Text>
+            <Text style={textStyle}>{title}</Text>
           </>
         )}
       </Pressable>
@@ -297,6 +299,6 @@ const styles = StyleSheet.create({
     marginRight: 2,
   },
   text: {
-    textTransform: 'uppercase',
+    textTransform: 'none',
   },
 });

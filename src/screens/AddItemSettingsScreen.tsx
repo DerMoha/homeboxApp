@@ -38,8 +38,8 @@ const AddItemSettingsScreen: React.FC = () => {
   const cardStyle = [
     styles.card,
     {
-      backgroundColor: theme.colors.card.background,
-      borderColor: theme.colors.card.border,
+      backgroundColor: theme.colors.background.secondary,
+      borderColor: theme.colors.borderSubtle,
       borderRadius: theme.borderRadius.lg,
     },
     theme.shadows.sm,
@@ -48,7 +48,10 @@ const AddItemSettingsScreen: React.FC = () => {
   const cardStyleWithMargin = [...cardStyle, {marginTop: theme.spacing.lg}];
   const headerIconStyle = [
     styles.headerIcon,
-    {backgroundColor: theme.colors.accent.muted},
+    {
+      backgroundColor: theme.colors.background.secondary,
+      borderColor: theme.colors.borderSubtle,
+    },
   ];
 
   useEffect(() => {
@@ -57,25 +60,28 @@ const AddItemSettingsScreen: React.FC = () => {
 
   const loadSettings = async () => {
     try {
-      const savedFields = await AsyncStorage.getItem(STORAGE_KEY);
-      const savedQuality = await AsyncStorage.getItem(IMAGE_QUALITY_KEY);
+      const savedFields = await storageService.getItem<FieldConfig[]>(
+        STORAGE_KEYS.ADD_ITEM_FIELDS,
+      );
+      const savedQuality = await storageService.getItem<number>(
+        STORAGE_KEYS.IMAGE_QUALITY,
+      );
 
       if (savedFields) {
-        const parsedFields: FieldConfig[] = JSON.parse(savedFields);
         const updatedFields = DEFAULT_FIELDS.map(defaultField => {
-          const savedField = parsedFields.find(
-            (field: FieldConfig) => field.id === defaultField.id,
+          const savedField = savedFields.find(
+            field => field.id === defaultField.id,
           );
           return savedField || defaultField;
         });
         setFields(updatedFields);
       }
 
-      if (savedQuality) {
-        setImageQuality(parseFloat(savedQuality));
+      if (typeof savedQuality === 'number') {
+        setImageQuality(savedQuality);
       }
     } catch (error) {
-      logger.error('Error loading settings:', error);
+      logger.error('Error loading settings:', {error});
       setFields(DEFAULT_FIELDS);
       setImageQuality(DEFAULT_IMAGE_QUALITY);
     }
@@ -95,11 +101,11 @@ const AddItemSettingsScreen: React.FC = () => {
 
   const saveSettings = async () => {
     try {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(fields));
-      await AsyncStorage.setItem(IMAGE_QUALITY_KEY, imageQuality.toString());
+      await storageService.setItem(STORAGE_KEYS.ADD_ITEM_FIELDS, fields);
+      await storageService.setItem(STORAGE_KEYS.IMAGE_QUALITY, imageQuality);
       Alert.alert('Saved', 'Settings updated successfully');
     } catch (error) {
-      logger.error('Error saving settings:', error);
+      logger.error('Error saving settings:', {error});
       Alert.alert('Error', 'Failed to save settings');
     }
   };
@@ -130,11 +136,19 @@ const AddItemSettingsScreen: React.FC = () => {
               color: theme.colors.text.primary,
               fontSize: theme.typography.sizes.xl,
               fontWeight: theme.typography.weights.semibold,
+              fontFamily: theme.typography.fonts.semibold,
             },
           ]}>
           Item Settings
         </Text>
-        <Text style={[styles.subtitle, {color: theme.colors.text.secondary}]}>
+        <Text
+          style={[
+            styles.subtitle,
+            {
+              color: theme.colors.text.secondary,
+              fontFamily: theme.typography.fonts.regular,
+            },
+          ]}>
           Choose which optional fields appear when creating items.
         </Text>
       </View>
@@ -153,10 +167,11 @@ const AddItemSettingsScreen: React.FC = () => {
                 color: theme.colors.text.primary,
                 fontSize: theme.typography.sizes.sm,
                 fontWeight: theme.typography.weights.semibold,
-                letterSpacing: theme.typography.letterSpacing.wide,
+                fontFamily: theme.typography.fonts.semibold,
+                letterSpacing: theme.typography.letterSpacing.normal,
               },
             ]}>
-            OPTIONAL FIELDS
+            Optional fields
           </Text>
         </View>
         {fields.map((field, index) => (
@@ -188,6 +203,7 @@ const AddItemSettingsScreen: React.FC = () => {
                   {
                     color: theme.colors.text.primary,
                     fontSize: theme.typography.sizes.md,
+                    fontFamily: theme.typography.fonts.medium,
                   },
                 ]}>
                 {field.label}
@@ -197,13 +213,13 @@ const AddItemSettingsScreen: React.FC = () => {
               value={field.enabled}
               onValueChange={() => handleToggle(field.id)}
               trackColor={{
-                false: theme.colors.border,
+                false: theme.colors.borderSubtle,
                 true: theme.colors.accent.primary,
               }}
               thumbColor={
                 field.enabled
                   ? theme.colors.accent.primary
-                  : theme.colors.border
+                  : theme.colors.background.primary
               }
             />
           </View>
@@ -226,6 +242,7 @@ const AddItemSettingsScreen: React.FC = () => {
                     color: theme.colors.text.primary,
                     fontSize: theme.typography.sizes.sm,
                     fontWeight: theme.typography.weights.semibold,
+                    fontFamily: theme.typography.fonts.semibold,
                   },
                 ]}>
                 Image Quality
@@ -233,7 +250,10 @@ const AddItemSettingsScreen: React.FC = () => {
               <Text
                 style={[
                   styles.qualitySubtitle,
-                  {color: theme.colors.text.secondary},
+                  {
+                    color: theme.colors.text.secondary,
+                    fontFamily: theme.typography.fonts.regular,
+                  },
                 ]}>
                 Balance clarity and storage size.
               </Text>
@@ -245,12 +265,17 @@ const AddItemSettingsScreen: React.FC = () => {
               {
                 backgroundColor: theme.colors.accent.muted,
                 borderRadius: theme.borderRadius.full,
+                borderColor: theme.colors.borderSubtle,
+                borderWidth: StyleSheet.hairlineWidth,
               },
             ]}>
             <Text
               style={[
                 styles.qualityBadgeText,
-                {color: theme.colors.accent.primary},
+                {
+                  color: theme.colors.accent.primary,
+                  fontFamily: theme.typography.fonts.semibold,
+                },
               ]}>
               {qualityPercent}%
             </Text>
@@ -265,21 +290,27 @@ const AddItemSettingsScreen: React.FC = () => {
           value={imageQuality}
           onValueChange={handleQualityChange}
           minimumTrackTintColor={theme.colors.accent.primary}
-          maximumTrackTintColor={theme.colors.border}
+          maximumTrackTintColor={theme.colors.borderSubtle}
           thumbTintColor={theme.colors.accent.primary}
         />
         <View style={styles.qualityRange}>
           <Text
             style={[
               styles.qualityRangeText,
-              {color: theme.colors.text.tertiary},
+              {
+                color: theme.colors.text.tertiary,
+                fontFamily: theme.typography.fonts.regular,
+              },
             ]}>
             Smaller
           </Text>
           <Text
             style={[
               styles.qualityRangeText,
-              {color: theme.colors.text.tertiary},
+              {
+                color: theme.colors.text.tertiary,
+                fontFamily: theme.typography.fonts.regular,
+              },
             ]}>
             Higher quality
           </Text>
@@ -313,6 +344,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
@@ -324,7 +356,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   card: {
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     padding: 16,
   },
   cardHeader: {
@@ -334,14 +366,14 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   cardTitle: {
-    textTransform: 'uppercase',
+    textTransform: 'none',
   },
   fieldRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 12,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   fieldRowLast: {
     borderBottomWidth: 0,

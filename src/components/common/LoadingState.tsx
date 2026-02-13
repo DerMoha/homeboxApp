@@ -71,20 +71,20 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
   size = 'large',
 }) => {
   const {theme} = useTheme();
-  const dotSize = size === 'large' ? 12 : 8;
+  const dotSize = size === 'large' ? 10 : 6;
   const gradientOpacity = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
     const animation = Animated.loop(
       Animated.sequence([
         Animated.timing(gradientOpacity, {
-          toValue: 0.6,
-          duration: 2000,
+          toValue: 0.35,
+          duration: 2200,
           useNativeDriver: true,
         }),
         Animated.timing(gradientOpacity, {
-          toValue: 0.3,
-          duration: 2000,
+          toValue: 0.18,
+          duration: 2200,
           useNativeDriver: true,
         }),
       ]),
@@ -133,7 +133,8 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
               color: theme.colors.text.secondary,
               fontSize: theme.typography.sizes.md,
               fontWeight: theme.typography.weights.medium,
-              letterSpacing: theme.typography.letterSpacing.wide,
+              fontFamily: theme.typography.fonts.medium,
+              letterSpacing: theme.typography.letterSpacing.normal,
             },
           ]}>
           {message}
@@ -152,9 +153,9 @@ const styles = StyleSheet.create({
   },
   backgroundPattern: {
     position: 'absolute',
-    width: 200,
-    height: 200,
-    borderRadius: 100,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
   },
   dotsContainer: {
     flexDirection: 'row',
@@ -165,6 +166,5 @@ const styles = StyleSheet.create({
   message: {
     marginTop: 24,
     textAlign: 'center',
-    textTransform: 'uppercase',
   },
 });

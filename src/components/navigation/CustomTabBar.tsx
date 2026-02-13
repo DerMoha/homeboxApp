@@ -16,8 +16,8 @@ import type {Theme} from '../../theme/theme';
 
 type FontWeight = TextStyle['fontWeight'];
 
-const TAB_ICON_SIZE = 24;
-const ADD_BUTTON_SIZE = 52;
+const TAB_ICON_SIZE = 22;
+const ADD_BUTTON_SIZE = 46;
 
 interface TabConfig {
   name: string;
@@ -45,9 +45,9 @@ const TabIcon: React.FC<TabIconProps> = ({name, focused, theme}) => {
 
   useEffect(() => {
     Animated.spring(scaleAnim, {
-      toValue: focused ? 1.1 : 1,
+      toValue: focused ? 1.06 : 1,
       useNativeDriver: true,
-      friction: 5,
+      friction: 6,
     }).start();
   }, [focused, scaleAnim]);
 
@@ -83,10 +83,13 @@ const AddButton: React.FC<AddButtonProps> = ({theme}) => {
   const addButtonStyle = useMemo(
     () => [
       styles.addButton,
-      {backgroundColor: theme.colors.accent.primary},
-      theme.shadows.md,
+      {
+        backgroundColor: theme.colors.accent.primary,
+        borderColor: theme.colors.borderSubtle,
+      },
+      theme.shadows.sm,
     ],
-    [theme.colors.accent.primary, theme.shadows.md],
+    [theme.colors.accent.primary, theme.colors.borderSubtle, theme.shadows.sm],
   );
 
   return (
@@ -125,12 +128,17 @@ const TabItem: React.FC<TabItemProps> = ({
         fontWeight: isFocused
           ? (theme.typography.weights.semibold as FontWeight)
           : (theme.typography.weights.regular as FontWeight),
+        fontFamily: isFocused
+          ? theme.typography.fonts.semibold
+          : theme.typography.fonts.regular,
       },
     ],
     [
       isFocused,
       theme.colors.accent.primary,
       theme.colors.text.tertiary,
+      theme.typography.fonts.regular,
+      theme.typography.fonts.semibold,
       theme.typography.weights.regular,
       theme.typography.weights.semibold,
     ],
@@ -189,7 +197,7 @@ export const CustomTabBar: React.FC<BottomTabBarProps> = ({
     () => [
       styles.container,
       {
-        backgroundColor: theme.colors.background.elevated,
+        backgroundColor: theme.colors.background.secondary,
         borderTopColor: theme.colors.borderSubtle,
         paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
       },
@@ -247,17 +255,17 @@ export const CustomTabBar: React.FC<BottomTabBarProps> = ({
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    borderTopWidth: 1,
-    paddingTop: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: 6,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: {width: 0, height: -4},
-        shadowOpacity: 0.1,
-        shadowRadius: 12,
+        shadowOffset: {width: 0, height: -2},
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
       },
       android: {
-        elevation: 8,
+        elevation: 4,
       },
     }),
   },
@@ -265,15 +273,15 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'flex-start',
-    paddingVertical: 4,
+    paddingVertical: 6,
   },
   iconContainer: {
-    width: 48,
-    height: 32,
-    borderRadius: 16,
+    width: 42,
+    height: 28,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 2,
+    marginBottom: 4,
   },
   addButton: {
     width: ADD_BUTTON_SIZE,
@@ -281,17 +289,18 @@ const styles = StyleSheet.create({
     borderRadius: ADD_BUTTON_SIZE / 2,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: -20,
+    marginTop: -10,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   label: {
-    fontSize: 10,
-    letterSpacing: 0.2,
+    fontSize: 11,
+    letterSpacing: 0,
   },
   activeIndicator: {
     position: 'absolute',
-    bottom: -4,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
+    bottom: -2,
+    width: 16,
+    height: 2,
+    borderRadius: 1,
   },
 });

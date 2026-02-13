@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, TextInput, StyleSheet, TextInputProps } from 'react-native';
-import { useTheme } from '../../theme/ThemeContext';
+import {View, Text, TextInput, StyleSheet, TextInputProps} from 'react-native';
+import {useTheme} from '../../theme/ThemeContext';
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -15,23 +15,34 @@ export const Input: React.FC<InputProps> = ({
   style,
   ...props
 }) => {
-  const { theme } = useTheme();
+  const {theme} = useTheme();
 
   return (
     <View style={styles.container}>
       {label && (
-        <Text style={[styles.label, { color: theme.colors.text.primary }]}>
+        <Text
+          style={[
+            styles.label,
+            {
+              color: theme.colors.text.secondary,
+              fontSize: theme.typography.sizes.sm,
+              fontWeight: theme.typography.weights.medium,
+              fontFamily: theme.typography.fonts.medium,
+            },
+          ]}>
           {label}
-          {required && <Text style={{ color: theme.colors.error }}> *</Text>}
+          {required && <Text style={{color: theme.colors.error}}> *</Text>}
         </Text>
       )}
       <TextInput
         style={[
           styles.input,
           {
-            backgroundColor: theme.colors.background.secondary,
+            backgroundColor: theme.colors.background.tertiary,
             color: theme.colors.text.primary,
-            borderColor: error ? theme.colors.error : theme.colors.border,
+            borderColor: error ? theme.colors.error : theme.colors.borderSubtle,
+            fontSize: theme.typography.sizes.md,
+            fontFamily: theme.typography.fonts.regular,
           },
           style,
         ]}
@@ -39,7 +50,15 @@ export const Input: React.FC<InputProps> = ({
         {...props}
       />
       {error && (
-        <Text style={[styles.error, { color: theme.colors.error }]}>
+        <Text
+          style={[
+            styles.error,
+            {
+              color: theme.colors.error,
+              fontSize: theme.typography.sizes.xs,
+              fontFamily: theme.typography.fonts.regular,
+            },
+          ]}>
           {error}
         </Text>
       )}
@@ -52,18 +71,15 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
     marginBottom: 6,
   },
   input: {
-    padding: 12,
-    borderRadius: 8,
-    fontSize: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 14,
     borderWidth: 1,
   },
   error: {
-    fontSize: 12,
     marginTop: 4,
   },
 });

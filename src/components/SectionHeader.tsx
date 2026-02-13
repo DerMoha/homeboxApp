@@ -23,20 +23,22 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
         color: theme.colors.text.secondary,
         fontSize: theme.typography.sizes.sm,
         fontWeight: theme.typography.weights.semibold,
-        letterSpacing: theme.typography.letterSpacing.wide,
+        fontFamily: theme.typography.fonts.semibold,
+        letterSpacing: theme.typography.letterSpacing.normal,
       },
     ],
     [
       theme.colors.text.secondary,
-      theme.typography.letterSpacing.wide,
+      theme.typography.letterSpacing.normal,
+      theme.typography.fonts.semibold,
       theme.typography.sizes.sm,
       theme.typography.weights.semibold,
     ],
   );
 
   const headerLineStyle = useMemo(
-    () => [styles.headerLine, {backgroundColor: theme.colors.accent.primary}],
-    [theme.colors.accent.primary],
+    () => [styles.headerLine, {backgroundColor: theme.colors.borderSubtle}],
+    [theme.colors.borderSubtle],
   );
 
   const iconContainerStyle = useMemo(
@@ -47,7 +49,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
   if (variant === 'withLine') {
     return (
       <View style={styles.headerWithLine}>
-        <Text style={headerTextStyle}>{title.toUpperCase()}</Text>
+        <Text style={headerTextStyle}>{title}</Text>
         <View style={headerLineStyle} />
       </View>
     );
@@ -63,7 +65,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
             color={theme.colors.accent.primary}
           />
         </View>
-        <Text style={headerTextStyle}>{title.toUpperCase()}</Text>
+        <Text style={headerTextStyle}>{title}</Text>
         <View style={[headerLineStyle, styles.flexLine]} />
       </View>
     );
@@ -71,44 +73,44 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
 
   return (
     <View style={styles.headerDefault}>
-      <Text style={headerTextStyle}>{title.toUpperCase()}</Text>
+      <Text style={headerTextStyle}>{title}</Text>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   headerDefault: {
-    marginTop: 24,
-    marginBottom: 12,
+    marginTop: 20,
+    marginBottom: 10,
   },
   headerWithLine: {
-    marginTop: 24,
-    marginBottom: 12,
+    marginTop: 20,
+    marginBottom: 10,
   },
   headerWithIcon: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 24,
-    marginBottom: 12,
+    marginTop: 20,
+    marginBottom: 10,
   },
   headerText: {
-    marginBottom: 8,
+    marginBottom: 6,
   },
   headerLine: {
-    height: 2,
-    width: 32,
+    height: 1,
+    width: 48,
     borderRadius: 1,
   },
   flexLine: {
     flex: 1,
     height: 1,
-    opacity: 0.3,
+    opacity: 0.6,
     marginBottom: 0,
   },
   iconContainer: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
+    width: 26,
+    height: 26,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 8,

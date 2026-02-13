@@ -6,68 +6,137 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
-import { useTheme } from '../theme/ThemeContext';
+import {useTheme} from '../theme/ThemeContext';
 
 const AppearanceScreen: React.FC = () => {
-  const { theme, themeMode, setThemeMode } = useTheme();
+  const {theme, themeMode, setThemeMode} = useTheme();
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background.primary }]}>
-      <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: theme.colors.text.primary }]}>Appearance</Text>
-        <Text style={[styles.headerSubtitle, { color: theme.colors.text.secondary }]}>Customize the app's look and feel</Text>
+    <View
+      style={[
+        styles.container,
+        {backgroundColor: theme.colors.background.primary},
+      ]}>
+      <View
+        style={[
+          styles.header,
+          {
+            borderBottomColor: theme.colors.borderSubtle,
+            borderBottomWidth: StyleSheet.hairlineWidth,
+          },
+        ]}>
+        <Text
+          style={[
+            styles.headerTitle,
+            {
+              color: theme.colors.text.primary,
+              fontFamily: theme.typography.fonts.semibold,
+            },
+          ]}>
+          Appearance
+        </Text>
+        <Text
+          style={[
+            styles.headerSubtitle,
+            {
+              color: theme.colors.text.secondary,
+              fontFamily: theme.typography.fonts.regular,
+            },
+          ]}>
+          Customize the app's look and feel
+        </Text>
       </View>
 
-      <ScrollView style={[styles.scrollView, { backgroundColor: theme.colors.background.primary }]}>
-        <View style={[styles.section, { backgroundColor: theme.colors.background.secondary }]}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Theme Mode</Text>
+      <ScrollView
+        style={[
+          styles.scrollView,
+          {backgroundColor: theme.colors.background.primary},
+        ]}
+        contentContainerStyle={styles.scrollContent}>
+        <View
+          style={[
+            styles.section,
+            {
+              backgroundColor: theme.colors.background.secondary,
+              borderColor: theme.colors.borderSubtle,
+            },
+          ]}>
+          <Text
+            style={[
+              styles.sectionTitle,
+              {
+                color: theme.colors.text.primary,
+                fontFamily: theme.typography.fonts.semibold,
+              },
+            ]}>
+            Theme Mode
+          </Text>
           <View style={styles.themeModeContainer}>
-            <TouchableOpacity
-              style={[
-                styles.themeModeButton,
-                themeMode === 'light' && styles.selectedThemeMode,
-                { backgroundColor: theme.colors.background.primary },
-              ]}
-              onPress={() => setThemeMode('light')}
-            >
-              <Text style={[styles.themeModeText, { color: theme.colors.text.primary }]}>Light</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.themeModeButton,
-                themeMode === 'dark' && styles.selectedThemeMode,
-                { backgroundColor: theme.colors.background.primary },
-              ]}
-              onPress={() => setThemeMode('dark')}
-            >
-              <Text style={[styles.themeModeText, { color: theme.colors.text.primary }]}>Dark</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.themeModeButton,
-                themeMode === 'auto' && styles.selectedThemeMode,
-                { backgroundColor: theme.colors.background.primary },
-              ]}
-              onPress={() => setThemeMode('auto')}
-            >
-              <Text style={[styles.themeModeText, { color: theme.colors.text.primary }]}>Auto</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.themeModeButton,
-                themeMode === 'oled' && styles.selectedThemeMode,
-                { backgroundColor: theme.colors.background.primary },
-              ]}
-              onPress={() => setThemeMode('oled')}
-            >
-              <Text style={[styles.themeModeText, { color: theme.colors.text.primary }]}>OLED</Text>
-            </TouchableOpacity>
+            {(['light', 'dark', 'auto', 'oled'] as const).map(mode => {
+              const isSelected = themeMode === mode;
+              return (
+                <TouchableOpacity
+                  key={mode}
+                  style={[
+                    styles.themeModeButton,
+                    {
+                      backgroundColor: isSelected
+                        ? theme.colors.accent.muted
+                        : theme.colors.background.primary,
+                      borderColor: isSelected
+                        ? theme.colors.accent.primary
+                        : theme.colors.borderSubtle,
+                    },
+                  ]}
+                  onPress={() => setThemeMode(mode)}>
+                  <Text
+                    style={[
+                      styles.themeModeText,
+                      {
+                        color: isSelected
+                          ? theme.colors.accent.primary
+                          : theme.colors.text.primary,
+                        fontFamily: theme.typography.fonts.medium,
+                      },
+                    ]}>
+                    {mode === 'auto'
+                      ? 'Auto'
+                      : mode.charAt(0).toUpperCase() + mode.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
 
-        <View style={[styles.section, { backgroundColor: theme.colors.background.secondary }]}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Theme Colors</Text>
-          <Text style={[styles.placeholderText, { color: theme.colors.text.secondary }]}>Coming soon...</Text>
+        <View
+          style={[
+            styles.section,
+            {
+              backgroundColor: theme.colors.background.secondary,
+              borderColor: theme.colors.borderSubtle,
+            },
+          ]}>
+          <Text
+            style={[
+              styles.sectionTitle,
+              {
+                color: theme.colors.text.primary,
+                fontFamily: theme.typography.fonts.semibold,
+              },
+            ]}>
+            Theme Colors
+          </Text>
+          <Text
+            style={[
+              styles.placeholderText,
+              {
+                color: theme.colors.text.secondary,
+                fontFamily: theme.typography.fonts.regular,
+              },
+            ]}>
+            Coming soon...
+          </Text>
         </View>
       </ScrollView>
     </View>
@@ -83,9 +152,7 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 16,
-    marginBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    marginBottom: 12,
   },
   headerTitle: {
     fontSize: 24,
@@ -97,8 +164,10 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   section: {
-    padding: 15,
-    marginBottom: 1,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 16,
   },
   sectionTitle: {
     fontSize: 18,
@@ -111,15 +180,12 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   themeModeButton: {
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
     minWidth: 80,
     alignItems: 'center',
-  },
-  selectedThemeMode: {
-    borderColor: '#007AFF',
-    borderWidth: 2,
   },
   themeModeText: {
     fontSize: 16,
@@ -128,6 +194,10 @@ const styles = StyleSheet.create({
   placeholderText: {
     fontSize: 16,
     fontStyle: 'italic',
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 24,
   },
 });
 

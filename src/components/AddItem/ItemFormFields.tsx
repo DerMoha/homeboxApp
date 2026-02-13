@@ -1,7 +1,7 @@
 import React, {useMemo} from 'react';
 import {View, Text, TextInput, StyleSheet} from 'react-native';
 import {useTheme} from '../../theme/ThemeContext';
-import {EnabledFields} from '../../hooks/useItemData';
+import type {EnabledFields} from '../../types';
 
 interface ItemFormFieldsProps {
   formData: Record<string, string | number>;
@@ -23,22 +23,29 @@ const FieldTag: React.FC<FieldTagProps> = ({label, theme}) => {
       styles.fieldTag,
       {
         backgroundColor: theme.colors.accent.muted,
+        borderColor: theme.colors.borderSubtle,
         borderRadius: theme.borderRadius.full,
       },
     ],
-    [theme.borderRadius.full, theme.colors.accent.muted],
+    [
+      theme.borderRadius.full,
+      theme.colors.accent.muted,
+      theme.colors.borderSubtle,
+    ],
   );
 
   const fieldTagTextStyle = useMemo(
     () => ({
       color: theme.colors.accent.primary,
       fontSize: theme.typography.sizes.xs,
-      fontWeight: theme.typography.weights.medium,
+      fontWeight: theme.typography.weights.semibold,
+      fontFamily: theme.typography.fonts.semibold,
     }),
     [
       theme.colors.accent.primary,
+      theme.typography.fonts.semibold,
       theme.typography.sizes.xs,
-      theme.typography.weights.medium,
+      theme.typography.weights.semibold,
     ],
   );
 
@@ -69,6 +76,7 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
       paddingHorizontal: theme.spacing.md,
       paddingVertical: theme.spacing.sm,
       fontSize: theme.typography.sizes.md,
+      fontFamily: theme.typography.fonts.regular,
     },
   ];
 
@@ -76,8 +84,9 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
     styles.fieldLabel,
     {
       color: theme.colors.text.secondary,
-      fontSize: theme.typography.sizes.xs,
-      letterSpacing: theme.typography.letterSpacing.wide,
+      fontSize: theme.typography.sizes.sm,
+      letterSpacing: theme.typography.letterSpacing.normal,
+      fontFamily: theme.typography.fonts.medium,
     },
   ];
 
@@ -91,7 +100,7 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
       {/* Item Name */}
       <View style={sectionSpacingStyle}>
         <View style={styles.labelRow}>
-          <Text style={labelStyle}>ITEM NAME</Text>
+          <Text style={labelStyle}>Item name</Text>
           <FieldTag label="Required" theme={theme} />
         </View>
         <TextInput
@@ -106,7 +115,7 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
       {/* Quantity */}
       <View style={sectionSpacingStyle}>
         <View style={styles.labelRow}>
-          <Text style={labelStyle}>QUANTITY</Text>
+          <Text style={labelStyle}>Quantity</Text>
         </View>
         <TextInput
           style={inputStyle}
@@ -129,7 +138,7 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
       {enabledFields.description && (
         <View style={sectionSpacingStyle}>
           <View style={styles.labelRow}>
-            <Text style={labelStyle}>DESCRIPTION</Text>
+            <Text style={labelStyle}>Description</Text>
             <FieldTag label="Optional" theme={theme} />
           </View>
           <TextInput
@@ -149,7 +158,7 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
       {enabledFields.purchasePrice && (
         <View>
           <View style={styles.labelRow}>
-            <Text style={labelStyle}>PURCHASE PRICE</Text>
+            <Text style={labelStyle}>Purchase price</Text>
             <FieldTag label="Optional" theme={theme} />
           </View>
           <TextInput
@@ -171,17 +180,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   fieldLabel: {
-    textTransform: 'uppercase',
+    textTransform: 'none',
   },
   fieldTag: {
     paddingHorizontal: 8,
     paddingVertical: 4,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   input: {
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   textArea: {
     minHeight: 120,

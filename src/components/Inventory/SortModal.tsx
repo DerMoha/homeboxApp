@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useTheme} from '../../theme/ThemeContext';
-import {SortOption} from '../../hooks/useInventoryData';
+import type {SortOption} from '../../types';
 
 interface SortModalProps {
   visible: boolean;
@@ -97,18 +97,21 @@ export const SortModal: React.FC<SortModalProps> = ({
       {
         backgroundColor: theme.colors.card.background,
         borderRadius: theme.borderRadius.xl,
+        borderColor: theme.colors.borderSubtle,
+        borderWidth: StyleSheet.hairlineWidth,
         padding: theme.spacing.lg,
         transform: [{translateY}, {scale}],
         opacity: slideAnim,
       },
-      theme.shadows.lg,
+      theme.shadows.md,
     ],
     [
       scale,
       slideAnim,
       theme.borderRadius.xl,
       theme.colors.card.background,
-      theme.shadows.lg,
+      theme.colors.borderSubtle,
+      theme.shadows.md,
       theme.spacing.lg,
       translateY,
     ],
@@ -121,12 +124,14 @@ export const SortModal: React.FC<SortModalProps> = ({
         color: theme.colors.text.primary,
         fontSize: theme.typography.sizes.xl,
         fontWeight: theme.typography.weights.semibold,
+        fontFamily: theme.typography.fonts.semibold,
         marginBottom: theme.spacing.md,
       },
     ],
     [
       theme.colors.text.primary,
       theme.spacing.md,
+      theme.typography.fonts.semibold,
       theme.typography.sizes.xl,
       theme.typography.weights.semibold,
     ],
@@ -137,7 +142,7 @@ export const SortModal: React.FC<SortModalProps> = ({
       styles.sortOption,
       {
         borderRadius: theme.borderRadius.md,
-        borderWidth: 1,
+        borderWidth: StyleSheet.hairlineWidth,
         padding: theme.spacing.md,
         marginBottom: theme.spacing.sm,
       },
@@ -156,9 +161,9 @@ export const SortModal: React.FC<SortModalProps> = ({
   const optionDefaultStyle = useMemo(
     () => ({
       backgroundColor: 'transparent',
-      borderColor: theme.colors.border,
+      borderColor: theme.colors.borderSubtle,
     }),
-    [theme.colors.border],
+    [theme.colors.borderSubtle],
   );
 
   const optionTextSelectedStyle = useMemo(
@@ -166,13 +171,15 @@ export const SortModal: React.FC<SortModalProps> = ({
       styles.sortOptionText,
       {
         color: theme.colors.accent.primary,
-        fontSize: theme.typography.sizes.lg,
+        fontSize: theme.typography.sizes.md,
         fontWeight: theme.typography.weights.semibold,
+        fontFamily: theme.typography.fonts.semibold,
       },
     ],
     [
       theme.colors.accent.primary,
-      theme.typography.sizes.lg,
+      theme.typography.fonts.semibold,
+      theme.typography.sizes.md,
       theme.typography.weights.semibold,
     ],
   );
@@ -182,13 +189,15 @@ export const SortModal: React.FC<SortModalProps> = ({
       styles.sortOptionText,
       {
         color: theme.colors.text.primary,
-        fontSize: theme.typography.sizes.lg,
+        fontSize: theme.typography.sizes.md,
         fontWeight: theme.typography.weights.regular,
+        fontFamily: theme.typography.fonts.regular,
       },
     ],
     [
       theme.colors.text.primary,
-      theme.typography.sizes.lg,
+      theme.typography.fonts.regular,
+      theme.typography.sizes.md,
       theme.typography.weights.regular,
     ],
   );
@@ -198,17 +207,18 @@ export const SortModal: React.FC<SortModalProps> = ({
       styles.modalCloseButton,
       {
         backgroundColor: theme.colors.background.elevated,
-        borderRadius: theme.borderRadius.md,
-        padding: theme.spacing.md,
+        borderRadius: theme.borderRadius.lg,
+        paddingVertical: theme.spacing.md,
+        paddingHorizontal: theme.spacing.md,
         marginTop: theme.spacing.lg,
-        borderWidth: 1,
-        borderColor: theme.colors.border,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: theme.colors.borderSubtle,
       },
     ],
     [
-      theme.borderRadius.md,
+      theme.borderRadius.lg,
       theme.colors.background.elevated,
-      theme.colors.border,
+      theme.colors.borderSubtle,
       theme.spacing.lg,
       theme.spacing.md,
     ],
@@ -219,13 +229,15 @@ export const SortModal: React.FC<SortModalProps> = ({
       styles.modalCloseButtonText,
       {
         color: theme.colors.text.primary,
-        fontSize: theme.typography.sizes.lg,
+        fontSize: theme.typography.sizes.md,
         fontWeight: theme.typography.weights.medium,
+        fontFamily: theme.typography.fonts.medium,
       },
     ],
     [
       theme.colors.text.primary,
-      theme.typography.sizes.lg,
+      theme.typography.fonts.medium,
+      theme.typography.sizes.md,
       theme.typography.weights.medium,
     ],
   );
@@ -293,7 +305,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   backdropTouchable: {
     ...StyleSheet.absoluteFillObject,
@@ -303,7 +315,7 @@ const styles = StyleSheet.create({
     maxWidth: 400,
   },
   modalTitle: {
-    textAlign: 'center',
+    textAlign: 'left',
   },
   sortOption: {
     flexDirection: 'row',

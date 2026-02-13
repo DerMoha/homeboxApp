@@ -33,7 +33,7 @@ const AddItemScreen: React.FC = () => {
   const formCardStyle = [
     styles.formCard,
     {
-      backgroundColor: theme.colors.card.background,
+      backgroundColor: theme.colors.background.secondary,
       borderColor: theme.colors.borderSubtle,
       borderRadius: theme.borderRadius.lg,
     },
@@ -48,9 +48,12 @@ const AddItemScreen: React.FC = () => {
   const loadingIconStyle = useMemo(
     () => [
       styles.loadingIconContainer,
-      {backgroundColor: theme.colors.accent.muted},
+      {
+        backgroundColor: theme.colors.background.secondary,
+        borderColor: theme.colors.borderSubtle,
+      },
     ],
-    [theme.colors.accent.muted],
+    [theme.colors.background.secondary, theme.colors.borderSubtle],
   );
 
   const loadingTextStyle = useMemo(
@@ -59,9 +62,14 @@ const AddItemScreen: React.FC = () => {
       {
         color: theme.colors.text.secondary,
         fontSize: theme.typography.sizes.md,
+        fontFamily: theme.typography.fonts.regular,
       },
     ],
-    [theme.colors.text.secondary, theme.typography.sizes.md],
+    [
+      theme.colors.text.secondary,
+      theme.typography.fonts.regular,
+      theme.typography.sizes.md,
+    ],
   );
 
   const {locations, labels, enabledFields, isConnecting, loadEnabledFields} =
@@ -105,22 +113,22 @@ const AddItemScreen: React.FC = () => {
         borderRadius: theme.borderRadius.lg,
         opacity: isLoading ? 0.6 : 1,
       },
-      theme.shadows.md,
+      theme.shadows.sm,
     ],
     [
       isLoading,
       theme.borderRadius.lg,
       theme.colors.accent.primary,
-      theme.shadows.md,
+      theme.shadows.sm,
     ],
   );
 
   const submitIconStyle = useMemo(
     () => [
       styles.submitIconContainer,
-      {backgroundColor: 'rgba(255,255,255,0.2)'},
+      {backgroundColor: theme.colors.accent.muted},
     ],
-    [],
+    [theme.colors.accent.muted],
   );
 
   const submitButtonTextStyle = useMemo(
@@ -130,10 +138,12 @@ const AddItemScreen: React.FC = () => {
         color: theme.colors.text.inverse,
         fontSize: theme.typography.sizes.md,
         fontWeight: theme.typography.weights.semibold,
+        fontFamily: theme.typography.fonts.semibold,
       },
     ],
     [
       theme.colors.text.inverse,
+      theme.typography.fonts.semibold,
       theme.typography.sizes.md,
       theme.typography.weights.semibold,
     ],
@@ -300,6 +310,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 20,
+    borderWidth: StyleSheet.hairlineWidth,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
@@ -316,13 +327,14 @@ const styles = StyleSheet.create({
   },
   formCard: {
     padding: 16,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   submitButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 18,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
     marginTop: 32,
     gap: 10,
   },
@@ -334,8 +346,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   submitButtonText: {
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    textTransform: 'none',
+    letterSpacing: 0,
   },
   bottomSpacer: {
     height: 24,

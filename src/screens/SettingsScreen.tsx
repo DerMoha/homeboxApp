@@ -43,7 +43,7 @@ const SettingsItem: React.FC<SettingsItemProps> = ({
     style={[
       styles.settingsItem,
       {
-        backgroundColor: theme.colors.card.background,
+        backgroundColor: theme.colors.background.secondary,
         borderColor: theme.colors.borderSubtle,
       },
       theme.shadows.sm,
@@ -69,6 +69,7 @@ const SettingsItem: React.FC<SettingsItemProps> = ({
             color: theme.colors.text.primary,
             fontSize: theme.typography.sizes.md,
             fontWeight: theme.typography.weights.medium,
+            fontFamily: theme.typography.fonts.medium,
           },
         ]}>
         {title}
@@ -198,7 +199,7 @@ const SettingsScreen: React.FC = () => {
         style={[
           styles.serverPickerCard,
           {
-            backgroundColor: theme.colors.card.background,
+            backgroundColor: theme.colors.background.secondary,
             borderColor: theme.colors.borderSubtle,
           },
           theme.shadows.sm,
@@ -222,6 +223,7 @@ const SettingsScreen: React.FC = () => {
                 color: theme.colors.text.primary,
                 fontSize: theme.typography.sizes.md,
                 fontWeight: theme.typography.weights.medium,
+                fontFamily: theme.typography.fonts.medium,
               },
             ]}>
             Active Server
@@ -308,7 +310,7 @@ const styles = StyleSheet.create({
   serverPickerCard: {
     borderRadius: 16,
     padding: 16,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   serverPickerHeader: {
     flexDirection: 'row',
@@ -319,7 +321,7 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   pickerContainer: {
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     overflow: 'hidden',
   },
   picker: {
@@ -334,7 +336,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 16,
     borderRadius: 16,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   settingsItemLeft: {
     flexDirection: 'row',

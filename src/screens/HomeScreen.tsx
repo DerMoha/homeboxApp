@@ -121,8 +121,10 @@ const StatCard: React.FC<StatCardProps> = ({
         styles.statCard,
         isPanel && styles.statPanel,
         {
-          backgroundColor: theme.colors.background.elevated,
+          backgroundColor: theme.colors.background.secondary,
           borderRadius: theme.borderRadius.lg,
+          borderColor: theme.colors.borderSubtle,
+          borderWidth: StyleSheet.hairlineWidth,
         },
         theme.shadows.sm,
       ]}>
@@ -142,7 +144,8 @@ const StatCard: React.FC<StatCardProps> = ({
               fontSize: isPanel
                 ? theme.typography.sizes.lg
                 : theme.typography.sizes.xxl,
-              fontWeight: theme.typography.weights.bold as FontWeight,
+              fontWeight: theme.typography.weights.semibold as FontWeight,
+              fontFamily: theme.typography.fonts.semibold,
             },
           ]}>
           {value}
@@ -154,6 +157,7 @@ const StatCard: React.FC<StatCardProps> = ({
             {
               color: theme.colors.text.tertiary,
               fontSize: theme.typography.sizes.xs,
+              fontFamily: theme.typography.fonts.medium,
             },
           ]}>
           {label}
@@ -171,8 +175,10 @@ const RecentItemRow: React.FC<RecentItemRowProps> = ({item, onPress}) => {
       style={[
         styles.recentItem,
         {
-          backgroundColor: theme.colors.background.elevated,
+          backgroundColor: theme.colors.background.secondary,
           borderRadius: theme.borderRadius.lg,
+          borderColor: theme.colors.borderSubtle,
+          borderWidth: StyleSheet.hairlineWidth,
         },
         theme.shadows.sm,
       ]}
@@ -201,6 +207,7 @@ const RecentItemRow: React.FC<RecentItemRowProps> = ({item, onPress}) => {
               color: theme.colors.text.primary,
               fontSize: theme.typography.sizes.md,
               fontWeight: theme.typography.weights.semibold as FontWeight,
+              fontFamily: theme.typography.fonts.semibold,
             },
           ]}>
           {item.name}
@@ -212,6 +219,7 @@ const RecentItemRow: React.FC<RecentItemRowProps> = ({item, onPress}) => {
             {
               color: theme.colors.text.secondary,
               fontSize: theme.typography.sizes.xs,
+              fontFamily: theme.typography.fonts.regular,
             },
           ]}>
           {item.location?.name ?? 'Unassigned'} - Qty {item.quantity}
@@ -223,6 +231,7 @@ const RecentItemRow: React.FC<RecentItemRowProps> = ({item, onPress}) => {
           {
             color: theme.colors.text.tertiary,
             fontSize: theme.typography.sizes.xs,
+            fontFamily: theme.typography.fonts.regular,
           },
         ]}>
         {formatShortDate(item.createdAt)}
@@ -244,8 +253,10 @@ const QuickAction: React.FC<QuickActionProps> = ({
       style={[
         styles.quickAction,
         {
-          backgroundColor: theme.colors.background.elevated,
+          backgroundColor: theme.colors.background.secondary,
           borderRadius: theme.borderRadius.lg,
+          borderColor: theme.colors.borderSubtle,
+          borderWidth: StyleSheet.hairlineWidth,
         },
         theme.shadows.sm,
       ]}
@@ -273,6 +284,7 @@ const QuickAction: React.FC<QuickActionProps> = ({
             color: theme.colors.text.primary,
             fontSize: theme.typography.sizes.sm,
             fontWeight: theme.typography.weights.semibold as FontWeight,
+            fontFamily: theme.typography.fonts.semibold,
           },
         ]}>
         {label}
@@ -285,6 +297,7 @@ const QuickAction: React.FC<QuickActionProps> = ({
             {
               color: theme.colors.text.tertiary,
               fontSize: theme.typography.sizes.xs,
+              fontFamily: theme.typography.fonts.regular,
             },
           ]}>
           {subtitle}
@@ -411,6 +424,8 @@ const HomeScreen: React.FC = () => {
             {
               backgroundColor: theme.colors.accent.muted,
               borderRadius: theme.borderRadius.lg,
+              borderColor: theme.colors.borderSubtle,
+              borderWidth: StyleSheet.hairlineWidth,
             },
           ]}>
           <MaterialIcons
@@ -425,7 +440,8 @@ const HomeScreen: React.FC = () => {
             {
               color: theme.colors.text.primary,
               fontSize: theme.typography.sizes.xl,
-              fontWeight: theme.typography.weights.bold as FontWeight,
+              fontWeight: theme.typography.weights.semibold as FontWeight,
+              fontFamily: theme.typography.fonts.semibold,
             },
           ]}>
           Homebox
@@ -436,6 +452,7 @@ const HomeScreen: React.FC = () => {
             {
               color: theme.colors.text.secondary,
               fontSize: theme.typography.sizes.sm,
+              fontFamily: theme.typography.fonts.regular,
             },
           ]}>
           Your home inventory
@@ -468,7 +485,8 @@ const HomeScreen: React.FC = () => {
             {
               color: theme.colors.text.primary,
               fontSize: theme.typography.sizes.lg,
-              fontWeight: theme.typography.weights.bold as FontWeight,
+              fontWeight: theme.typography.weights.semibold as FontWeight,
+              fontFamily: theme.typography.fonts.semibold,
             },
           ]}>
           Quick actions
@@ -496,7 +514,8 @@ const HomeScreen: React.FC = () => {
             {
               color: theme.colors.text.primary,
               fontSize: theme.typography.sizes.lg,
-              fontWeight: theme.typography.weights.bold as FontWeight,
+              fontWeight: theme.typography.weights.semibold as FontWeight,
+              fontFamily: theme.typography.fonts.semibold,
             },
           ]}>
           Snapshot
@@ -520,6 +539,7 @@ const HomeScreen: React.FC = () => {
               {
                 color: theme.colors.text.tertiary,
                 fontSize: theme.typography.sizes.xs,
+                fontFamily: theme.typography.fonts.medium,
               },
             ]}>
             Last added
@@ -533,6 +553,7 @@ const HomeScreen: React.FC = () => {
                   color: theme.colors.text.primary,
                   fontSize: theme.typography.sizes.sm,
                   fontWeight: theme.typography.weights.semibold as FontWeight,
+                  fontFamily: theme.typography.fonts.semibold,
                 },
               ]}>
               {lastItemName}
@@ -543,6 +564,7 @@ const HomeScreen: React.FC = () => {
                 {
                   color: theme.colors.text.tertiary,
                   fontSize: theme.typography.sizes.xs,
+                  fontFamily: theme.typography.fonts.regular,
                 },
               ]}>
               {lastItemDate}
@@ -562,6 +584,7 @@ const HomeScreen: React.FC = () => {
               {
                 color: theme.colors.text.tertiary,
                 fontSize: theme.typography.sizes.xs,
+                fontFamily: theme.typography.fonts.medium,
               },
             ]}>
             Most accessed
@@ -575,6 +598,7 @@ const HomeScreen: React.FC = () => {
                   color: theme.colors.text.primary,
                   fontSize: theme.typography.sizes.sm,
                   fontWeight: theme.typography.weights.semibold as FontWeight,
+                  fontFamily: theme.typography.fonts.semibold,
                 },
               ]}>
               {topLocationName}
@@ -585,6 +609,7 @@ const HomeScreen: React.FC = () => {
                 {
                   color: theme.colors.text.tertiary,
                   fontSize: theme.typography.sizes.xs,
+                  fontFamily: theme.typography.fonts.regular,
                 },
               ]}>
               {topLocationItems}
@@ -600,7 +625,8 @@ const HomeScreen: React.FC = () => {
             {
               color: theme.colors.text.primary,
               fontSize: theme.typography.sizes.lg,
-              fontWeight: theme.typography.weights.bold as FontWeight,
+              fontWeight: theme.typography.weights.semibold as FontWeight,
+              fontFamily: theme.typography.fonts.semibold,
             },
           ]}>
           Recently added
@@ -628,6 +654,7 @@ const HomeScreen: React.FC = () => {
               {
                 color: theme.colors.text.tertiary,
                 fontSize: theme.typography.sizes.sm,
+                fontFamily: theme.typography.fonts.regular,
               },
             ]}>
             Add your first item to see it here.
@@ -659,12 +686,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   appTitle: {
-    letterSpacing: -0.5,
     marginBottom: 6,
   },
-  tagline: {
-    letterSpacing: 0.2,
-  },
+  tagline: {},
   statsContainer: {
     flexDirection: 'row',
     gap: 16,
@@ -698,13 +722,8 @@ const styles = StyleSheet.create({
   statPanelNumber: {
     marginBottom: 2,
   },
-  statLabel: {
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  statPanelLabel: {
-    letterSpacing: 0.6,
-  },
+  statLabel: {},
+  statPanelLabel: {},
   statPanelText: {
     marginLeft: 12,
   },
@@ -714,9 +733,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 12,
   },
-  sectionTitle: {
-    letterSpacing: -0.2,
-  },
+  sectionTitle: {},
   quickActions: {
     flexDirection: 'row',
     gap: 12,
@@ -758,8 +775,6 @@ const styles = StyleSheet.create({
   },
   insightLabel: {
     flex: 1,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
   },
   insightValueBlock: {
     flex: 1,
@@ -797,9 +812,7 @@ const styles = StyleSheet.create({
   recentName: {
     marginBottom: 2,
   },
-  recentSubtitle: {
-    letterSpacing: 0.2,
-  },
+  recentSubtitle: {},
   recentDate: {
     marginLeft: 12,
   },

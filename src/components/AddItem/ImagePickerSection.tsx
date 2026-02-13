@@ -41,9 +41,10 @@ const ActionButton: React.FC<ActionButtonProps> = ({
 }) => {
   const {theme} = useTheme();
   const isDanger = tone === 'danger';
+  const dangerBackground = `${theme.colors.error}1A`;
   const backgroundColor = isDanger
-    ? 'rgba(239, 68, 68, 0.12)'
-    : theme.colors.background.tertiary;
+    ? dangerBackground
+    : theme.colors.background.secondary;
   const borderColor = isDanger ? theme.colors.error : theme.colors.borderSubtle;
   const foreground = isDanger ? theme.colors.error : theme.colors.text.primary;
 
@@ -60,8 +61,14 @@ const ActionButton: React.FC<ActionButtonProps> = ({
   );
 
   const buttonTextStyle = useMemo(
-    () => [styles.actionButtonText, {color: foreground}],
-    [foreground],
+    () => [
+      styles.actionButtonText,
+      {
+        color: foreground,
+        fontFamily: theme.typography.fonts.medium,
+      },
+    ],
+    [foreground, theme.typography.fonts.medium],
   );
 
   return (
@@ -125,15 +132,27 @@ export const ImagePickerSection: React.FC<ImagePickerSectionProps> = ({
       styles.previewBadge,
       {
         backgroundColor: theme.colors.accent.muted,
+        borderColor: theme.colors.borderSubtle,
+        borderWidth: StyleSheet.hairlineWidth,
         borderRadius: theme.borderRadius.full,
       },
     ],
-    [theme.borderRadius.full, theme.colors.accent.muted],
+    [
+      theme.borderRadius.full,
+      theme.colors.accent.muted,
+      theme.colors.borderSubtle,
+    ],
   );
 
   const previewBadgeTextStyle = useMemo(
-    () => [styles.previewBadgeText, {color: theme.colors.accent.primary}],
-    [theme.colors.accent.primary],
+    () => [
+      styles.previewBadgeText,
+      {
+        color: theme.colors.accent.primary,
+        fontFamily: theme.typography.fonts.semibold,
+      },
+    ],
+    [theme.colors.accent.primary, theme.typography.fonts.semibold],
   );
 
   const imageSizeInfoStyle = useMemo(
@@ -153,18 +172,36 @@ export const ImagePickerSection: React.FC<ImagePickerSectionProps> = ({
   );
 
   const imageSizeLabelStyle = useMemo(
-    () => [styles.imageSizeLabel, {color: theme.colors.text.secondary}],
-    [theme.colors.text.secondary],
+    () => [
+      styles.imageSizeLabel,
+      {
+        color: theme.colors.text.secondary,
+        fontFamily: theme.typography.fonts.medium,
+      },
+    ],
+    [theme.colors.text.secondary, theme.typography.fonts.medium],
   );
 
   const imageSizeValueStyle = useMemo(
-    () => [styles.imageSizeValue, {color: theme.colors.text.primary}],
-    [theme.colors.text.primary],
+    () => [
+      styles.imageSizeValue,
+      {
+        color: theme.colors.text.primary,
+        fontFamily: theme.typography.fonts.semibold,
+      },
+    ],
+    [theme.colors.text.primary, theme.typography.fonts.semibold],
   );
 
   const imageSizeValueSuccessStyle = useMemo(
-    () => [styles.imageSizeValue, {color: theme.colors.success}],
-    [theme.colors.success],
+    () => [
+      styles.imageSizeValue,
+      {
+        color: theme.colors.success,
+        fontFamily: theme.typography.fonts.semibold,
+      },
+    ],
+    [theme.colors.success, theme.typography.fonts.semibold],
   );
 
   const imageControlsStyle = useMemo(
@@ -176,11 +213,16 @@ export const ImagePickerSection: React.FC<ImagePickerSectionProps> = ({
     () => [
       styles.emptyState,
       {
+        backgroundColor: theme.colors.background.secondary,
         borderColor: theme.colors.borderSubtle,
         borderRadius: theme.borderRadius.md,
       },
     ],
-    [theme.borderRadius.md, theme.colors.borderSubtle],
+    [
+      theme.borderRadius.md,
+      theme.colors.background.secondary,
+      theme.colors.borderSubtle,
+    ],
   );
 
   const emptyIconStyle = useMemo(
@@ -188,20 +230,38 @@ export const ImagePickerSection: React.FC<ImagePickerSectionProps> = ({
       styles.emptyIcon,
       {
         backgroundColor: theme.colors.accent.muted,
+        borderColor: theme.colors.borderSubtle,
+        borderWidth: StyleSheet.hairlineWidth,
         borderRadius: theme.borderRadius.full,
       },
     ],
-    [theme.borderRadius.full, theme.colors.accent.muted],
+    [
+      theme.borderRadius.full,
+      theme.colors.accent.muted,
+      theme.colors.borderSubtle,
+    ],
   );
 
   const emptyTitleStyle = useMemo(
-    () => [styles.emptyTitle, {color: theme.colors.text.primary}],
-    [theme.colors.text.primary],
+    () => [
+      styles.emptyTitle,
+      {
+        color: theme.colors.text.primary,
+        fontFamily: theme.typography.fonts.semibold,
+      },
+    ],
+    [theme.colors.text.primary, theme.typography.fonts.semibold],
   );
 
   const emptySubtitleStyle = useMemo(
-    () => [styles.emptySubtitle, {color: theme.colors.text.secondary}],
-    [theme.colors.text.secondary],
+    () => [
+      styles.emptySubtitle,
+      {
+        color: theme.colors.text.secondary,
+        fontFamily: theme.typography.fonts.regular,
+      },
+    ],
+    [theme.colors.text.secondary, theme.typography.fonts.regular],
   );
 
   const imagePickerButtonsStyle = useMemo(
@@ -339,7 +399,7 @@ const styles = StyleSheet.create({
   },
   emptyState: {
     padding: 16,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
   },
   emptyIcon: {
@@ -361,7 +421,7 @@ const styles = StyleSheet.create({
   imagePreviewContainer: {
     width: '100%',
     height: 200,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     overflow: 'hidden',
     marginBottom: 12,
     justifyContent: 'center',
@@ -387,7 +447,7 @@ const styles = StyleSheet.create({
   },
   imageSizeInfo: {
     padding: 12,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     marginBottom: 12,
     gap: 6,
   },
@@ -397,8 +457,8 @@ const styles = StyleSheet.create({
   },
   imageSizeLabel: {
     fontSize: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
+    textTransform: 'none',
+    letterSpacing: 0,
   },
   imageSizeValue: {
     fontSize: 12,
@@ -414,7 +474,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 10,
     gap: 8,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   actionButtonText: {
     fontSize: 12,

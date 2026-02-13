@@ -1,9 +1,9 @@
 import {useState, useEffect, useCallback} from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Alert} from 'react-native';
 import ServerService from '../services/serverService';
 import {logger} from '../utils/logger';
 import {Location, Label, EnabledFields} from '../types';
+import {storageService, STORAGE_KEYS} from '../services/storageService';
 
 export const useItemData = () => {
   const [locations, setLocations] = useState<Location[]>([]);
@@ -18,20 +18,19 @@ export const useItemData = () => {
 
   const loadEnabledFields = useCallback(async () => {
     try {
-      const savedFields = await AsyncStorage.getItem('@add_item_fields');
-      if (savedFields) {
-        const fields = JSON.parse(savedFields);
-        const enabledMap = fields.reduce(
-          (acc: Record<string, boolean>, field: any) => {
-            acc[field.id] = field.enabled;
-            return acc;
-          },
-          {},
-        );
-        setEnabledFields(prev => ({...prev, ...enabledMap}));
+      const savedFields = await storageService.getItem<
+        Array<{id: string; enabled: boolean}>
+      >(STORAGE_KEYS.ADD_ITEM_FIELDS);
+      if (!savedFields) {
+        return;
       }
+      const enabledMap = savedFields.reduce((acc, field) => {
+        acc[field.id] = field.enabled;
+        return acc;
+      }, {} as Record<string, boolean>);
+      setEnabledFields(prev => ({...prev, ...enabledMap}));
     } catch (error) {
-      logger.error('Error loading enabled fields:', error);
+      logger.error('Error loading enabled fields', {error});
     }
   }, []);
 
@@ -43,7 +42,7 @@ export const useItemData = () => {
         setLocations(response.data.locations);
       }
     } catch (error) {
-      logger.error('Error loading locations:', error);
+      logger.error('Error loading locations', {error});
       Alert.alert('Error', 'Failed to load locations');
     }
   }, []);
@@ -56,7 +55,7 @@ export const useItemData = () => {
         setLabels(response.data);
       }
     } catch (error) {
-      logger.error('Error loading labels:', error);
+      logger.error('Error loading labels', {error});
       Alert.alert('Error', 'Failed to load labels');
     }
   }, []);
@@ -78,7 +77,7 @@ export const useItemData = () => {
       await Promise.all([loadLocations(), loadLabels()]);
       return true;
     } catch (error) {
-      logger.error('Error auto-connecting:', error);
+      logger.error('Error auto-connecting', {error});
       Alert.alert('Error', 'Failed to connect to server');
       return false;
     } finally {

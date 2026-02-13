@@ -81,13 +81,13 @@ const LocationTreeItemComponent: React.FC<LocationTreeItemProps> = ({
       {
         backgroundColor: isSelected
           ? theme.colors.accent.muted
-          : theme.colors.card.background,
+          : theme.colors.background.secondary,
         borderColor: isSelected
           ? theme.colors.accent.primary
           : theme.colors.borderSubtle,
         marginLeft: levelIndent,
         borderRadius: theme.borderRadius.lg,
-        borderLeftWidth: isNested ? 3 : 1,
+        borderLeftWidth: isNested ? 2 : StyleSheet.hairlineWidth,
         borderLeftColor: isNested
           ? theme.colors.accent.secondary
           : theme.colors.borderSubtle,
@@ -103,7 +103,7 @@ const LocationTreeItemComponent: React.FC<LocationTreeItemProps> = ({
       theme.colors.accent.primary,
       theme.colors.accent.secondary,
       theme.colors.borderSubtle,
-      theme.colors.card.background,
+      theme.colors.background.secondary,
       theme.shadows.sm,
     ],
   );
@@ -111,9 +111,12 @@ const LocationTreeItemComponent: React.FC<LocationTreeItemProps> = ({
   const expandButtonStyle = useMemo(
     () => [
       styles.expandButton,
-      {backgroundColor: theme.colors.background.secondary},
+      {
+        backgroundColor: theme.colors.background.tertiary,
+        borderColor: theme.colors.borderSubtle,
+      },
     ],
-    [theme.colors.background.secondary],
+    [theme.colors.background.tertiary, theme.colors.borderSubtle],
   );
 
   const rotateStyle = useMemo(
@@ -124,9 +127,12 @@ const LocationTreeItemComponent: React.FC<LocationTreeItemProps> = ({
   const locationIconStyle = useMemo(
     () => [
       styles.locationIconContainer,
-      {backgroundColor: theme.colors.accent.muted},
+      {
+        backgroundColor: theme.colors.background.secondary,
+        borderColor: theme.colors.borderSubtle,
+      },
     ],
-    [theme.colors.accent.muted],
+    [theme.colors.background.secondary, theme.colors.borderSubtle],
   );
 
   const locationNameStyle = useMemo(
@@ -140,11 +146,17 @@ const LocationTreeItemComponent: React.FC<LocationTreeItemProps> = ({
           level === 0
             ? theme.typography.weights.semibold
             : theme.typography.weights.medium,
+        fontFamily:
+          level === 0
+            ? theme.typography.fonts.semibold
+            : theme.typography.fonts.medium,
       },
     ],
     [
       level,
       theme.colors.text.primary,
+      theme.typography.fonts.medium,
+      theme.typography.fonts.semibold,
       theme.typography.sizes.lg,
       theme.typography.sizes.md,
       theme.typography.weights.medium,
@@ -158,9 +170,14 @@ const LocationTreeItemComponent: React.FC<LocationTreeItemProps> = ({
       {
         color: theme.colors.text.tertiary,
         fontSize: theme.typography.sizes.xs,
+        fontFamily: theme.typography.fonts.regular,
       },
     ],
-    [theme.colors.text.tertiary, theme.typography.sizes.xs],
+    [
+      theme.colors.text.tertiary,
+      theme.typography.fonts.regular,
+      theme.typography.sizes.xs,
+    ],
   );
 
   return (
@@ -318,9 +335,12 @@ const LocationsScreen: React.FC = () => {
   const emptyIconStyle = useMemo(
     () => [
       styles.emptyIconContainer,
-      {backgroundColor: theme.colors.accent.muted},
+      {
+        backgroundColor: theme.colors.background.secondary,
+        borderColor: theme.colors.borderSubtle,
+      },
     ],
-    [theme.colors.accent.muted],
+    [theme.colors.background.secondary, theme.colors.borderSubtle],
   );
 
   const emptyTitleStyle = useMemo(
@@ -330,10 +350,12 @@ const LocationsScreen: React.FC = () => {
         color: theme.colors.text.primary,
         fontSize: theme.typography.sizes.lg,
         fontWeight: theme.typography.weights.semibold,
+        fontFamily: theme.typography.fonts.semibold,
       },
     ],
     [
       theme.colors.text.primary,
+      theme.typography.fonts.semibold,
       theme.typography.sizes.lg,
       theme.typography.weights.semibold,
     ],
@@ -345,9 +367,14 @@ const LocationsScreen: React.FC = () => {
       {
         color: theme.colors.text.secondary,
         fontSize: theme.typography.sizes.sm,
+        fontFamily: theme.typography.fonts.regular,
       },
     ],
-    [theme.colors.text.secondary, theme.typography.sizes.sm],
+    [
+      theme.colors.text.secondary,
+      theme.typography.fonts.regular,
+      theme.typography.sizes.sm,
+    ],
   );
 
   if (isLoading) {
@@ -412,7 +439,7 @@ const styles = StyleSheet.create({
   },
   locationCard: {
     marginBottom: 8,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     overflow: 'hidden',
   },
   locationContent: {
@@ -425,6 +452,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,
@@ -433,6 +461,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -456,6 +485,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 20,
+    borderWidth: StyleSheet.hairlineWidth,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,

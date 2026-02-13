@@ -57,15 +57,16 @@ const StatCard: React.FC<StatCardProps> = ({
     () => [
       styles.statCard,
       {
-        backgroundColor: theme.colors.card.background,
-        borderColor: theme.colors.card.border,
+        backgroundColor: theme.colors.background.secondary,
+        borderColor: theme.colors.borderSubtle,
+        borderWidth: StyleSheet.hairlineWidth,
         borderRadius: theme.borderRadius.md,
       },
     ],
     [
       theme.borderRadius.md,
-      theme.colors.card.background,
-      theme.colors.card.border,
+      theme.colors.background.secondary,
+      theme.colors.borderSubtle,
     ],
   );
 
@@ -86,9 +87,14 @@ const StatCard: React.FC<StatCardProps> = ({
       {
         color: theme.colors.text.secondary,
         fontSize: theme.typography.sizes.xs,
+        fontFamily: theme.typography.fonts.medium,
       },
     ],
-    [theme.colors.text.secondary, theme.typography.sizes.xs],
+    [
+      theme.colors.text.secondary,
+      theme.typography.fonts.medium,
+      theme.typography.sizes.xs,
+    ],
   );
 
   const valueStyle = useMemo(
@@ -98,10 +104,12 @@ const StatCard: React.FC<StatCardProps> = ({
         color: theme.colors.text.primary,
         fontSize: theme.typography.sizes.lg,
         fontWeight: theme.typography.weights.semibold,
+        fontFamily: theme.typography.fonts.semibold,
       },
     ],
     [
       theme.colors.text.primary,
+      theme.typography.fonts.semibold,
       theme.typography.sizes.lg,
       theme.typography.weights.semibold,
     ],
@@ -143,9 +151,14 @@ const MetaRow: React.FC<MetaRowProps> = ({icon, label, value, theme}) => {
       {
         color: theme.colors.text.secondary,
         fontSize: theme.typography.sizes.xs,
+        fontFamily: theme.typography.fonts.medium,
       },
     ],
-    [theme.colors.text.secondary, theme.typography.sizes.xs],
+    [
+      theme.colors.text.secondary,
+      theme.typography.fonts.medium,
+      theme.typography.sizes.xs,
+    ],
   );
 
   const metaValueStyle = useMemo(
@@ -154,9 +167,14 @@ const MetaRow: React.FC<MetaRowProps> = ({icon, label, value, theme}) => {
       {
         color: theme.colors.text.primary,
         fontSize: theme.typography.sizes.md,
+        fontFamily: theme.typography.fonts.regular,
       },
     ],
-    [theme.colors.text.primary, theme.typography.sizes.md],
+    [
+      theme.colors.text.primary,
+      theme.typography.fonts.regular,
+      theme.typography.sizes.md,
+    ],
   );
 
   return (
@@ -191,7 +209,7 @@ const ItemDetailScreen: React.FC = () => {
     const service = ServerService.getInstance();
     const result = await service.getItemById(itemId);
     if (result.success && result.data) {
-      return result.data;
+      return result.data as InventoryItem;
     }
     throw new Error(result.error || 'Failed to load item');
   }, [itemId]);
@@ -226,16 +244,17 @@ const ItemDetailScreen: React.FC = () => {
     () => [
       styles.heroCard,
       {
-        backgroundColor: theme.colors.card.background,
-        borderColor: theme.colors.card.border,
+        backgroundColor: theme.colors.background.secondary,
+        borderColor: theme.colors.borderSubtle,
+        borderWidth: StyleSheet.hairlineWidth,
         borderRadius: theme.borderRadius.lg,
       },
       theme.shadows.sm,
     ],
     [
       theme.borderRadius.lg,
-      theme.colors.card.background,
-      theme.colors.card.border,
+      theme.colors.background.secondary,
+      theme.colors.borderSubtle,
       theme.shadows.sm,
     ],
   );
@@ -244,12 +263,12 @@ const ItemDetailScreen: React.FC = () => {
     () => [
       styles.accentStripe,
       {
-        backgroundColor: theme.colors.accent.primary,
+        backgroundColor: theme.colors.accent.muted,
         borderTopLeftRadius: theme.borderRadius.lg,
         borderBottomLeftRadius: theme.borderRadius.lg,
       },
     ],
-    [theme.borderRadius.lg, theme.colors.accent.primary],
+    [theme.borderRadius.lg, theme.colors.accent.muted],
   );
 
   const heroContentStyle = useMemo(
@@ -290,10 +309,12 @@ const ItemDetailScreen: React.FC = () => {
         color: theme.colors.text.primary,
         fontSize: theme.typography.sizes.xxl,
         fontWeight: theme.typography.weights.semibold,
+        fontFamily: theme.typography.fonts.semibold,
       },
     ],
     [
       theme.colors.text.primary,
+      theme.typography.fonts.semibold,
       theme.typography.sizes.xxl,
       theme.typography.weights.semibold,
     ],
@@ -305,9 +326,14 @@ const ItemDetailScreen: React.FC = () => {
       {
         color: theme.colors.text.secondary,
         fontSize: theme.typography.sizes.md,
+        fontFamily: theme.typography.fonts.regular,
       },
     ],
-    [theme.colors.text.secondary, theme.typography.sizes.md],
+    [
+      theme.colors.text.secondary,
+      theme.typography.fonts.regular,
+      theme.typography.sizes.md,
+    ],
   );
 
   const locationTextStyle = useMemo(
@@ -316,9 +342,14 @@ const ItemDetailScreen: React.FC = () => {
       {
         color: theme.colors.text.tertiary,
         fontSize: theme.typography.sizes.sm,
+        fontFamily: theme.typography.fonts.regular,
       },
     ],
-    [theme.colors.text.tertiary, theme.typography.sizes.sm],
+    [
+      theme.colors.text.tertiary,
+      theme.typography.fonts.regular,
+      theme.typography.sizes.sm,
+    ],
   );
 
   const labelRowStyle = useMemo(
@@ -335,9 +366,15 @@ const ItemDetailScreen: React.FC = () => {
       {
         backgroundColor: theme.colors.accent.muted,
         borderRadius: theme.borderRadius.full,
+        borderColor: theme.colors.borderSubtle,
+        borderWidth: StyleSheet.hairlineWidth,
       },
     ],
-    [theme.borderRadius.full, theme.colors.accent.muted],
+    [
+      theme.borderRadius.full,
+      theme.colors.accent.muted,
+      theme.colors.borderSubtle,
+    ],
   );
 
   const labelChipTextStyle = useMemo(
@@ -346,9 +383,14 @@ const ItemDetailScreen: React.FC = () => {
       {
         color: theme.colors.accent.primary,
         fontSize: theme.typography.sizes.xs,
+        fontFamily: theme.typography.fonts.medium,
       },
     ],
-    [theme.colors.accent.primary, theme.typography.sizes.xs],
+    [
+      theme.colors.accent.primary,
+      theme.typography.fonts.medium,
+      theme.typography.sizes.xs,
+    ],
   );
 
   const statsGridStyle = useMemo(
@@ -363,8 +405,9 @@ const ItemDetailScreen: React.FC = () => {
     () => [
       styles.detailCard,
       {
-        backgroundColor: theme.colors.card.background,
-        borderColor: theme.colors.card.border,
+        backgroundColor: theme.colors.background.secondary,
+        borderColor: theme.colors.borderSubtle,
+        borderWidth: StyleSheet.hairlineWidth,
         borderRadius: theme.borderRadius.lg,
         marginTop: theme.spacing.lg,
       },
@@ -372,8 +415,8 @@ const ItemDetailScreen: React.FC = () => {
     ],
     [
       theme.borderRadius.lg,
-      theme.colors.card.background,
-      theme.colors.card.border,
+      theme.colors.background.secondary,
+      theme.colors.borderSubtle,
       theme.shadows.sm,
       theme.spacing.lg,
     ],
@@ -386,12 +429,14 @@ const ItemDetailScreen: React.FC = () => {
         color: theme.colors.text.primary,
         fontSize: theme.typography.sizes.sm,
         fontWeight: theme.typography.weights.semibold,
-        letterSpacing: theme.typography.letterSpacing.wide,
+        fontFamily: theme.typography.fonts.semibold,
+        letterSpacing: theme.typography.letterSpacing.normal,
       },
     ],
     [
       theme.colors.text.primary,
-      theme.typography.letterSpacing.wide,
+      theme.typography.fonts.semibold,
+      theme.typography.letterSpacing.normal,
       theme.typography.sizes.sm,
       theme.typography.weights.semibold,
     ],
@@ -534,12 +579,12 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
   heroCard: {
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     overflow: 'hidden',
     flexDirection: 'row',
   },
   accentStripe: {
-    width: 4,
+    width: 2,
   },
   heroContent: {
     flex: 1,
@@ -551,7 +596,7 @@ const styles = StyleSheet.create({
   heroImage: {
     width: 96,
     height: 96,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
@@ -585,9 +630,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
-  labelChipText: {
-    fontWeight: '500',
-  },
+  labelChipText: {},
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -595,7 +638,7 @@ const styles = StyleSheet.create({
   statCard: {
     flexBasis: '48%',
     flexGrow: 1,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     padding: 12,
     minHeight: 88,
   },
@@ -607,15 +650,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   statLabel: {
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
     marginBottom: 4,
   },
   statValue: {
     fontWeight: '600',
   },
   detailCard: {
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     padding: 16,
   },
   detailHeader: {
@@ -624,9 +665,7 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 12,
   },
-  detailTitle: {
-    textTransform: 'uppercase',
-  },
+  detailTitle: {},
   detailContent: {
     gap: 12,
   },
@@ -644,10 +683,7 @@ const styles = StyleSheet.create({
   metaTextGroup: {
     flex: 1,
   },
-  metaLabel: {
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-  },
+  metaLabel: {},
   metaValue: {
     marginTop: 2,
   },

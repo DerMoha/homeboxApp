@@ -51,7 +51,7 @@ export const Card: React.FC<CardProps> = ({
 
   const overlayOpacity = pressAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, 0.04],
+    outputRange: [0, 0.03],
   });
 
   const cardStyle = useMemo(
@@ -59,10 +59,10 @@ export const Card: React.FC<CardProps> = ({
       styles.card,
       {
         backgroundColor: theme.colors.card.background,
-        borderColor: theme.colors.card.border,
+        borderColor: theme.colors.borderSubtle,
         borderRadius: theme.borderRadius.lg,
       },
-      theme.shadows.md,
+      theme.shadows.sm,
       style,
     ],
     [
@@ -92,8 +92,9 @@ export const Card: React.FC<CardProps> = ({
       {
         color: theme.colors.text.primary,
         fontSize: theme.typography.sizes.lg,
-        fontWeight: theme.typography.weights.bold,
-        letterSpacing: theme.typography.letterSpacing.tight,
+        fontWeight: theme.typography.weights.semibold,
+        fontFamily: theme.typography.fonts.semibold,
+        letterSpacing: theme.typography.letterSpacing.normal,
       },
     ],
     [
@@ -151,12 +152,12 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 16,
     marginBottom: 16,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     overflow: 'hidden',
     position: 'relative',
   },
   content: {
-    padding: 16,
+    padding: 18,
   },
   contentWithStripe: {
     paddingLeft: 20,
@@ -166,7 +167,7 @@ const styles = StyleSheet.create({
     left: 0,
     top: 0,
     bottom: 0,
-    width: 4,
+    width: 3,
   },
   title: {
     marginBottom: 12,

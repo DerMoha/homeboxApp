@@ -45,10 +45,10 @@ const InventorySettingsScreen: React.FC = () => {
       styles.preferenceItem,
       {
         backgroundColor: theme.colors.background.secondary,
-        borderColor: theme.colors.border,
+        borderColor: theme.colors.borderSubtle,
       },
     ],
-    [theme.colors.background.secondary, theme.colors.border],
+    [theme.colors.background.secondary, theme.colors.borderSubtle],
   );
 
   const dragHandleDotStyle = useMemo(
@@ -72,7 +72,7 @@ const InventorySettingsScreen: React.FC = () => {
       const savedPreferences = await AsyncStorage.getItem(
         STORAGE_KEYS.INVENTORY_DISPLAY_PREFERENCES,
       );
-      logger.log('Loading preferences from storage:', savedPreferences);
+      logger.log('Loading preferences from storage', {savedPreferences});
 
       if (savedPreferences) {
         const parsedPreferences = JSON.parse(savedPreferences);
@@ -82,11 +82,13 @@ const InventorySettingsScreen: React.FC = () => {
           (p: DisplayPreference) => !p.isCore,
         );
         const mergedPreferences = [...corePreferences, ...nonCorePreferences];
-        logger.log('Loaded preferences:', mergedPreferences);
+        logger.log('Loaded preferences', {mergedPreferences});
         setPreferences(mergedPreferences);
         setIsFirstLoad(false);
       } else {
-        logger.log('No saved preferences, using defaults:', defaultPreferences);
+        logger.log('No saved preferences, using defaults', {
+          defaultPreferences,
+        });
         setPreferences(defaultPreferences);
         if (isFirstLoad) {
           await AsyncStorage.setItem(
@@ -97,7 +99,7 @@ const InventorySettingsScreen: React.FC = () => {
         }
       }
     } catch (error) {
-      logger.error('Error loading preferences:', error);
+      logger.error('Error loading preferences', {error});
     }
   }, [isFirstLoad]);
 
@@ -107,14 +109,14 @@ const InventorySettingsScreen: React.FC = () => {
 
   const savePreferences = async (newPreferences: DisplayPreference[]) => {
     try {
-      logger.log('Saving preferences:', newPreferences);
+      logger.log('Saving preferences', {newPreferences});
       await AsyncStorage.setItem(
         STORAGE_KEYS.INVENTORY_DISPLAY_PREFERENCES,
         JSON.stringify(newPreferences),
       );
       setPreferences(newPreferences);
     } catch (error) {
-      logger.error('Error saving preferences:', error);
+      logger.error('Error saving preferences', {error});
     }
   };
 
@@ -127,7 +129,7 @@ const InventorySettingsScreen: React.FC = () => {
       );
       setPreferences(defaultPreferences);
     } catch (error) {
-      logger.error('Error resetting preferences:', error);
+      logger.error('Error resetting preferences', {error});
     }
   };
 
@@ -154,12 +156,32 @@ const InventorySettingsScreen: React.FC = () => {
         styles.container,
         {backgroundColor: theme.colors.background.primary},
       ]}>
-      <View style={styles.header}>
-        <Text style={[styles.headerTitle, {color: theme.colors.text.primary}]}>
+      <View
+        style={[
+          styles.header,
+          {
+            borderBottomColor: theme.colors.borderSubtle,
+            borderBottomWidth: StyleSheet.hairlineWidth,
+          },
+        ]}>
+        <Text
+          style={[
+            styles.headerTitle,
+            {
+              color: theme.colors.text.primary,
+              fontFamily: theme.typography.fonts.semibold,
+            },
+          ]}>
           Inventory Display
         </Text>
         <Text
-          style={[styles.headerSubtitle, {color: theme.colors.text.secondary}]}>
+          style={[
+            styles.headerSubtitle,
+            {
+              color: theme.colors.text.secondary,
+              fontFamily: theme.typography.fonts.regular,
+            },
+          ]}>
           Customize which item attributes to display and their order
         </Text>
       </View>
@@ -172,13 +194,22 @@ const InventorySettingsScreen: React.FC = () => {
         contentContainerStyle={styles.contentContainer}>
         <View style={styles.section}>
           <Text
-            style={[styles.sectionTitle, {color: theme.colors.text.primary}]}>
+            style={[
+              styles.sectionTitle,
+              {
+                color: theme.colors.text.primary,
+                fontFamily: theme.typography.fonts.semibold,
+              },
+            ]}>
             Core Attributes
           </Text>
           <Text
             style={[
               styles.sectionSubtitle,
-              {color: theme.colors.text.secondary},
+              {
+                color: theme.colors.text.secondary,
+                fontFamily: theme.typography.fonts.regular,
+              },
             ]}>
             Essential information that cannot be reordered and should stay
             toggled on
@@ -193,13 +224,16 @@ const InventorySettingsScreen: React.FC = () => {
                     styles.preferenceItem,
                     {
                       backgroundColor: theme.colors.background.secondary,
-                      borderColor: theme.colors.border,
+                      borderColor: theme.colors.borderSubtle,
                     },
                   ]}>
                   <Text
                     style={[
                       styles.preferenceLabel,
-                      {color: theme.colors.text.primary},
+                      {
+                        color: theme.colors.text.primary,
+                        fontFamily: theme.typography.fonts.medium,
+                      },
                     ]}>
                     {preference.label}
                   </Text>
@@ -207,10 +241,14 @@ const InventorySettingsScreen: React.FC = () => {
                     value={preference.enabled}
                     onValueChange={() => togglePreference(preference.id)}
                     trackColor={{
-                      false: theme.colors.border,
+                      false: theme.colors.borderSubtle,
                       true: theme.colors.button.primary,
                     }}
-                    thumbColor={theme.colors.button.text}
+                    thumbColor={
+                      preference.enabled
+                        ? theme.colors.accent.primary
+                        : theme.colors.background.primary
+                    }
                   />
                 </View>
               ))}
@@ -219,13 +257,22 @@ const InventorySettingsScreen: React.FC = () => {
 
         <View style={styles.additionalAttributesSection}>
           <Text
-            style={[styles.sectionTitle, {color: theme.colors.text.primary}]}>
+            style={[
+              styles.sectionTitle,
+              {
+                color: theme.colors.text.primary,
+                fontFamily: theme.typography.fonts.semibold,
+              },
+            ]}>
             Additional Attributes
           </Text>
           <Text
             style={[
               styles.sectionSubtitle,
-              {color: theme.colors.text.secondary},
+              {
+                color: theme.colors.text.secondary,
+                fontFamily: theme.typography.fonts.regular,
+              },
             ]}>
             Optional information that can be reordered
           </Text>
@@ -249,7 +296,10 @@ const InventorySettingsScreen: React.FC = () => {
                       <Text
                         style={[
                           styles.preferenceLabel,
-                          {color: theme.colors.text.primary},
+                          {
+                            color: theme.colors.text.primary,
+                            fontFamily: theme.typography.fonts.medium,
+                          },
                         ]}>
                         {preference.label}
                       </Text>
@@ -257,10 +307,14 @@ const InventorySettingsScreen: React.FC = () => {
                         value={preference.enabled}
                         onValueChange={() => togglePreference(preference.id)}
                         trackColor={{
-                          false: theme.colors.border,
+                          false: theme.colors.borderSubtle,
                           true: theme.colors.button.primary,
                         }}
-                        thumbColor={theme.colors.button.text}
+                        thumbColor={
+                          preference.enabled
+                            ? theme.colors.accent.primary
+                            : theme.colors.background.primary
+                        }
                       />
                     </Animated.View>
                   );
@@ -272,11 +326,20 @@ const InventorySettingsScreen: React.FC = () => {
         <TouchableOpacity
           style={[
             styles.resetButton,
-            {backgroundColor: theme.colors.button.primary},
+            {
+              backgroundColor: theme.colors.background.secondary,
+              borderColor: theme.colors.borderSubtle,
+            },
           ]}
           onPress={resetToDefaults}>
           <Text
-            style={[styles.resetButtonText, {color: theme.colors.button.text}]}>
+            style={[
+              styles.resetButtonText,
+              {
+                color: theme.colors.accent.primary,
+                fontFamily: theme.typography.fonts.semibold,
+              },
+            ]}>
             Reset to Default View
           </Text>
         </TouchableOpacity>
@@ -294,13 +357,11 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 16,
-    marginBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    marginBottom: 12,
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: '700',
+    fontWeight: '600',
     marginBottom: 4,
   },
   headerSubtitle: {
@@ -311,7 +372,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   section: {
-    marginBottom: 16,
+    marginBottom: 14,
   },
   additionalAttributesSection: {
     marginTop: 24,
@@ -334,8 +395,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   preferenceItemIdle: {
     opacity: 1,
@@ -364,7 +425,8 @@ const styles = StyleSheet.create({
   resetButton: {
     marginTop: 24,
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
   },
   resetButtonText: {

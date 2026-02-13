@@ -1,5 +1,11 @@
 import React, {useMemo} from 'react';
-import {View, TextInput, TouchableOpacity, Text, StyleSheet} from 'react-native';
+import {
+  View,
+  TextInput,
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+} from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useTheme} from '../../theme/ThemeContext';
 
@@ -26,27 +32,34 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       {
         backgroundColor: theme.colors.background.primary,
         paddingHorizontal: theme.spacing.md,
-        paddingVertical: theme.spacing.sm,
+        paddingTop: theme.spacing.sm,
+        paddingBottom: theme.spacing.xs,
       },
     ],
-    [theme.colors.background.primary, theme.spacing.md, theme.spacing.sm],
+    [
+      theme.colors.background.primary,
+      theme.spacing.md,
+      theme.spacing.sm,
+      theme.spacing.xs,
+    ],
   );
 
   const searchInputContainerStyle = useMemo(
     () => [
       styles.searchInputContainer,
       {
-        backgroundColor: theme.colors.background.elevated,
-        borderRadius: theme.borderRadius.md,
-        borderWidth: 1,
-        borderColor: theme.colors.border,
+        backgroundColor: theme.colors.background.secondary,
+        borderRadius: theme.borderRadius.lg,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: theme.colors.borderSubtle,
         paddingHorizontal: theme.spacing.md,
+        minHeight: 46,
       },
     ],
     [
-      theme.borderRadius.md,
-      theme.colors.background.elevated,
-      theme.colors.border,
+      theme.borderRadius.lg,
+      theme.colors.background.secondary,
+      theme.colors.borderSubtle,
       theme.spacing.md,
     ],
   );
@@ -57,6 +70,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       {
         color: theme.colors.text.primary,
         fontSize: theme.typography.sizes.md,
+        fontFamily: theme.typography.fonts.regular,
         paddingVertical: theme.spacing.sm,
       },
     ],
@@ -64,6 +78,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       theme.colors.text.primary,
       theme.spacing.sm,
       theme.typography.sizes.md,
+      theme.typography.fonts.regular,
     ],
   );
 
@@ -74,12 +89,14 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         color: theme.colors.text.secondary,
         fontSize: theme.typography.sizes.sm,
         marginTop: theme.spacing.xs,
+        fontFamily: theme.typography.fonts.regular,
       },
     ],
     [
       theme.colors.text.secondary,
       theme.spacing.xs,
       theme.typography.sizes.sm,
+      theme.typography.fonts.regular,
     ],
   );
 
@@ -139,6 +156,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   resultsText: {
-    textAlign: 'center',
+    textAlign: 'left',
+    marginLeft: 4,
   },
 });
