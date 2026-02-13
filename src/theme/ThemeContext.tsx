@@ -1,4 +1,5 @@
 import React, {createContext, useContext, useState, useEffect} from 'react';
+import {useColorScheme} from 'react-native';
 import {Theme, lightTheme, darkTheme, oledTheme} from './theme';
 import {storageService, STORAGE_KEYS} from '../services/storageService';
 
@@ -22,6 +23,7 @@ export const ThemeProvider: React.FC<{children: React.ReactNode}> = ({
   const [customColors, setCustomColors] = useState<Partial<Theme['colors']>>(
     {},
   );
+  const systemColorScheme = useColorScheme();
 
   useEffect(() => {
     const loadThemePreferences = async () => {
@@ -82,6 +84,9 @@ export const ThemeProvider: React.FC<{children: React.ReactNode}> = ({
       case 'oled':
         baseTheme = oledTheme;
         break;
+      case 'auto':
+        baseTheme = systemColorScheme === 'dark' ? darkTheme : lightTheme;
+        break;
       default:
         baseTheme = lightTheme;
         break;
@@ -97,7 +102,10 @@ export const ThemeProvider: React.FC<{children: React.ReactNode}> = ({
   };
 
   const theme = getCurrentTheme();
-  const isDarkMode = themeMode === 'dark' || themeMode === 'oled';
+  const isDarkMode =
+    themeMode === 'dark' ||
+    themeMode === 'oled' ||
+    (themeMode === 'auto' && systemColorScheme === 'dark');
 
   const toggleTheme = () => {
     setThemeMode(themeMode === 'light' ? 'dark' : 'light');
