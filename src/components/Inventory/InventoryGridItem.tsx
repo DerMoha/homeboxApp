@@ -16,6 +16,7 @@ import {
   isPreferenceEnabled,
 } from '../../hooks/useDisplayPreferences';
 import {getImageSource} from '../../utils/imageUtils';
+import {QuantityBadge, InfoChip} from './shared';
 
 interface InventoryGridItemProps {
   item: InventoryItem;
@@ -33,11 +34,25 @@ const InventoryGridItemComponent: React.FC<InventoryGridItemProps> = ({
   const {theme} = useTheme();
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
+  const showQuantity = isPreferenceEnabled(displayPreferences, 'quantity');
+  const showPrice =
+    isPreferenceEnabled(displayPreferences, 'purchasePrice') &&
+    item.purchasePrice;
+  const showInsured =
+    isPreferenceEnabled(displayPreferences, 'insured') && item.insured;
+  const showLabel =
+    isPreferenceEnabled(displayPreferences, 'labels') &&
+    item.labels &&
+    item.labels.length > 0;
+  const showLabelRow = showLabel || showQuantity;
+
   const itemWidth = useMemo(() => {
     const screenWidth = Dimensions.get('window').width;
     const gap = theme.spacing.xs;
     return Math.floor((screenWidth - gap * (itemsPerRow + 1)) / itemsPerRow);
   }, [itemsPerRow, theme.spacing.xs]);
+
+  const imageHeight = useMemo(() => Math.round(itemWidth * 0.62), [itemWidth]);
 
   const handlePressIn = useCallback(() => {
     Animated.spring(scaleAnim, {
@@ -73,21 +88,20 @@ const InventoryGridItemComponent: React.FC<InventoryGridItemProps> = ({
     () => [
       styles.gridItemContainer,
       {
-        backgroundColor: theme.colors.card.background,
+        backgroundColor: theme.colors.background.secondary,
         width: itemWidth,
-        height: itemWidth,
         borderRadius: theme.borderRadius.lg,
-        borderWidth: 1,
-        borderColor: theme.colors.card.border,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: theme.colors.borderSubtle,
       },
-      theme.shadows.md,
+      theme.shadows.sm,
     ],
     [
       itemWidth,
       theme.borderRadius.lg,
-      theme.colors.card.background,
-      theme.colors.card.border,
-      theme.shadows.md,
+      theme.colors.background.secondary,
+      theme.colors.borderSubtle,
+      theme.shadows.sm,
     ],
   );
 
@@ -95,11 +109,11 @@ const InventoryGridItemComponent: React.FC<InventoryGridItemProps> = ({
     () => [
       styles.gridItemImageContainer,
       {
-        height: itemWidth,
+        height: imageHeight,
         borderRadius: theme.borderRadius.md,
       },
     ],
-    [itemWidth, theme.borderRadius.md],
+    [imageHeight, theme.borderRadius.md],
   );
 
   const imageStyle = useMemo(
@@ -116,52 +130,99 @@ const InventoryGridItemComponent: React.FC<InventoryGridItemProps> = ({
   );
 
   const infoStyle = useMemo(
-    () => [styles.gridItemInfo, {padding: theme.spacing.sm}],
-    [theme.spacing.sm],
+    () => [
+      styles.gridItemInfo,
+      {
+        padding: theme.spacing.sm,
+        backgroundColor: theme.colors.background.secondary,
+        borderTopColor: theme.colors.borderSubtle,
+      },
+    ],
+    [
+      theme.colors.background.secondary,
+      theme.colors.borderSubtle,
+      theme.spacing.sm,
+    ],
   );
 
   const itemNameStyle = useMemo(
     () => [
       styles.gridItemName,
       {
+        color: theme.colors.text.primary,
         fontSize: theme.typography.sizes.md,
         fontWeight: theme.typography.weights.semibold,
-      },
-    ],
-    [theme.typography.sizes.md, theme.typography.weights.semibold],
-  );
-
-  const itemLocationStyle = useMemo(
-    () => [styles.gridItemLocation, {fontSize: theme.typography.sizes.xs}],
-    [theme.typography.sizes.xs],
-  );
-
-  const quantityBadgeStyle = useMemo(
-    () => [
-      styles.gridQuantityBadge,
-      {
-        backgroundColor: theme.colors.accent.primary,
-        borderRadius: theme.borderRadius.full,
-      },
-    ],
-    [theme.borderRadius.full, theme.colors.accent.primary],
-  );
-
-  const quantityTextStyle = useMemo(
-    () => [
-      styles.gridQuantityText,
-      {
-        fontSize: theme.typography.sizes.xs,
-        fontWeight: theme.typography.weights.bold,
-        color: theme.colors.text.inverse,
+        fontFamily: theme.typography.fonts.semibold,
       },
     ],
     [
-      theme.typography.sizes.xs,
-      theme.typography.weights.bold,
-      theme.colors.text.inverse,
+      theme.colors.text.primary,
+      theme.typography.fonts.semibold,
+      theme.typography.sizes.md,
+      theme.typography.weights.semibold,
     ],
   );
+
+  const itemLocationStyle = useMemo(
+    () => [
+      styles.gridItemLocation,
+      {
+        fontSize: theme.typography.sizes.xs,
+        color: theme.colors.text.tertiary,
+        fontFamily: theme.typography.fonts.regular,
+      },
+    ],
+    [
+      theme.colors.text.tertiary,
+      theme.typography.fonts.regular,
+      theme.typography.sizes.xs,
+    ],
+  );
+
+  const priceOverlayStyle = useMemo(
+    () => [
+      styles.priceOverlay,
+      {
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        borderRadius: theme.borderRadius.sm,
+        paddingHorizontal: theme.spacing.xs,
+        paddingVertical: 2,
+      },
+    ],
+    [theme.borderRadius.sm, theme.spacing.xs],
+  );
+
+  const priceTextStyle = useMemo(
+    () => [
+      styles.priceText,
+      {
+        fontSize: theme.typography.sizes.xs,
+        fontWeight: theme.typography.weights.semibold,
+        fontFamily: theme.typography.fonts.semibold,
+      },
+    ],
+    [
+      theme.typography.fonts.semibold,
+      theme.typography.sizes.xs,
+      theme.typography.weights.semibold,
+    ],
+  );
+
+  const insuredOverlayStyle = useMemo(
+    () => [
+      styles.insuredOverlay,
+      {
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        borderRadius: theme.borderRadius.sm,
+        padding: theme.spacing.xs,
+      },
+    ],
+    [theme.borderRadius.sm, theme.spacing.xs],
+  );
+
+  const formatPrice = useCallback((price: number) => {
+    return `$${price.toFixed(2)}`;
+  }, []);
 
   return (
     <Animated.View style={wrapperStyle}>
@@ -187,6 +248,27 @@ const InventoryGridItemComponent: React.FC<InventoryGridItemProps> = ({
               />
             </View>
           )}
+
+          {(showPrice || showInsured) && (
+            <View style={styles.overlaysContainer}>
+              {showPrice && (
+                <View style={priceOverlayStyle}>
+                  <Text style={priceTextStyle}>
+                    {formatPrice(item.purchasePrice!)}
+                  </Text>
+                </View>
+              )}
+              {showInsured && (
+                <View style={insuredOverlayStyle}>
+                  <MaterialIcons
+                    name="shield"
+                    size={14}
+                    color={theme.colors.success}
+                  />
+                </View>
+              )}
+            </View>
+          )}
         </View>
 
         <View style={infoStyle}>
@@ -197,15 +279,26 @@ const InventoryGridItemComponent: React.FC<InventoryGridItemProps> = ({
           {item.location && (
             <Text
               style={itemLocationStyle}
-              numberOfLines={1}
+              numberOfLines={2}
               ellipsizeMode="tail">
               {item.location.name}
             </Text>
           )}
 
-          {isPreferenceEnabled(displayPreferences, 'quantity') && (
-            <View style={quantityBadgeStyle}>
-              <Text style={quantityTextStyle}>{item.quantity}</Text>
+          {showLabelRow && (
+            <View style={styles.labelRow}>
+              {showLabel && (
+                <InfoChip
+                  icon="label"
+                  label={item.labels![0].name}
+                  theme={theme}
+                />
+              )}
+              {showQuantity && (
+                <View style={styles.quantityWrapper}>
+                  <QuantityBadge quantity={item.quantity} theme={theme} />
+                </View>
+              )}
             </View>
           )}
         </View>
@@ -233,30 +326,35 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  gridItemInfo: {
+  overlaysContainer: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    top: 6,
+    right: 6,
+    alignItems: 'flex-end',
+    gap: 4,
+  },
+  priceOverlay: {},
+  priceText: {
+    color: '#FFFFFF',
+  },
+  insuredOverlay: {},
+  gridItemInfo: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    minHeight: 60,
   },
   gridItemName: {
-    color: 'white',
+    marginBottom: 2,
   },
   gridItemLocation: {
-    marginTop: 2,
-    color: 'rgba(255, 255, 255, 0.6)',
+    marginBottom: 4,
   },
-  gridQuantityBadge: {
-    position: 'absolute',
-    top: -28,
-    right: 8,
-    width: 26,
-    height: 26,
-    justifyContent: 'center',
+  labelRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 4,
+    gap: 8,
   },
-  gridQuantityText: {
-    textAlign: 'center',
+  quantityWrapper: {
+    marginLeft: 'auto',
   },
 });

@@ -27,6 +27,43 @@ interface AnimatedButtonProps {
   theme: ReturnType<typeof useTheme>['theme'];
 }
 
+interface StateIndicatorProps {
+  value: string | number;
+  theme: ReturnType<typeof useTheme>['theme'];
+}
+
+const ZOOM_LEVEL_NAMES = ['Compact', 'Standard', 'Detailed'] as const;
+
+const StateIndicator: React.FC<StateIndicatorProps> = ({value, theme}) => {
+  const containerStyle = useMemo(
+    () => [
+      styles.stateIndicatorContainer,
+      {
+        backgroundColor: theme.colors.background.tertiary,
+        borderRadius: theme.borderRadius.md,
+      },
+    ],
+    [theme.colors.background.tertiary, theme.borderRadius.md],
+  );
+
+  const textStyle = useMemo(
+    () => [
+      styles.stateIndicatorText,
+      {
+        color: theme.colors.text.secondary,
+        fontSize: theme.typography.sizes.sm,
+      },
+    ],
+    [theme.colors.text.secondary, theme.typography.sizes.sm],
+  );
+
+  return (
+    <View style={containerStyle}>
+      <Text style={textStyle}>{value}</Text>
+    </View>
+  );
+};
+
 const AnimatedHeaderButton: React.FC<AnimatedButtonProps> = ({
   onPress,
   disabled = false,
@@ -64,13 +101,13 @@ const AnimatedHeaderButton: React.FC<AnimatedButtonProps> = ({
       styles.headerButton,
       {
         backgroundColor: isActive
-          ? theme.colors.accent.primary
-          : theme.colors.background.elevated,
+          ? theme.colors.accent.muted
+          : theme.colors.background.secondary,
         borderRadius: theme.borderRadius.md,
-        borderWidth: 1,
+        borderWidth: StyleSheet.hairlineWidth,
         borderColor: isActive
           ? theme.colors.accent.primary
-          : theme.colors.border,
+          : theme.colors.borderSubtle,
         opacity: disabled ? 0.4 : 1,
       },
     ],
@@ -79,14 +116,15 @@ const AnimatedHeaderButton: React.FC<AnimatedButtonProps> = ({
       isActive,
       theme.borderRadius.md,
       theme.colors.accent.primary,
-      theme.colors.background.elevated,
-      theme.colors.border,
+      theme.colors.accent.muted,
+      theme.colors.background.secondary,
+      theme.colors.borderSubtle,
     ],
   );
 
   const iconColor = isActive
-    ? theme.colors.text.inverse
-    : theme.colors.text.primary;
+    ? theme.colors.accent.primary
+    : theme.colors.text.secondary;
 
   return (
     <Animated.View style={animatedStyle}>
@@ -127,28 +165,38 @@ export const InventoryHeader: React.FC<InventoryHeaderProps> = ({
     () => [
       styles.badge,
       {
-        backgroundColor: theme.colors.accent.primary,
+        backgroundColor: theme.colors.background.secondary,
         borderRadius: theme.borderRadius.full,
+        borderColor: theme.colors.borderSubtle,
+        borderWidth: StyleSheet.hairlineWidth,
       },
     ],
-    [theme.borderRadius.full, theme.colors.accent.primary],
+    [
+      theme.borderRadius.full,
+      theme.colors.background.secondary,
+      theme.colors.borderSubtle,
+    ],
   );
 
   const badgeTextStyle = useMemo(
     () => [
       styles.badgeText,
       {
-        color: theme.colors.text.inverse,
+        color: theme.colors.text.primary,
         fontSize: theme.typography.sizes.xs,
-        fontWeight: theme.typography.weights.bold,
+        fontWeight: theme.typography.weights.semibold,
+        fontFamily: theme.typography.fonts.semibold,
       },
     ],
     [
-      theme.colors.text.inverse,
+      theme.colors.text.primary,
+      theme.typography.fonts.semibold,
       theme.typography.sizes.xs,
-      theme.typography.weights.bold,
+      theme.typography.weights.semibold,
     ],
   );
+
+  const zoomLevelName = ZOOM_LEVEL_NAMES[listZoom] || 'Standard';
 
   return (
     <View style={headerControlsStyle}>
@@ -160,6 +208,7 @@ export const InventoryHeader: React.FC<InventoryHeaderProps> = ({
             icon="remove"
             theme={theme}
           />
+          <StateIndicator value={itemsPerRow} theme={theme} />
           <AnimatedHeaderButton
             onPress={onIncreaseItemsPerRow}
             disabled={itemsPerRow >= 5}
@@ -170,15 +219,16 @@ export const InventoryHeader: React.FC<InventoryHeaderProps> = ({
       ) : (
         <>
           <AnimatedHeaderButton
-            onPress={onIncreaseZoom}
-            disabled={listZoom >= 2}
-            icon="zoom-in"
-            theme={theme}
-          />
-          <AnimatedHeaderButton
             onPress={onDecreaseZoom}
             disabled={listZoom <= 0}
             icon="zoom-out"
+            theme={theme}
+          />
+          <StateIndicator value={zoomLevelName} theme={theme} />
+          <AnimatedHeaderButton
+            onPress={onIncreaseZoom}
+            disabled={listZoom >= 2}
+            icon="zoom-in"
             theme={theme}
           />
         </>
@@ -221,10 +271,20 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   headerButton: {
-    width: 38,
-    height: 38,
+    width: 36,
+    height: 36,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  stateIndicatorContainer: {
+    paddingHorizontal: 10,
+    minWidth: 60,
+    height: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  stateIndicatorText: {
+    fontWeight: '500',
   },
   badge: {
     position: 'absolute',

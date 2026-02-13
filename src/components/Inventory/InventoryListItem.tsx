@@ -9,6 +9,7 @@ import {
   isPreferenceEnabled,
 } from '../../hooks/useDisplayPreferences';
 import {getImageSource, formatDate} from '../../utils/imageUtils';
+import {QuantityBadge, MetaItem, ItemCardBase} from './shared';
 
 interface InventoryListItemProps {
   item: InventoryItem;
@@ -17,121 +18,25 @@ interface InventoryListItemProps {
   onPress: (itemId: string) => void;
 }
 
-interface MetaItemProps {
-  icon: string;
-  text: string;
-  theme: Theme;
-}
-
-const MetaItem: React.FC<MetaItemProps> = ({icon, text, theme}) => {
-  const textStyle = useMemo(
-    () => [
-      styles.metaText,
-      {color: theme.colors.text.tertiary, fontSize: theme.typography.sizes.sm},
-    ],
-    [theme.colors.text.tertiary, theme.typography.sizes.sm],
-  );
-
-  return (
-    <View style={styles.metaItem}>
-      <MaterialIcons
-        name={icon}
-        size={14}
-        color={theme.colors.text.tertiary}
-        style={styles.metaIcon}
-      />
-      <Text style={textStyle}>{text}</Text>
-    </View>
-  );
-};
-
-interface QuantityBadgeProps {
-  quantity: number;
-  theme: Theme;
-  style?: object;
-}
-
-const QuantityBadge: React.FC<QuantityBadgeProps> = ({
-  quantity,
-  theme,
-  style,
-}) => {
-  const badgeStyle = useMemo(
-    () => [
-      styles.quantityBadge,
-      {
-        backgroundColor:
-          quantity > 0 ? theme.colors.accent.primary : theme.colors.error,
-        borderRadius: theme.borderRadius.full,
-        paddingHorizontal: theme.spacing.sm,
-        paddingVertical: theme.spacing.xs,
-      },
-      style,
-    ],
-    [
-      quantity,
-      style,
-      theme.borderRadius.full,
-      theme.colors.accent.primary,
-      theme.colors.error,
-      theme.spacing.sm,
-      theme.spacing.xs,
-    ],
-  );
-
-  const textStyle = useMemo(
-    () => [
-      styles.quantityText,
-      {
-        color: theme.colors.text.inverse,
-        fontSize: theme.typography.sizes.sm,
-        fontWeight: theme.typography.weights.bold,
-      },
-    ],
-    [
-      theme.colors.text.inverse,
-      theme.typography.sizes.sm,
-      theme.typography.weights.bold,
-    ],
-  );
-
-  return (
-    <View style={badgeStyle}>
-      <Text style={textStyle}>{quantity}</Text>
-    </View>
-  );
-};
-
-interface ItemNameProps {
+const ItemNameText: React.FC<{
   name: string;
   size?: 'md' | 'lg' | 'xl';
   theme: Theme;
-}
-
-const ItemNameText: React.FC<ItemNameProps> = ({name, size = 'lg', theme}) => {
-  const nameStyle = useMemo(
-    () => [
+}> = ({name, size = 'lg', theme}) => (
+  <Text
+    style={[
       styles.itemName,
       {
         color: theme.colors.text.primary,
         fontSize: theme.typography.sizes[size],
         fontWeight: theme.typography.weights.semibold,
+        fontFamily: theme.typography.fonts.semibold,
       },
-    ],
-    [
-      size,
-      theme.colors.text.primary,
-      theme.typography.sizes,
-      theme.typography.weights.semibold,
-    ],
-  );
-
-  return (
-    <Text style={nameStyle} numberOfLines={1}>
-      {name}
-    </Text>
-  );
-};
+    ]}
+    numberOfLines={1}>
+    {name}
+  </Text>
+);
 
 const InventoryListItemComponent: React.FC<InventoryListItemProps> = ({
   item,
@@ -169,336 +74,213 @@ const InventoryListItemComponent: React.FC<InventoryListItemProps> = ({
 
   const handlePress = useCallback(() => onPress(item.id), [onPress, item.id]);
 
-  const containerStyle = useMemo(
-    () => [
-      styles.container,
-      {
-        backgroundColor: theme.colors.card.background,
-        borderRadius: theme.borderRadius.lg,
-        marginHorizontal: theme.spacing.sm,
-        marginVertical: theme.spacing.xs,
-        borderWidth: 1,
-        borderColor: theme.colors.card.border,
-      },
-      theme.shadows.sm,
-    ],
-    [
-      theme.borderRadius.lg,
-      theme.colors.card.background,
-      theme.colors.card.border,
-      theme.spacing.sm,
-      theme.spacing.xs,
-      theme.shadows.sm,
-    ],
-  );
-
-  const accentStripeStyle = useMemo(
-    () => [
-      styles.accentStripe,
-      {
-        backgroundColor: theme.colors.accent.primary,
-        borderTopLeftRadius: theme.borderRadius.lg,
-        borderBottomLeftRadius: theme.borderRadius.lg,
-      },
-    ],
-    [theme.borderRadius.lg, theme.colors.accent.primary],
-  );
-
-  const compactContentStyle = useMemo(
-    () => [
-      styles.content,
-      {
-        paddingLeft: theme.spacing.md,
-        paddingVertical: theme.spacing.sm,
-        paddingRight: theme.spacing.sm,
-      },
-    ],
-    [theme.spacing.md, theme.spacing.sm],
-  );
-
-  const compactMetaRowStyle = useMemo(
-    () => [
-      styles.metaRow,
-      {gap: theme.spacing.sm, marginTop: theme.spacing.xs},
-    ],
+  const cardStyle = useMemo(
+    () => ({
+      marginHorizontal: theme.spacing.sm,
+      marginVertical: theme.spacing.xs,
+    }),
     [theme.spacing.sm, theme.spacing.xs],
   );
 
-  const standardRowStyle = useMemo(
-    () => [styles.standardRow, {gap: theme.spacing.md}],
-    [theme.spacing.md],
-  );
+  const showQuantity = isPreferenceEnabled(displayPreferences, 'quantity');
 
-  const standardMetaRowStyle = useMemo(
-    () => [styles.metaRow, {marginTop: theme.spacing.xs}],
-    [theme.spacing.xs],
-  );
-
-  const thumbnailStyle = useMemo(
-    () => [
-      styles.thumbnail,
-      {
-        borderRadius: theme.borderRadius.md,
-        backgroundColor: theme.colors.background.tertiary,
-      },
-    ],
-    [theme.borderRadius.md, theme.colors.background.tertiary],
-  );
-
-  const thumbnailImageStyle = useMemo(
-    () => [styles.thumbnailImage, {borderRadius: theme.borderRadius.md}],
-    [theme.borderRadius.md],
-  );
-
-  const detailedContentStyle = useMemo(
-    () => [
-      styles.content,
-      {
-        padding: theme.spacing.md,
-        paddingLeft: theme.spacing.md + 4,
-      },
-    ],
-    [theme.spacing.md],
-  );
-
-  const imageContainerStyle = useMemo(
-    () => [
-      styles.imageContainer,
-      {
-        marginVertical: theme.spacing.sm,
-        borderRadius: theme.borderRadius.md,
-      },
-    ],
-    [theme.borderRadius.md, theme.spacing.sm],
-  );
-
-  const fullImageStyle = useMemo(
-    () => [styles.fullImage, {borderRadius: theme.borderRadius.md}],
-    [theme.borderRadius.md],
-  );
-
-  const descriptionStyle = useMemo(
-    () => [
-      styles.description,
-      {
-        color: theme.colors.text.secondary,
-        fontSize: theme.typography.sizes.md,
-        marginBottom: theme.spacing.sm,
-      },
-    ],
-    [theme.colors.text.secondary, theme.spacing.sm, theme.typography.sizes.md],
-  );
-
-  const detailedMetaRowStyle = useMemo(
-    () => [
-      styles.metaRow,
-      styles.metaRowWrap,
-      {gap: theme.spacing.xs, marginTop: theme.spacing.xs},
-    ],
-    [theme.spacing.xs],
-  );
-
-  // Compact View (listZoom === 0)
   if (listZoom === 0) {
     return (
-      <TouchableOpacity
-        style={containerStyle}
-        onPress={handlePress}
-        activeOpacity={0.7}>
-        <View style={accentStripeStyle} />
-        <View style={compactContentStyle}>
-          <View style={styles.headerRow}>
-            <View style={styles.titleContainer}>
-              <ItemNameText name={item.name} theme={theme} />
-            </View>
-            {isPreferenceEnabled(displayPreferences, 'quantity') && (
-              <QuantityBadge quantity={item.quantity} theme={theme} />
-            )}
-          </View>
-          <View style={compactMetaRowStyle}>
-            {isPreferenceEnabled(displayPreferences, 'location') &&
-              item.location && (
-                <MetaItem
-                  icon="location-on"
-                  text={item.location.name}
-                  theme={theme}
-                />
-              )}
-            {isPreferenceEnabled(displayPreferences, 'labels') &&
-              item.labels.length > 0 && (
-                <MetaItem
-                  icon="label"
-                  text={item.labels.map(l => l.name).join(', ')}
-                  theme={theme}
-                />
-              )}
-            {hasImage && (
-              <MaterialIcons
-                name="image"
-                size={14}
-                color={theme.colors.text.tertiary}
-              />
-            )}
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
-  }
-
-  // Standard View (listZoom === 1)
-  if (listZoom === 1) {
-    return (
-      <TouchableOpacity
-        style={containerStyle}
-        onPress={handlePress}
-        activeOpacity={0.7}>
-        <View style={accentStripeStyle} />
-        <View style={compactContentStyle}>
-          <View style={standardRowStyle}>
-            <View style={styles.textSection}>
-              <ItemNameText name={item.name} theme={theme} />
-              <View style={standardMetaRowStyle}>
-                {isPreferenceEnabled(displayPreferences, 'location') &&
-                  item.location && (
-                    <MetaItem
-                      icon="location-on"
-                      text={item.location.name}
-                      theme={theme}
-                    />
-                  )}
-                {isPreferenceEnabled(displayPreferences, 'labels') &&
-                  item.labels.length > 0 && (
-                    <MetaItem
-                      icon="label"
-                      text={item.labels.map(l => l.name).join(', ')}
-                      theme={theme}
-                    />
-                  )}
-              </View>
-            </View>
-            {hasImage && (
-              <View style={thumbnailStyle}>
-                <Image
-                  source={getImageSource(item.id, item.imageId!)}
-                  style={thumbnailImageStyle}
-                  resizeMode="cover"
-                />
-              </View>
-            )}
-            {isPreferenceEnabled(displayPreferences, 'quantity') && (
-              <QuantityBadge quantity={item.quantity} theme={theme} />
-            )}
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
-  }
-
-  // Detailed View (listZoom === 2)
-  return (
-    <TouchableOpacity
-      style={containerStyle}
-      onPress={handlePress}
-      activeOpacity={0.7}>
-      <View style={accentStripeStyle} />
-      <View style={detailedContentStyle}>
+      <ItemCardBase theme={theme} style={cardStyle} onPress={handlePress}>
         <View style={styles.headerRow}>
           <View style={styles.titleContainer}>
-            <ItemNameText name={item.name} size="xl" theme={theme} />
+            <ItemNameText name={item.name} theme={theme} />
           </View>
-          {isPreferenceEnabled(displayPreferences, 'quantity') && (
-            <QuantityBadge
-              quantity={item.quantity}
-              theme={theme}
-              style={styles.quantityBadgeFloating}
+          {showQuantity && (
+            <QuantityBadge quantity={item.quantity} theme={theme} />
+          )}
+        </View>
+        <View style={[styles.metaRow, {marginTop: theme.spacing.xs}]}>
+          {isPreferenceEnabled(displayPreferences, 'location') &&
+            item.location && (
+              <MetaItem
+                icon="location-on"
+                text={item.location.name}
+                theme={theme}
+              />
+            )}
+          {isPreferenceEnabled(displayPreferences, 'labels') &&
+            item.labels.length > 0 && (
+              <MetaItem
+                icon="label"
+                text={item.labels.map(l => l.name).join(', ')}
+                theme={theme}
+              />
+            )}
+          {hasImage && (
+            <MaterialIcons
+              name="image"
+              size={14}
+              color={theme.colors.text.tertiary}
             />
           )}
         </View>
+      </ItemCardBase>
+    );
+  }
 
-        {hasImage && (
-          <View style={imageContainerStyle}>
-            <Image
-              source={getImageSource(item.id, item.imageId!)}
-              style={fullImageStyle}
-              resizeMode="cover"
-            />
+  if (listZoom === 1) {
+    return (
+      <ItemCardBase theme={theme} style={cardStyle} onPress={handlePress}>
+        <View style={[styles.standardRow, {gap: theme.spacing.md}]}>
+          <View style={styles.textSection}>
+            <ItemNameText name={item.name} theme={theme} />
+            <View style={[styles.metaRow, {marginTop: theme.spacing.xs}]}>
+              {isPreferenceEnabled(displayPreferences, 'location') &&
+                item.location && (
+                  <MetaItem
+                    icon="location-on"
+                    text={item.location.name}
+                    theme={theme}
+                  />
+                )}
+              {isPreferenceEnabled(displayPreferences, 'labels') &&
+                item.labels.length > 0 && (
+                  <MetaItem
+                    icon="label"
+                    text={item.labels.map(l => l.name).join(', ')}
+                    theme={theme}
+                  />
+                )}
+            </View>
           </View>
-        )}
+          {hasImage && (
+            <View
+              style={[
+                styles.thumbnail,
+                {
+                  borderRadius: theme.borderRadius.md,
+                  backgroundColor: theme.colors.background.tertiary,
+                },
+              ]}>
+              <Image
+                source={getImageSource(item.id, item.imageId!)}
+                style={[
+                  styles.thumbnailImage,
+                  {borderRadius: theme.borderRadius.md},
+                ]}
+                resizeMode="cover"
+              />
+            </View>
+          )}
+          {showQuantity && (
+            <QuantityBadge quantity={item.quantity} theme={theme} />
+          )}
+        </View>
+      </ItemCardBase>
+    );
+  }
 
-        {hasDescription && (
-          <Text style={descriptionStyle}>{item.description}</Text>
-        )}
-
-        {hasFooterContent && (
-          <View style={detailedMetaRowStyle}>
-            {isPreferenceEnabled(displayPreferences, 'location') &&
-              item.location && (
-                <MetaItem
-                  icon="location-on"
-                  text={item.location.name}
-                  theme={theme}
-                />
-              )}
-            {isPreferenceEnabled(displayPreferences, 'labels') &&
-              item.labels.length > 0 && (
-                <MetaItem
-                  icon="label"
-                  text={item.labels.map(l => l.name).join(', ')}
-                  theme={theme}
-                />
-              )}
-            {isPreferenceEnabled(displayPreferences, 'purchasePrice') &&
-              item.purchasePrice &&
-              item.purchasePrice > 0 && (
-                <MetaItem
-                  icon="attach-money"
-                  text={`$${item.purchasePrice.toFixed(2)}`}
-                  theme={theme}
-                />
-              )}
-            {isPreferenceEnabled(displayPreferences, 'insured') && (
-              <MetaItem
-                icon={item.insured ? 'verified' : 'error-outline'}
-                text={item.insured ? 'Insured' : 'Uninsured'}
-                theme={theme}
-              />
-            )}
-            {isPreferenceEnabled(displayPreferences, 'createdAt') && (
-              <MetaItem
-                icon="schedule"
-                text={`Created: ${formatDate(item.createdAt)}`}
-                theme={theme}
-              />
-            )}
-            {isPreferenceEnabled(displayPreferences, 'updatedAt') && (
-              <MetaItem
-                icon="update"
-                text={`Updated: ${formatDate(item.updatedAt)}`}
-                theme={theme}
-              />
-            )}
-          </View>
+  return (
+    <ItemCardBase theme={theme} style={cardStyle} onPress={handlePress}>
+      <View style={styles.headerRow}>
+        <View style={styles.titleContainer}>
+          <ItemNameText name={item.name} size="xl" theme={theme} />
+        </View>
+        {showQuantity && (
+          <QuantityBadge quantity={item.quantity} theme={theme} />
         )}
       </View>
-    </TouchableOpacity>
+
+      {hasImage && (
+        <View
+          style={[
+            styles.imageContainer,
+            {
+              marginVertical: theme.spacing.sm,
+              borderRadius: theme.borderRadius.md,
+            },
+          ]}>
+          <Image
+            source={getImageSource(item.id, item.imageId!)}
+            style={[styles.fullImage, {borderRadius: theme.borderRadius.md}]}
+            resizeMode="cover"
+          />
+        </View>
+      )}
+
+      {hasDescription && (
+        <Text
+          style={[
+            styles.description,
+            {
+              color: theme.colors.text.secondary,
+              fontSize: theme.typography.sizes.md,
+              marginBottom: theme.spacing.sm,
+              fontFamily: theme.typography.fonts.regular,
+            },
+          ]}>
+          {item.description}
+        </Text>
+      )}
+
+      {hasFooterContent && (
+        <View
+          style={[
+            styles.metaRow,
+            styles.metaRowWrap,
+            {gap: theme.spacing.xs, marginTop: theme.spacing.xs},
+          ]}>
+          {isPreferenceEnabled(displayPreferences, 'location') &&
+            item.location && (
+              <MetaItem
+                icon="location-on"
+                text={item.location.name}
+                theme={theme}
+              />
+            )}
+          {isPreferenceEnabled(displayPreferences, 'labels') &&
+            item.labels.length > 0 && (
+              <MetaItem
+                icon="label"
+                text={item.labels.map(l => l.name).join(', ')}
+                theme={theme}
+              />
+            )}
+          {isPreferenceEnabled(displayPreferences, 'purchasePrice') &&
+            item.purchasePrice &&
+            item.purchasePrice > 0 && (
+              <MetaItem
+                icon="attach-money"
+                text={`$${item.purchasePrice.toFixed(2)}`}
+                theme={theme}
+              />
+            )}
+          {isPreferenceEnabled(displayPreferences, 'insured') && (
+            <MetaItem
+              icon={item.insured ? 'verified' : 'error-outline'}
+              text={item.insured ? 'Insured' : 'Uninsured'}
+              theme={theme}
+            />
+          )}
+          {isPreferenceEnabled(displayPreferences, 'createdAt') && (
+            <MetaItem
+              icon="schedule"
+              text={`Created: ${formatDate(item.createdAt)}`}
+              theme={theme}
+            />
+          )}
+          {isPreferenceEnabled(displayPreferences, 'updatedAt') && (
+            <MetaItem
+              icon="update"
+              text={`Updated: ${formatDate(item.updatedAt)}`}
+              theme={theme}
+            />
+          )}
+        </View>
+      )}
+    </ItemCardBase>
   );
 };
 
 export const InventoryListItem = React.memo(InventoryListItemComponent);
 
 const styles = StyleSheet.create({
-  container: {
-    overflow: 'hidden',
-    flex: 1,
-    flexDirection: 'row',
-  },
-  accentStripe: {
-    width: 3,
-    alignSelf: 'stretch',
-  },
-  content: {
-    flex: 1,
-  },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -506,27 +288,15 @@ const styles = StyleSheet.create({
   },
   titleContainer: {
     flex: 1,
-    marginRight: 40,
+    marginRight: 8,
   },
   itemName: {
     flex: 1,
-  },
-  quantityBadge: {
-    minWidth: 32,
-    alignItems: 'center',
   },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  metaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  metaIcon: {
-    marginRight: 4,
-  },
-  metaText: {},
   metaRowWrap: {
     flexWrap: 'wrap',
   },
@@ -554,11 +324,5 @@ const styles = StyleSheet.create({
     width: '100%',
     aspectRatio: 1,
   },
-  quantityBadgeFloating: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-  },
   description: {},
-  quantityText: {},
 });

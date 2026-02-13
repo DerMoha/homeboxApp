@@ -1,5 +1,12 @@
 import React, {useEffect, useCallback, useMemo} from 'react';
-import {View, StyleSheet, FlatList, RefreshControl, TouchableOpacity, Text} from 'react-native';
+import {
+  View,
+  StyleSheet,
+  FlatList,
+  RefreshControl,
+  TouchableOpacity,
+  Text,
+} from 'react-native';
 import {useTheme} from '../theme/ThemeContext';
 import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
@@ -18,6 +25,7 @@ import {
 } from '../components/Inventory';
 import {LoadingState} from '../components/common/LoadingState';
 import {EmptyState} from '../components/common/EmptyState';
+import {InventorySkeletonList} from '../components/common/Skeleton';
 import {InventoryItem} from '../types';
 import {matchesSearch, applyFilters} from '../utils/inventoryFilters';
 
@@ -35,6 +43,11 @@ type RootStackParamList = {
   };
   ItemDetail: {itemId: string};
 };
+
+const ITEM_HEIGHTS = {
+  0: 60,
+  1: 90,
+} as const;
 
 const InventoryScreen: React.FC = () => {
   const {theme} = useTheme();
@@ -93,16 +106,13 @@ const InventoryScreen: React.FC = () => {
     initializeScreen();
   }, [initializeScreen]);
 
-  // Apply search and filters to inventory
   const filteredInventory = useMemo(() => {
     let result = [...inventory];
 
-    // Apply search
     if (debouncedQuery.trim()) {
       result = result.filter(item => matchesSearch(item, debouncedQuery));
     }
 
-    // Apply filters
     result = applyFilters(result, filters);
 
     return result;
@@ -177,7 +187,18 @@ const InventoryScreen: React.FC = () => {
     [viewMode, displayPreferences, listZoom, itemsPerRow, handleItemPress],
   );
 
-  // Memoized styles (must be before early returns)
+  const getItemLayout = useCallback(
+    (_data: any, index: number) => {
+      const height = ITEM_HEIGHTS[listZoom as keyof typeof ITEM_HEIGHTS] ?? 90;
+      return {
+        length: height,
+        offset: height * index,
+        index,
+      };
+    },
+    [listZoom],
+  );
+
   const emptyStateStyle = useMemo(
     () => [
       styles.emptyStateContainer,
@@ -193,11 +214,13 @@ const InventoryScreen: React.FC = () => {
         color: theme.colors.text.secondary,
         fontSize: theme.typography.sizes.lg,
         marginBottom: theme.spacing.md,
+        fontFamily: theme.typography.fonts.semibold,
       },
     ],
     [
       theme.colors.text.secondary,
       theme.spacing.md,
+      theme.typography.fonts.semibold,
       theme.typography.sizes.lg,
     ],
   );
@@ -206,17 +229,20 @@ const InventoryScreen: React.FC = () => {
     () => [
       styles.clearButton,
       {
-        backgroundColor: theme.colors.accent.primary,
-        borderRadius: theme.borderRadius.md,
+        backgroundColor: theme.colors.background.secondary,
+        borderRadius: theme.borderRadius.lg,
+        borderColor: theme.colors.borderSubtle,
+        borderWidth: StyleSheet.hairlineWidth,
         paddingHorizontal: theme.spacing.lg,
-        paddingVertical: theme.spacing.md,
+        paddingVertical: theme.spacing.sm,
       },
     ],
     [
-      theme.borderRadius.md,
-      theme.colors.accent.primary,
+      theme.borderRadius.lg,
+      theme.colors.background.secondary,
+      theme.colors.borderSubtle,
       theme.spacing.lg,
-      theme.spacing.md,
+      theme.spacing.sm,
     ],
   );
 
@@ -224,21 +250,31 @@ const InventoryScreen: React.FC = () => {
     () => [
       styles.clearButtonText,
       {
-        color: theme.colors.text.inverse,
+        color: theme.colors.accent.primary,
         fontSize: theme.typography.sizes.md,
         fontWeight: theme.typography.weights.semibold,
+        fontFamily: theme.typography.fonts.semibold,
       },
     ],
     [
-      theme.colors.text.inverse,
+      theme.colors.accent.primary,
+      theme.typography.fonts.semibold,
       theme.typography.sizes.md,
       theme.typography.weights.semibold,
     ],
   );
 
-  // Early returns after all hooks
   if (isLoading && inventory.length === 0) {
-    return <LoadingState message="Loading inventory..." />;
+    return (
+      <View style={{flex: 1, backgroundColor: theme.colors.background.primary}}>
+        <InventorySkeletonList
+          viewMode={viewMode}
+          itemsPerRow={itemsPerRow}
+          listZoom={listZoom}
+          theme={theme}
+        />
+      </View>
+    );
   }
 
   const hasSearchOrFilters =
@@ -306,6 +342,12 @@ const InventoryScreen: React.FC = () => {
           />
         }
         showsVerticalScrollIndicator={false}
+        initialNumToRender={10}
+        maxToRenderPerBatch={5}
+        windowSize={5}
+        removeClippedSubviews={true}
+        {...(viewMode === 'list' &&
+          listZoom in ITEM_HEIGHTS && {getItemLayout})}
       />
 
       <SortModal
@@ -350,6 +392,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 24,
   },
   emptyStateText: {
     textAlign: 'center',
