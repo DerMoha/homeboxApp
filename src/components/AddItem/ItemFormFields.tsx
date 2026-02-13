@@ -1,5 +1,12 @@
 import React, {useMemo} from 'react';
-import {View, Text, TextInput, StyleSheet} from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  TouchableOpacity,
+} from 'react-native';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useTheme} from '../../theme/ThemeContext';
 import type {EnabledFields} from '../../types';
 
@@ -7,9 +14,11 @@ interface ItemFormFieldsProps {
   formData: Record<string, string | number>;
   enabledFields: EnabledFields;
   isQuantityFocused: boolean;
+  barcode?: string | null;
   onUpdateField: (field: string, value: string | number) => void;
   onQuantityFocus: () => void;
   onQuantityBlur: () => void;
+  onScanBarcode?: () => void;
 }
 
 interface FieldTagProps {
@@ -60,9 +69,11 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
   formData,
   enabledFields,
   isQuantityFocused,
+  barcode,
   onUpdateField,
   onQuantityFocus,
   onQuantityBlur,
+  onScanBarcode,
 }) => {
   const {theme} = useTheme();
 
@@ -93,6 +104,17 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
   const sectionSpacingStyle = useMemo(
     () => ({marginBottom: theme.spacing.md}),
     [theme.spacing.md],
+  );
+
+  const scanButtonStyle = useMemo(
+    () => [
+      styles.scanButton,
+      {
+        backgroundColor: theme.colors.accent.muted,
+        borderRadius: theme.borderRadius.md,
+      },
+    ],
+    [theme.colors.accent.muted, theme.borderRadius.md],
   );
 
   return (
@@ -132,6 +154,32 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
           onFocus={onQuantityFocus}
           onBlur={onQuantityBlur}
         />
+      </View>
+
+      {/* Barcode */}
+      <View style={sectionSpacingStyle}>
+        <View style={styles.labelRow}>
+          <Text style={labelStyle}>Barcode</Text>
+          <FieldTag label="Optional" theme={theme} />
+        </View>
+        <View style={styles.barcodeRow}>
+          <TextInput
+            style={[inputStyle, styles.barcodeInput]}
+            placeholder="Scan or enter barcode"
+            placeholderTextColor={theme.colors.text.secondary}
+            value={String(barcode || '')}
+            onChangeText={text => onUpdateField('barcode', text)}
+          />
+          {onScanBarcode && (
+            <TouchableOpacity style={scanButtonStyle} onPress={onScanBarcode}>
+              <MaterialIcons
+                name="qr-code-scanner"
+                size={20}
+                color={theme.colors.accent.primary}
+              />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {/* Description (if enabled) */}
@@ -195,5 +243,19 @@ const styles = StyleSheet.create({
   },
   textArea: {
     minHeight: 120,
+  },
+  barcodeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  barcodeInput: {
+    flex: 1,
+  },
+  scanButton: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

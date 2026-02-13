@@ -33,6 +33,8 @@
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string/>
+	<key>NSCameraUsageDescription</key>
+	<string>Homebox needs camera access to scan barcodes and take photos of items.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIRequiredDeviceCapabilities</key>

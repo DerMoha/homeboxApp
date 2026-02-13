@@ -38,6 +38,7 @@ export interface Item {
   imageId?: string | null;
   insured: boolean;
   purchasePrice: number;
+  barcode?: string | null;
 }
 
 // Inventory item (alias for backward compatibility)

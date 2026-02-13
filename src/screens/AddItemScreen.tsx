@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {
   View,
   Text,
@@ -20,6 +20,8 @@ import {
   ItemFormFields,
 } from '../components/AddItem';
 import {SectionHeader} from '../components/SectionHeader';
+import {BarcodeScannerModal} from '../components/BarcodeScanner';
+import {barcodeService} from '../services/barcodeService';
 
 const AddItemScreen: React.FC = () => {
   const {theme} = useTheme();
@@ -104,6 +106,10 @@ const AddItemScreen: React.FC = () => {
     resetForm,
     submitItem,
   } = useAddItemForm();
+
+  const [scannerVisible, setScannerVisible] = useState(false);
+  const [barcode, setBarcode] = useState<string | null>(null);
+  const [isLookingUpBarcode, setIsLookingUpBarcode] = useState(false);
 
   const submitButtonStyle = useMemo(
     () => [
@@ -191,6 +197,32 @@ const AddItemScreen: React.FC = () => {
     }
   };
 
+  const handleBarcodeDetected = async (scannedBarcode: string) => {
+    setScannerVisible(false);
+    setBarcode(scannedBarcode);
+    setIsLookingUpBarcode(true);
+
+    try {
+      const result = await barcodeService.lookupBarcode(scannedBarcode);
+      if (result.success && result.product) {
+        if (!formData.name && result.product.name) {
+          updateFormField('name', result.product.name);
+        }
+        if (!formData.description && result.product.description) {
+          updateFormField('description', result.product.description);
+        }
+      }
+    } catch {
+      // Silently fail - barcode is still saved
+    } finally {
+      setIsLookingUpBarcode(false);
+    }
+  };
+
+  const handleScanBarcode = () => {
+    setScannerVisible(true);
+  };
+
   if (isConnecting) {
     return (
       <View style={screenStyle}>
@@ -220,10 +252,27 @@ const AddItemScreen: React.FC = () => {
             formData={formData}
             enabledFields={enabledFields}
             isQuantityFocused={isQuantityFocused}
+            barcode={barcode}
             onUpdateField={updateFormField}
             onQuantityFocus={handleQuantityFocus}
             onQuantityBlur={handleQuantityBlur}
+            onScanBarcode={handleScanBarcode}
           />
+          {isLookingUpBarcode && (
+            <View style={styles.lookupIndicator}>
+              <ActivityIndicator
+                size="small"
+                color={theme.colors.accent.primary}
+              />
+              <Text
+                style={[
+                  styles.lookupText,
+                  {color: theme.colors.text.secondary},
+                ]}>
+                Looking up product...
+              </Text>
+            </View>
+          )}
         </View>
 
         <SectionHeader title="Location" icon="place" variant="withIcon" />
@@ -293,6 +342,12 @@ const AddItemScreen: React.FC = () => {
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
+
+      <BarcodeScannerModal
+        visible={scannerVisible}
+        onClose={() => setScannerVisible(false)}
+        onBarcodeDetected={handleBarcodeDetected}
+      />
     </View>
   );
 };
@@ -351,6 +406,15 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: 24,
+  },
+  lookupIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    gap: 8,
+  },
+  lookupText: {
+    fontSize: 13,
   },
 });
 

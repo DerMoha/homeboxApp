@@ -20,6 +20,7 @@ import {useTheme} from '../theme/ThemeContext';
 import ServerService from '../services/serverService';
 import {InventoryItem} from '../types';
 import {LocationsStackParamList} from '../types/navigation';
+import {BarcodeScannerModal} from '../components/BarcodeScanner';
 
 type FontWeight = TextStyle['fontWeight'];
 
@@ -315,6 +316,7 @@ const HomeScreen: React.FC = () => {
   const [topLocation, setTopLocation] = useState<LocationSummary | null>(null);
   const [recentItems, setRecentItems] = useState<InventoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [scannerVisible, setScannerVisible] = useState(false);
 
   const loadHomeData = useCallback(async () => {
     setIsLoading(true);
@@ -397,8 +399,16 @@ const HomeScreen: React.FC = () => {
   }, [navigation, topLocation]);
 
   const handleScanPress = useCallback(() => {
-    Alert.alert('Scan barcode', 'Barcode scanning is not available yet.');
+    setScannerVisible(true);
   }, []);
+
+  const handleBarcodeDetected = useCallback(
+    (barcode: string) => {
+      setScannerVisible(false);
+      navigation.navigate('AddItemTab');
+    },
+    [navigation],
+  );
 
   const latestItem = recentItems[0];
   const lastItemName = latestItem?.name ?? 'No items yet';
@@ -661,6 +671,12 @@ const HomeScreen: React.FC = () => {
           </Text>
         )
       )}
+
+      <BarcodeScannerModal
+        visible={scannerVisible}
+        onClose={() => setScannerVisible(false)}
+        onBarcodeDetected={handleBarcodeDetected}
+      />
     </ScrollView>
   );
 };
