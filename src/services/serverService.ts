@@ -12,28 +12,6 @@ import {
   Item,
 } from '../types';
 
-export interface InventoryItem {
-  id: string;
-  name: string;
-  description?: string;
-  quantity: number;
-  location?: {
-    id: string;
-    name: string;
-  };
-  labels?: Array<{
-    id: string;
-    name: string;
-  }>;
-  archived: boolean;
-  assetId: string;
-  createdAt: string;
-  updatedAt: string;
-  imageId?: string;
-  insured: boolean;
-  purchasePrice: number;
-}
-
 interface ErrorResponse {
   message?: string;
   [key: string]: unknown;
