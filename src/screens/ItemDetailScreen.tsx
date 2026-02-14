@@ -18,6 +18,7 @@ import {getImageSource, formatDateTime} from '../utils/imageUtils';
 import {LoadingState} from '../components/common/LoadingState';
 import {ErrorState} from '../components/common/ErrorState';
 import {hapticImpact} from '../utils/haptics';
+import {formatRelativeTime} from '../utils/dateUtils';
 
 type ItemDetailRouteProp = RouteProp<
   {ItemDetail: {itemId: string}},
@@ -601,7 +602,7 @@ const ItemDetailScreen: React.FC = () => {
             <MetaRow
               icon="schedule"
               label="Created"
-              value={formatDateTime(item.createdAt)}
+              value={`Added ${formatRelativeTime(item.createdAt)}`}
               theme={theme}
             />
             <MetaRow

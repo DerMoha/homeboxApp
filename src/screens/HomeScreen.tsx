@@ -21,6 +21,7 @@ import ServerService from '../services/serverService';
 import {InventoryItem} from '../types';
 import {LocationsStackParamList} from '../types/navigation';
 import {BarcodeScannerModal} from '../components/BarcodeScanner';
+import {formatRelativeTime} from '../utils/dateUtils';
 
 type FontWeight = TextStyle['fontWeight'];
 
@@ -225,18 +226,18 @@ const RecentItemRow: React.FC<RecentItemRowProps> = ({item, onPress}) => {
           ]}>
           {item.location?.name ?? 'Unassigned'} - Qty {item.quantity}
         </Text>
+        <Text
+          style={[
+            styles.recentTime,
+            {
+              color: theme.colors.text.tertiary,
+              fontSize: theme.typography.sizes.xs,
+              fontFamily: theme.typography.fonts.regular,
+            },
+          ]}>
+          Added {formatRelativeTime(item.createdAt)}
+        </Text>
       </View>
-      <Text
-        style={[
-          styles.recentDate,
-          {
-            color: theme.colors.text.tertiary,
-            fontSize: theme.typography.sizes.xs,
-            fontFamily: theme.typography.fonts.regular,
-          },
-        ]}>
-        {formatShortDate(item.createdAt)}
-      </Text>
     </TouchableOpacity>
   );
 };
@@ -829,8 +830,8 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   recentSubtitle: {},
-  recentDate: {
-    marginLeft: 12,
+  recentTime: {
+    marginTop: 2,
   },
   emptyState: {
     textAlign: 'center',
