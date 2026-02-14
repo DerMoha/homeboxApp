@@ -135,7 +135,11 @@ const InventoryListItemComponent: React.FC<InventoryListItemProps> = ({
                 item.location && (
                   <MetaItem
                     icon="location-on"
-                    text={item.location.name}
+                    text={
+                      item.location.itemCount
+                        ? `${item.location.name} (${item.location.itemCount})`
+                        : item.location.name
+                    }
                     theme={theme}
                   />
                 )}
@@ -230,7 +234,11 @@ const InventoryListItemComponent: React.FC<InventoryListItemProps> = ({
             item.location && (
               <MetaItem
                 icon="location-on"
-                text={item.location.name}
+                text={
+                  item.location.itemCount
+                    ? `${item.location.name} (${item.location.itemCount})`
+                    : item.location.name
+                }
                 theme={theme}
               />
             )}

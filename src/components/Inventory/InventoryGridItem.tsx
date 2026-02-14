@@ -283,7 +283,9 @@ const InventoryGridItemComponent: React.FC<InventoryGridItemProps> = ({
               style={itemLocationStyle}
               numberOfLines={2}
               ellipsizeMode="tail">
-              {item.location.name}
+              {item.location.itemCount
+                ? `${item.location.name} (${item.location.itemCount})`
+                : item.location.name}
             </Text>
           )}
 

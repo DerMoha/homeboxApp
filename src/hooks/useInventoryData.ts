@@ -12,12 +12,32 @@ export const useInventoryData = () => {
 
   const sortInventory = useCallback(
     (items: InventoryItem[], sortBy: SortOption): InventoryItem[] => {
-      // Ensure items is an array before spreading
       if (!items || !Array.isArray(items)) {
         return [];
       }
 
-      return [...items].sort((a, b) => {
+      const locationCounts = new Map<string, number>();
+      items.forEach(item => {
+        if (item.location?.id) {
+          locationCounts.set(
+            item.location.id,
+            (locationCounts.get(item.location.id) || 0) + 1,
+          );
+        }
+      });
+
+      const itemsWithCounts = items.map(item => {
+        if (item.location?.id) {
+          const count = locationCounts.get(item.location.id) || 0;
+          return {
+            ...item,
+            location: {...item.location, itemCount: count},
+          };
+        }
+        return item;
+      });
+
+      return [...itemsWithCounts].sort((a, b) => {
         switch (sortBy) {
           case 'name':
             return a.name.localeCompare(b.name);
