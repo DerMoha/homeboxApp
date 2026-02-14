@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useTheme} from '../../theme/ThemeContext';
+import {hapticImpact} from '../../utils/haptics';
 
 type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
 type ButtonSize = 'small' | 'medium' | 'large';
@@ -40,6 +41,7 @@ export const Button: React.FC<ButtonProps> = ({
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
+    hapticImpact(variant === 'danger' ? 'heavy' : 'medium');
     Animated.spring(scaleAnim, {
       toValue: 0.97,
       useNativeDriver: true,

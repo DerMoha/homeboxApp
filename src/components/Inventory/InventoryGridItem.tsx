@@ -17,6 +17,7 @@ import {
 } from '../../hooks/useDisplayPreferences';
 import {getImageSource} from '../../utils/imageUtils';
 import {QuantityBadge, InfoChip} from './shared';
+import {hapticImpact} from '../../utils/haptics';
 
 interface InventoryGridItemProps {
   item: InventoryItem;
@@ -55,6 +56,7 @@ const InventoryGridItemComponent: React.FC<InventoryGridItemProps> = ({
   const imageHeight = useMemo(() => Math.round(itemWidth * 0.62), [itemWidth]);
 
   const handlePressIn = useCallback(() => {
+    hapticImpact('light');
     Animated.spring(scaleAnim, {
       toValue: 0.96,
       useNativeDriver: true,

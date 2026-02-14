@@ -1,6 +1,7 @@
 import React, {memo, useMemo, ReactNode} from 'react';
 import {View, TouchableOpacity, StyleSheet, ViewStyle} from 'react-native';
 import {Theme} from '../../../theme/theme';
+import {hapticImpact} from '../../../utils/haptics';
 
 interface ItemCardBaseProps {
   children: ReactNode;
@@ -63,7 +64,10 @@ const ItemCardBaseComponent: React.FC<ItemCardBaseProps> = ({
     return (
       <TouchableOpacity
         style={containerStyle}
-        onPress={onPress}
+        onPress={() => {
+          hapticImpact('light');
+          onPress();
+        }}
         activeOpacity={0.8}>
         <View style={accentStripeStyle} />
         <View style={contentStyle}>{children}</View>

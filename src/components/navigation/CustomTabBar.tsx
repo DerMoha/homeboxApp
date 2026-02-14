@@ -13,6 +13,7 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import type {BottomTabBarProps} from '@react-navigation/bottom-tabs';
 import {useTheme} from '../../theme/ThemeContext';
 import type {Theme} from '../../theme/theme';
+import {hapticSelection, hapticImpact} from '../../utils/haptics';
 
 type FontWeight = TextStyle['fontWeight'];
 
@@ -159,7 +160,10 @@ const TabItem: React.FC<TabItemProps> = ({
         accessibilityRole="button"
         accessibilityState={isFocused ? {selected: true} : {}}
         accessibilityLabel={accessibilityLabel}
-        onPress={onPress}
+        onPress={() => {
+          hapticImpact('medium');
+          onPress();
+        }}
         onLongPress={onLongPress}
         style={styles.tab}
         activeOpacity={0.8}>
@@ -174,7 +178,10 @@ const TabItem: React.FC<TabItemProps> = ({
       accessibilityRole="button"
       accessibilityState={isFocused ? {selected: true} : {}}
       accessibilityLabel={accessibilityLabel}
-      onPress={onPress}
+      onPress={() => {
+        hapticSelection();
+        onPress();
+      }}
       onLongPress={onLongPress}
       style={styles.tab}
       activeOpacity={0.7}>

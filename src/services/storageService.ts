@@ -31,6 +31,9 @@ export const STORAGE_KEYS = {
   // Theme
   THEME_MODE: '@theme_mode',
   CUSTOM_COLORS: '@customColors',
+
+  // Haptics
+  HAPTICS_ENABLED: '@haptics_enabled',
 } as const;
 
 class StorageService {

@@ -5,11 +5,26 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  Switch,
 } from 'react-native';
 import {useTheme} from '../theme/ThemeContext';
+import {useHaptics} from '../hooks/useHaptics';
+import {setHapticsEnabled} from '../utils/haptics';
+import {hapticSelection} from '../utils/haptics';
 
 const AppearanceScreen: React.FC = () => {
   const {theme, themeMode, setThemeMode} = useTheme();
+  const {hapticsEnabled, setHapticsEnabled: setHapticsPref} = useHaptics();
+
+  const handleThemeModeChange = (mode: 'light' | 'dark' | 'auto' | 'oled') => {
+    hapticSelection();
+    setThemeMode(mode);
+  };
+
+  const handleHapticsToggle = async (value: boolean) => {
+    setHapticsEnabled(value);
+    await setHapticsPref(value);
+  };
 
   return (
     <View
@@ -88,7 +103,7 @@ const AppearanceScreen: React.FC = () => {
                         : theme.colors.borderSubtle,
                     },
                   ]}
-                  onPress={() => setThemeMode(mode)}>
+                  onPress={() => handleThemeModeChange(mode)}>
                   <Text
                     style={[
                       styles.themeModeText,
@@ -137,6 +152,54 @@ const AppearanceScreen: React.FC = () => {
             ]}>
             Coming soon...
           </Text>
+        </View>
+
+        <View
+          style={[
+            styles.section,
+            {
+              backgroundColor: theme.colors.background.secondary,
+              borderColor: theme.colors.borderSubtle,
+            },
+          ]}>
+          <View style={styles.settingRow}>
+            <View style={styles.settingTextContainer}>
+              <Text
+                style={[
+                  styles.sectionTitle,
+                  {
+                    color: theme.colors.text.primary,
+                    fontFamily: theme.typography.fonts.semibold,
+                    marginBottom: 4,
+                  },
+                ]}>
+                Haptic Feedback
+              </Text>
+              <Text
+                style={[
+                  styles.settingDescription,
+                  {
+                    color: theme.colors.text.secondary,
+                    fontFamily: theme.typography.fonts.regular,
+                  },
+                ]}>
+                Vibrations for button presses and actions
+              </Text>
+            </View>
+            <Switch
+              value={hapticsEnabled}
+              onValueChange={handleHapticsToggle}
+              trackColor={{
+                false: theme.colors.borderSubtle,
+                true: theme.colors.accent.muted,
+              }}
+              thumbColor={
+                hapticsEnabled
+                  ? theme.colors.accent.primary
+                  : theme.colors.text.tertiary
+              }
+            />
+          </View>
         </View>
       </ScrollView>
     </View>
@@ -198,6 +261,19 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingBottom: 24,
+  },
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  settingTextContainer: {
+    flex: 1,
+    marginRight: 12,
+  },
+  settingDescription: {
+    fontSize: 14,
+    lineHeight: 20,
   },
 });
 
