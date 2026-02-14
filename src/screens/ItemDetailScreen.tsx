@@ -1,13 +1,23 @@
 import React, {useCallback, useEffect, useMemo} from 'react';
-import {View, Text, StyleSheet, ScrollView, Image} from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Image,
+  Share,
+  TouchableOpacity,
+} from 'react-native';
 import {RouteProp, useRoute} from '@react-navigation/native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import ServerService, {InventoryItem} from '../services/serverService';
+import ServerService from '../services/serverService';
+import {Item} from '../types';
 import {useTheme} from '../theme/ThemeContext';
 import {useAsyncState} from '../hooks/useAsyncState';
 import {getImageSource, formatDateTime} from '../utils/imageUtils';
 import {LoadingState} from '../components/common/LoadingState';
 import {ErrorState} from '../components/common/ErrorState';
+import {hapticImpact} from '../utils/haptics';
 
 type ItemDetailRouteProp = RouteProp<
   {ItemDetail: {itemId: string}},
@@ -198,18 +208,13 @@ const ItemDetailScreen: React.FC = () => {
   const {theme} = useTheme();
   const route = useRoute<ItemDetailRouteProp>();
   const {itemId} = route.params;
-  const {
-    data: item,
-    isLoading,
-    error,
-    execute,
-  } = useAsyncState<InventoryItem>();
+  const {data: item, isLoading, error, execute} = useAsyncState<Item>();
 
   const fetchItem = useCallback(async () => {
     const service = ServerService.getInstance();
     const result = await service.getItemById(itemId);
     if (result.success && result.data) {
-      return result.data as InventoryItem;
+      return result.data as Item;
     }
     throw new Error(result.error || 'Failed to load item');
   }, [itemId]);
@@ -220,6 +225,36 @@ const ItemDetailScreen: React.FC = () => {
 
   const description = item?.description?.trim();
   const labels = item?.labels ?? [];
+
+  const buildShareMessage = useCallback(() => {
+    if (!item) return '';
+    const lines = [item.name];
+    if (item.location?.name) {
+      lines.push(`Location: ${item.location.name}`);
+    }
+    lines.push(`Quantity: ${item.quantity}`);
+    if (item.purchasePrice && item.purchasePrice > 0) {
+      lines.push(`Purchase Price: $${item.purchasePrice.toFixed(2)}`);
+    }
+    if (description) {
+      lines.push(`Description: ${description}`);
+    }
+    return lines.join('\n');
+  }, [item, description]);
+
+  const handleShare = useCallback(async () => {
+    if (!item) return;
+    hapticImpact('light');
+    const message = buildShareMessage();
+    try {
+      await Share.share({
+        message,
+        title: item.name,
+      });
+    } catch (error) {
+      // Share was cancelled or failed
+    }
+  }, [item, buildShareMessage]);
 
   const containerStyle = useMemo(
     () => [
@@ -479,7 +514,24 @@ const ItemDetailScreen: React.FC = () => {
                 )}
               </View>
               <View style={styles.heroText}>
-                <Text style={titleStyle}>{item.name}</Text>
+                <View style={styles.titleRow}>
+                  <Text style={titleStyle}>{item.name}</Text>
+                  <TouchableOpacity
+                    onPress={handleShare}
+                    style={[
+                      styles.shareButton,
+                      {
+                        backgroundColor: theme.colors.accent.muted,
+                        borderRadius: theme.borderRadius.sm,
+                      },
+                    ]}>
+                    <MaterialIcons
+                      name="share"
+                      size={20}
+                      color={theme.colors.accent.primary}
+                    />
+                  </TouchableOpacity>
+                </View>
                 <Text style={descStyle}>
                   {description || 'No description added yet.'}
                 </Text>
@@ -498,7 +550,7 @@ const ItemDetailScreen: React.FC = () => {
 
             {labels.length > 0 && (
               <View style={labelRowStyle}>
-                {labels.map(label => (
+                {labels.map((label: {id: string; name: string}) => (
                   <View key={label.id} style={labelChipStyle}>
                     <Text style={labelChipTextStyle}>{label.name}</Text>
                   </View>
@@ -610,6 +662,14 @@ const styles = StyleSheet.create({
   },
   title: {
     marginBottom: 6,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  shareButton: {
+    padding: 8,
   },
   desc: {
     marginBottom: 8,
