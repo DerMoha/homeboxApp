@@ -123,13 +123,7 @@ const LocationItemsScreen: React.FC = () => {
           colors={[theme.colors.button.primary]}
         />
       }
-      ListEmptyComponent={
-        <EmptyState
-          message="No items in this location"
-          subtitle="Items you add here will show up in this list."
-          icon="inventory"
-        />
-      }
+      ListEmptyComponent={<EmptyState variant="no-location-items" />}
     />
   );
 };

@@ -1,12 +1,5 @@
 import React, {useEffect, useCallback, useMemo} from 'react';
-import {
-  View,
-  StyleSheet,
-  FlatList,
-  RefreshControl,
-  TouchableOpacity,
-  Text,
-} from 'react-native';
+import {View, StyleSheet, FlatList, RefreshControl} from 'react-native';
 import {useTheme} from '../theme/ThemeContext';
 import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
@@ -28,6 +21,7 @@ import {EmptyState} from '../components/common/EmptyState';
 import {InventorySkeletonList} from '../components/common/Skeleton';
 import {InventoryItem} from '../types';
 import {matchesSearch, applyFilters} from '../utils/inventoryFilters';
+import {hapticImpact} from '../utils/haptics';
 
 type RootStackParamList = {
   InventoryTab: undefined;
@@ -207,63 +201,6 @@ const InventoryScreen: React.FC = () => {
     [theme.colors.background.primary],
   );
 
-  const emptyStateTextStyle = useMemo(
-    () => [
-      styles.emptyStateText,
-      {
-        color: theme.colors.text.secondary,
-        fontSize: theme.typography.sizes.lg,
-        marginBottom: theme.spacing.md,
-        fontFamily: theme.typography.fonts.semibold,
-      },
-    ],
-    [
-      theme.colors.text.secondary,
-      theme.spacing.md,
-      theme.typography.fonts.semibold,
-      theme.typography.sizes.lg,
-    ],
-  );
-
-  const clearButtonStyle = useMemo(
-    () => [
-      styles.clearButton,
-      {
-        backgroundColor: theme.colors.background.secondary,
-        borderRadius: theme.borderRadius.lg,
-        borderColor: theme.colors.borderSubtle,
-        borderWidth: StyleSheet.hairlineWidth,
-        paddingHorizontal: theme.spacing.lg,
-        paddingVertical: theme.spacing.sm,
-      },
-    ],
-    [
-      theme.borderRadius.lg,
-      theme.colors.background.secondary,
-      theme.colors.borderSubtle,
-      theme.spacing.lg,
-      theme.spacing.sm,
-    ],
-  );
-
-  const clearButtonTextStyle = useMemo(
-    () => [
-      styles.clearButtonText,
-      {
-        color: theme.colors.accent.primary,
-        fontSize: theme.typography.sizes.md,
-        fontWeight: theme.typography.weights.semibold,
-        fontFamily: theme.typography.fonts.semibold,
-      },
-    ],
-    [
-      theme.colors.accent.primary,
-      theme.typography.fonts.semibold,
-      theme.typography.sizes.md,
-      theme.typography.weights.semibold,
-    ],
-  );
-
   if (isLoading && inventory.length === 0) {
     return (
       <View style={{flex: 1, backgroundColor: theme.colors.background.primary}}>
@@ -280,8 +217,19 @@ const InventoryScreen: React.FC = () => {
   const hasSearchOrFilters =
     debouncedQuery.trim() !== '' || activeFilterCount > 0;
 
+  const handleAddItem = useCallback(() => {
+    hapticImpact('medium');
+    navigation.navigate('AddItem');
+  }, [navigation]);
+
+  const handleClearFilters = useCallback(() => {
+    hapticImpact('medium');
+    clearSearch();
+    clearAllFilters();
+  }, [clearSearch, clearAllFilters]);
+
   if (!isLoading && inventory.length === 0) {
-    return <EmptyState message="No items in inventory" icon="inventory" />;
+    return <EmptyState variant="empty-inventory" onAction={handleAddItem} />;
   }
 
   if (!isLoading && filteredInventory.length === 0 && hasSearchOrFilters) {
@@ -294,17 +242,11 @@ const InventoryScreen: React.FC = () => {
           resultCount={filteredInventory.length}
           totalCount={inventory.length}
         />
-        <View style={styles.emptyContent}>
-          <Text style={emptyStateTextStyle}>No matching items</Text>
-          <TouchableOpacity
-            style={clearButtonStyle}
-            onPress={() => {
-              clearSearch();
-              clearAllFilters();
-            }}>
-            <Text style={clearButtonTextStyle}>Clear Filters</Text>
-          </TouchableOpacity>
-        </View>
+        <EmptyState
+          variant="no-results"
+          actionLabel={activeFilterCount > 0 ? 'Clear Filters' : undefined}
+          onAction={activeFilterCount > 0 ? handleClearFilters : undefined}
+        />
       </View>
     );
   }
@@ -388,19 +330,6 @@ const styles = StyleSheet.create({
   emptyStateContainer: {
     flex: 1,
   },
-  emptyContent: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-  },
-  emptyStateText: {
-    textAlign: 'center',
-  },
-  clearButton: {
-    alignItems: 'center',
-  },
-  clearButtonText: {},
 });
 
 export default InventoryScreen;
