@@ -23,6 +23,14 @@ interface CreateItemResponse {
   error?: string;
 }
 
+export interface TreeNode {
+  id: string;
+  name?: string;
+  children?: TreeNode[];
+  items?: Item[];
+  [key: string]: unknown;
+}
+
 class ServerService {
   // ...existing fields and methods...
 
@@ -456,6 +464,46 @@ class ServerService {
       logger.error('Error getting location items', {error});
       return {success: false, error: 'Failed to get location items'};
     }
+  }
+
+  async getLocationTree(): Promise<ApiResponse<TreeNode[]>> {
+    try {
+      const axiosInstance = this.getAxiosInstance();
+      if (!axiosInstance) {
+        return {success: false, error: 'No active server connection'};
+      }
+      const response = await axiosInstance.get('/api/v1/locations/tree');
+      return {success: true, data: response.data};
+    } catch (error) {
+      logger.error('Error getting location tree', {error});
+      return {success: false, error: 'Failed to get location tree'};
+    }
+  }
+
+  buildLocationPath(
+    tree: TreeNode[],
+    targetLocationId: string,
+  ): {id: string; name: string}[] {
+    const path: {id: string; name: string}[] = [];
+
+    const findPath = (nodes: TreeNode[], targetId: string): boolean => {
+      for (const node of nodes) {
+        if (node.id === targetId) {
+          path.unshift({id: node.id, name: node.name || 'Unknown'});
+          return true;
+        }
+        if (node.children && node.children.length > 0) {
+          if (findPath(node.children, targetId)) {
+            path.unshift({id: node.id, name: node.name || 'Unknown'});
+            return true;
+          }
+        }
+      }
+      return false;
+    };
+
+    findPath(tree, targetLocationId);
+    return path;
   }
 
   async createItem(item: CreateItemRequest): Promise<CreateItemResponse> {

@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useMemo} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,8 @@ import {
   Share,
   TouchableOpacity,
 } from 'react-native';
-import {RouteProp, useRoute} from '@react-navigation/native';
+import {RouteProp, useRoute, useNavigation} from '@react-navigation/native';
+import {NavigationProp} from '@react-navigation/native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import ServerService from '../services/serverService';
 import {Item} from '../types';
@@ -17,6 +18,7 @@ import {useAsyncState} from '../hooks/useAsyncState';
 import {getImageSource, formatDateTime} from '../utils/imageUtils';
 import {LoadingState} from '../components/common/LoadingState';
 import {ErrorState} from '../components/common/ErrorState';
+import {Breadcrumb, BreadcrumbItem} from '../components/common/Breadcrumb';
 import {hapticImpact} from '../utils/haptics';
 import {formatRelativeTime} from '../utils/dateUtils';
 
@@ -208,8 +210,10 @@ const MetaRow: React.FC<MetaRowProps> = ({icon, label, value, theme}) => {
 const ItemDetailScreen: React.FC = () => {
   const {theme} = useTheme();
   const route = useRoute<ItemDetailRouteProp>();
+  const navigation = useNavigation<NavigationProp<{}>>();
   const {itemId} = route.params;
   const {data: item, isLoading, error, execute} = useAsyncState<Item>();
+  const [locationPath, setLocationPath] = useState<BreadcrumbItem[]>([]);
 
   const fetchItem = useCallback(async () => {
     const service = ServerService.getInstance();
@@ -223,6 +227,42 @@ const ItemDetailScreen: React.FC = () => {
   useEffect(() => {
     execute(fetchItem);
   }, [execute, fetchItem]);
+
+  useEffect(() => {
+    const fetchLocationPath = async () => {
+      if (!item?.location?.id) {
+        setLocationPath([]);
+        return;
+      }
+      const service = ServerService.getInstance();
+      const treeResult = await service.getLocationTree();
+      if (treeResult.success && treeResult.data) {
+        const path = service.buildLocationPath(
+          treeResult.data,
+          item.location.id,
+        );
+        setLocationPath(path);
+      }
+    };
+    fetchLocationPath();
+  }, [item?.location?.id]);
+
+  const handleBreadcrumbPress = useCallback(
+    (breadcrumbItem: BreadcrumbItem, index: number) => {
+      hapticImpact('light');
+      navigation.navigate(
+        'Locations' as never,
+        {
+          screen: 'LocationItems',
+          params: {
+            locationId: breadcrumbItem.id,
+            locationName: breadcrumbItem.name,
+          },
+        } as never,
+      );
+    },
+    [navigation],
+  );
 
   const description = item?.description?.trim();
   const labels = item?.labels ?? [];
@@ -536,6 +576,14 @@ const ItemDetailScreen: React.FC = () => {
                 <Text style={descStyle}>
                   {description || 'No description added yet.'}
                 </Text>
+                {locationPath.length > 0 && (
+                  <View style={styles.breadcrumbRow}>
+                    <Breadcrumb
+                      items={locationPath}
+                      onItemPress={handleBreadcrumbPress}
+                    />
+                  </View>
+                )}
                 <View style={styles.locationRow}>
                   <MaterialIcons
                     name="location-on"
@@ -673,6 +721,9 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   desc: {
+    marginBottom: 8,
+  },
+  breadcrumbRow: {
     marginBottom: 8,
   },
   locationRow: {
