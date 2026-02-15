@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useTheme} from '../../theme/ThemeContext';
-import {Label} from '../../hooks/useItemData';
+import {Label} from '../../types';
 
 interface LabelSelectorProps {
   labels: Label[];

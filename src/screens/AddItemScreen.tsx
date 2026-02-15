@@ -74,8 +74,7 @@ const AddItemScreen: React.FC = () => {
     ],
   );
 
-  const {locations, labels, enabledFields, isConnecting, loadEnabledFields} =
-    useItemData();
+  const {locations, labels, enabledFields, loadEnabledFields} = useItemData();
 
   const {
     selectedImage,
@@ -222,22 +221,6 @@ const AddItemScreen: React.FC = () => {
   const handleScanBarcode = () => {
     setScannerVisible(true);
   };
-
-  if (isConnecting) {
-    return (
-      <View style={screenStyle}>
-        <View style={styles.loadingContainer}>
-          <View style={loadingIconStyle}>
-            <ActivityIndicator
-              size="large"
-              color={theme.colors.accent.primary}
-            />
-          </View>
-          <Text style={loadingTextStyle}>Connecting to server...</Text>
-        </View>
-      </View>
-    );
-  }
 
   return (
     <View style={screenStyle}>

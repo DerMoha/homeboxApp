@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useTheme} from '../../theme/ThemeContext';
-import {Location} from '../../hooks/useItemData';
+import {Location} from '../../types';
 
 interface LocationSelectorProps {
   locations: Location[];

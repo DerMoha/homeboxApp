@@ -1,4 +1,4 @@
-import {useState, useEffect, useCallback} from 'react';
+import {useState, useCallback} from 'react';
 import {Alert} from 'react-native';
 import ServerService from '../services/serverService';
 import {logger} from '../utils/logger';
@@ -14,7 +14,6 @@ export const useItemData = () => {
     insured: false,
     labels: true,
   });
-  const [isConnecting, setIsConnecting] = useState(true);
 
   const loadEnabledFields = useCallback(async () => {
     try {
@@ -60,41 +59,13 @@ export const useItemData = () => {
     }
   }, []);
 
-  const autoConnect = useCallback(async () => {
-    try {
-      setIsConnecting(true);
-      const service = ServerService.getInstance();
-      const response = await service.autoConnect();
-
-      if (!response.success) {
-        Alert.alert(
-          'Error',
-          'Failed to connect to server. Please check your connection settings.',
-        );
-        return false;
-      }
-
-      await Promise.all([loadLocations(), loadLabels()]);
-      return true;
-    } catch (error) {
-      logger.error('Error auto-connecting', {error});
-      Alert.alert('Error', 'Failed to connect to server');
-      return false;
-    } finally {
-      setIsConnecting(false);
-    }
-  }, [loadLocations, loadLabels]);
-
-  useEffect(() => {
-    autoConnect();
-  }, [autoConnect]);
-
   return {
     locations,
     labels,
     enabledFields,
-    isConnecting,
     loadEnabledFields,
+    loadLocations,
+    loadLabels,
     refreshData: useCallback(() => {
       loadLocations();
       loadLabels();
