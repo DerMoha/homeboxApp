@@ -1,5 +1,5 @@
 import React, {useEffect, useCallback, useMemo} from 'react';
-import {View, StyleSheet, FlatList, RefreshControl} from 'react-native';
+import {View, StyleSheet, FlatList, RefreshControl, Alert} from 'react-native';
 import {useTheme} from '../theme/ThemeContext';
 import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
@@ -15,13 +15,14 @@ import {
   InventoryGridItem,
   SearchBar,
   FilterModal,
+  SwipeableItem,
 } from '../components/Inventory';
-import {LoadingState} from '../components/common/LoadingState';
 import {EmptyState} from '../components/common/EmptyState';
 import {InventorySkeletonList} from '../components/common/Skeleton';
 import {InventoryItem} from '../types';
 import {matchesSearch, applyFilters} from '../utils/inventoryFilters';
 import {hapticImpact} from '../utils/haptics';
+import ServerService from '../services/serverService';
 
 type RootStackParamList = {
   InventoryTab: undefined;
@@ -156,16 +157,62 @@ const InventoryScreen: React.FC = () => {
     [navigation],
   );
 
+  const handleEditItem = useCallback(
+    (itemId: string) => {
+      navigation.navigate('ItemDetail', {itemId});
+    },
+    [navigation],
+  );
+
+  const handleDeleteItem = useCallback(
+    (item: InventoryItem) => {
+      Alert.alert(
+        'Delete Item',
+        `Are you sure you want to delete "${item.name}"? This action cannot be undone.`,
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                const service = ServerService.getInstance();
+                const result = await service.deleteItem(item.id);
+                if (result.success) {
+                  hapticImpact('medium');
+                  loadInventory();
+                } else {
+                  Alert.alert('Error', result.error || 'Failed to delete item');
+                }
+              } catch (error) {
+                Alert.alert('Error', 'Failed to delete item');
+              }
+            },
+          },
+        ],
+      );
+    },
+    [loadInventory],
+  );
+
   const renderItem = useCallback(
     ({item}: {item: InventoryItem}) => {
       if (viewMode === 'list') {
         return (
-          <InventoryListItem
-            item={item}
-            displayPreferences={displayPreferences}
-            listZoom={listZoom}
-            onPress={() => handleItemPress(item.id)}
-          />
+          <SwipeableItem
+            onEdit={() => handleEditItem(item.id)}
+            onDelete={() => handleDeleteItem(item)}
+            itemName={item.name}>
+            <InventoryListItem
+              item={item}
+              displayPreferences={displayPreferences}
+              listZoom={listZoom}
+              onPress={() => handleItemPress(item.id)}
+            />
+          </SwipeableItem>
         );
       }
 
@@ -178,7 +225,15 @@ const InventoryScreen: React.FC = () => {
         />
       );
     },
-    [viewMode, displayPreferences, listZoom, itemsPerRow, handleItemPress],
+    [
+      viewMode,
+      displayPreferences,
+      listZoom,
+      itemsPerRow,
+      handleItemPress,
+      handleEditItem,
+      handleDeleteItem,
+    ],
   );
 
   const getItemLayout = useCallback(
@@ -201,6 +256,17 @@ const InventoryScreen: React.FC = () => {
     [theme.colors.background.primary],
   );
 
+  const handleAddItem = useCallback(() => {
+    hapticImpact('medium');
+    navigation.navigate('AddItem');
+  }, [navigation]);
+
+  const handleClearFilters = useCallback(() => {
+    hapticImpact('medium');
+    clearSearch();
+    clearAllFilters();
+  }, [clearSearch, clearAllFilters]);
+
   if (isLoading && inventory.length === 0) {
     return (
       <View style={{flex: 1, backgroundColor: theme.colors.background.primary}}>
@@ -216,17 +282,6 @@ const InventoryScreen: React.FC = () => {
 
   const hasSearchOrFilters =
     debouncedQuery.trim() !== '' || activeFilterCount > 0;
-
-  const handleAddItem = useCallback(() => {
-    hapticImpact('medium');
-    navigation.navigate('AddItem');
-  }, [navigation]);
-
-  const handleClearFilters = useCallback(() => {
-    hapticImpact('medium');
-    clearSearch();
-    clearAllFilters();
-  }, [clearSearch, clearAllFilters]);
 
   if (!isLoading && inventory.length === 0) {
     return <EmptyState variant="empty-inventory" onAction={handleAddItem} />;

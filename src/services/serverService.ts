@@ -567,6 +567,32 @@ class ServerService {
       };
     }
   }
+
+  async deleteItem(itemId: string): Promise<ApiResponse> {
+    try {
+      const axiosInstance = this.getAxiosInstance();
+      if (!axiosInstance) {
+        return {success: false, error: 'No active server connection'};
+      }
+      await axiosInstance.delete(`/api/v1/items/${itemId}`);
+      return {success: true};
+    } catch (error: unknown) {
+      logger.error('Error deleting item', {error});
+      if (axios.isAxiosError(error)) {
+        return {
+          success: false,
+          error:
+            error.response?.data?.message ||
+            error.message ||
+            'Failed to delete item',
+        };
+      }
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to delete item',
+      };
+    }
+  }
 }
 
 export default ServerService;
