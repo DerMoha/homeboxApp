@@ -1,12 +1,11 @@
+import {renderHook, act} from '@testing-library/react-native';
+import {Alert} from 'react-native';
 import {useAddItemForm} from '../useAddItemForm';
 import ServerService from '../../services/serverService';
 
 jest.mock('../../services/serverService');
 
 const mockAlert = jest.fn();
-jest.mock('react-native/Libraries/Alert/Alert', () => ({
-  alert: mockAlert,
-}));
 
 const mockedServerService = ServerService as jest.Mocked<typeof ServerService>;
 
@@ -15,9 +14,13 @@ describe('useAddItemForm', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(Alert, 'alert').mockImplementation((...args) => {
+      mockAlert(...args);
+    });
 
     mockServiceInstance = {
       createItem: jest.fn(),
+      updateItem: jest.fn(),
       uploadItemImage: jest.fn(),
     };
 
@@ -41,6 +44,11 @@ describe('useAddItemForm', () => {
     it('should have uploadItemImage method available', () => {
       const service = ServerService.getInstance();
       expect(service.uploadItemImage).toBeDefined();
+    });
+
+    it('should have updateItem method available', () => {
+      const service = ServerService.getInstance();
+      expect(service.updateItem).toBeDefined();
     });
   });
 
@@ -120,6 +128,100 @@ describe('useAddItemForm', () => {
     it('should have Alert.alert mocked', () => {
       expect(mockAlert).toBeDefined();
       expect(typeof mockAlert).toBe('function');
+    });
+  });
+
+  describe('submitItem', () => {
+    it('should include barcode when creating an item', async () => {
+      mockServiceInstance.createItem.mockResolvedValueOnce({
+        success: true,
+        data: {id: 'item-1', name: 'Test Item'},
+      });
+
+      const onSuccess = jest.fn();
+      const {result} = renderHook(() => useAddItemForm());
+
+      act(() => {
+        result.current.updateFormField('name', 'Test Item');
+        result.current.updateFormField('barcode', '123456789');
+        result.current.setSelectedLocation({
+          id: 'loc-1',
+          name: 'Shelf',
+          description: '',
+        });
+      });
+
+      await act(async () => {
+        await result.current.submitItem(
+          undefined,
+          null,
+          {
+            description: true,
+            purchasePrice: true,
+            insured: true,
+            labels: true,
+          },
+          onSuccess,
+        );
+      });
+
+      expect(mockServiceInstance.createItem).toHaveBeenCalledWith(
+        expect.objectContaining({barcode: '123456789'}),
+      );
+      expect(mockAlert).toHaveBeenCalledWith(
+        'Success',
+        'Item added successfully!',
+        expect.any(Array),
+      );
+    });
+
+    it('should update an existing item when itemId is provided', async () => {
+      const updatedItem = {id: 'item-1', name: 'Updated Item'};
+      mockServiceInstance.updateItem.mockResolvedValueOnce({
+        success: true,
+        data: updatedItem,
+      });
+
+      const onSuccess = jest.fn();
+      const {result} = renderHook(() => useAddItemForm());
+
+      act(() => {
+        result.current.updateFormField('name', 'Updated Item');
+        result.current.setSelectedLocation({
+          id: 'loc-1',
+          name: 'Shelf',
+          description: '',
+        });
+      });
+
+      await act(async () => {
+        await result.current.submitItem(
+          'item-1',
+          null,
+          {
+            description: true,
+            purchasePrice: true,
+            insured: true,
+            labels: true,
+          },
+          onSuccess,
+        );
+      });
+
+      expect(mockServiceInstance.updateItem).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'item-1',
+          name: 'Updated Item',
+        }),
+      );
+
+      const successAlert = mockAlert.mock.calls.find(
+        call => call[1] === 'Item updated successfully!',
+      );
+      const buttons = successAlert?.[2] as Array<{onPress?: () => void}>;
+      buttons[0].onPress?.();
+
+      expect(onSuccess).toHaveBeenCalledWith(updatedItem);
     });
   });
 });

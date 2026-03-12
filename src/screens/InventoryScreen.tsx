@@ -1,7 +1,7 @@
 import React, {useEffect, useCallback, useMemo} from 'react';
 import {View, StyleSheet, FlatList, RefreshControl, Alert} from 'react-native';
 import {useTheme} from '../theme/ThemeContext';
-import {useNavigation} from '@react-navigation/native';
+import {CompositeNavigationProp, useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useInventoryData} from '../hooks/useInventoryData';
 import {useInventoryDisplay} from '../hooks/useInventoryDisplay';
@@ -20,24 +20,15 @@ import {
 import {EmptyState} from '../components/common/EmptyState';
 import {InventorySkeletonList} from '../components/common/Skeleton';
 import {InventoryItem} from '../types';
+import {InventoryStackParamList, RootTabParamList} from '../types/navigation';
 import {matchesSearch, applyFilters} from '../utils/inventoryFilters';
 import {hapticImpact} from '../utils/haptics';
 import ServerService from '../services/serverService';
 
-type RootStackParamList = {
-  InventoryTab: undefined;
-  Inventory: undefined;
-  InventorySettings: undefined;
-  AddItem: undefined;
-  ServerConfig: undefined;
-  SettingsTab: {
-    screen: 'Settings';
-    params?: {
-      screen: 'ServerConfig';
-    };
-  };
-  ItemDetail: {itemId: string};
-};
+type InventoryScreenNavigationProp = CompositeNavigationProp<
+  NativeStackNavigationProp<InventoryStackParamList, 'Inventory'>,
+  NativeStackNavigationProp<RootTabParamList>
+>;
 
 const ITEM_HEIGHTS = {
   0: 60,
@@ -46,8 +37,7 @@ const ITEM_HEIGHTS = {
 
 const InventoryScreen: React.FC = () => {
   const {theme} = useTheme();
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<InventoryScreenNavigationProp>();
 
   const {
     inventory,
@@ -163,7 +153,10 @@ const InventoryScreen: React.FC = () => {
 
   const handleEditItem = useCallback(
     (itemId: string) => {
-      navigation.navigate('ItemDetail', {itemId});
+      navigation.navigate('AddItemTab', {
+        screen: 'AddItem',
+        params: {itemId},
+      });
     },
     [navigation],
   );
@@ -262,7 +255,9 @@ const InventoryScreen: React.FC = () => {
 
   const handleAddItem = useCallback(() => {
     hapticImpact('medium');
-    navigation.navigate('AddItem');
+    navigation.navigate('AddItemTab', {
+      screen: 'AddItem',
+    });
   }, [navigation]);
 
   const handleClearFilters = useCallback(() => {

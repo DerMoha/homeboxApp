@@ -1,7 +1,14 @@
 import {useState, useCallback} from 'react';
 import {Alert} from 'react-native';
 import ServerService from '../services/serverService';
-import {Location, Label, EnabledFields, FormDataFile} from '../types';
+import {
+  Location,
+  Label,
+  EnabledFields,
+  FormDataFile,
+  Item,
+  UpdateItemRequest,
+} from '../types';
 import {logger} from '../utils/logger';
 
 interface FormData {
@@ -44,11 +51,26 @@ export const useAddItemForm = () => {
     setSelectedLabels([]);
   }, []);
 
+  const populateForm = useCallback((item: Item) => {
+    setFormData({
+      name: item.name,
+      quantity: String(item.quantity || 1),
+      description: item.description || '',
+      purchasePrice:
+        item.purchasePrice > 0 ? String(item.purchasePrice) : undefined,
+      insured: item.insured,
+      barcode: item.barcode || '',
+    });
+    setSelectedLocation(item.location);
+    setSelectedLabels(item.labels || []);
+  }, []);
+
   const submitItem = useCallback(
     async (
+      itemId: string | undefined,
       imageUri: string | null,
       enabledFields: EnabledFields,
-      onSuccess: () => void,
+      onSuccess: (item: Item) => void,
     ): Promise<boolean> => {
       if (!formData.name?.trim()) {
         Alert.alert('Error', 'Please enter an item name');
@@ -79,11 +101,20 @@ export const useAddItemForm = () => {
           labels: selectedLabels.map(label => label.id),
         };
 
-        const itemResponse = await service.createItem(itemData);
+        const itemResponse = itemId
+          ? await service.updateItem({
+              ...(itemData as UpdateItemRequest),
+              id: itemId,
+            })
+          : await service.createItem(itemData);
 
         if (!itemResponse.success || !itemResponse.data) {
-          throw new Error('Failed to create item');
+          throw new Error(
+            itemId ? 'Failed to update item' : 'Failed to create item',
+          );
         }
+
+        let savedItem = itemResponse.data;
 
         // Upload image if selected
         if (imageUri) {
@@ -120,24 +151,37 @@ export const useAddItemForm = () => {
             logger.warn('Failed to upload image', {
               error: imageResponse.error,
             });
-            Alert.alert('Warning', 'Item was created but image upload failed');
+            Alert.alert(
+              'Warning',
+              itemId
+                ? 'Item was updated but image upload failed'
+                : 'Item was created but image upload failed',
+            );
           } else if (imageResponse.data) {
             logger.log('Image uploaded successfully, updated item', {
               item: imageResponse.data,
             });
+            savedItem = imageResponse.data;
           } else {
             logger.log('Image uploaded successfully without updated item data');
           }
         }
 
-        Alert.alert('Success', 'Item added successfully!', [
-          {text: 'OK', onPress: onSuccess},
-        ]);
+        Alert.alert(
+          'Success',
+          itemId ? 'Item updated successfully!' : 'Item added successfully!',
+          [{text: 'OK', onPress: () => onSuccess(savedItem)}],
+        );
 
         return true;
       } catch (error) {
         logger.error('Error creating item:', {error});
-        Alert.alert('Error', 'Failed to create item. Please try again.');
+        Alert.alert(
+          'Error',
+          itemId
+            ? 'Failed to update item. Please try again.'
+            : 'Failed to create item. Please try again.',
+        );
         return false;
       } finally {
         setIsLoading(false);
@@ -157,6 +201,7 @@ export const useAddItemForm = () => {
     updateFormField,
     handleLabelToggle,
     resetForm,
+    populateForm,
     submitItem,
   };
 };

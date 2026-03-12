@@ -130,7 +130,7 @@ class ServerService {
    * @param id The item ID
    * @returns ApiResponse with the item details
    */
-  public async getItemById(id: string): Promise<ApiResponse> {
+  public async getItemById(id: string): Promise<ApiResponse<Item>> {
     try {
       if (!this.axiosInstance || !this.token) {
         return {
@@ -712,7 +712,7 @@ class ServerService {
   async uploadItemImage(
     itemId: string,
     formData: FormData,
-  ): Promise<ApiResponse> {
+  ): Promise<ApiResponse<Item>> {
     try {
       const axiosInstance = this.getAxiosInstance();
       if (!axiosInstance) {

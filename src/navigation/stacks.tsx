@@ -1,6 +1,6 @@
 import React from 'react';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { useTheme } from '../theme/ThemeContext';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import {useTheme} from '../theme/ThemeContext';
 
 import SettingsScreen from '../screens/SettingsScreen';
 import ServerConfigScreen from '../screens/ServerConfigScreen';
@@ -12,14 +12,20 @@ import ItemDetailScreen from '../screens/ItemDetailScreen';
 import LocationsScreen from '../screens/LocationsScreen';
 import LocationItemsScreen from '../screens/LocationItemsScreen';
 import AddItemScreen from '../screens/AddItemScreen';
+import {
+  AddItemStackParamList,
+  InventoryStackParamList,
+  LocationsStackParamList,
+  SettingsStackParamList,
+} from '../types/navigation';
 
-const SettingsStack = createNativeStackNavigator();
-const LocationsStack = createNativeStackNavigator();
-const InventoryStack = createNativeStackNavigator();
-const AddItemStack = createNativeStackNavigator();
+const SettingsStack = createNativeStackNavigator<SettingsStackParamList>();
+const LocationsStack = createNativeStackNavigator<LocationsStackParamList>();
+const InventoryStack = createNativeStackNavigator<InventoryStackParamList>();
+const AddItemStack = createNativeStackNavigator<AddItemStackParamList>();
 
 const useStackScreenOptions = () => {
-  const { theme } = useTheme();
+  const {theme} = useTheme();
 
   return {
     headerStyle: {
@@ -48,27 +54,27 @@ export const SettingsStackScreen: React.FC = () => {
       <SettingsStack.Screen
         name="Settings"
         component={SettingsScreen}
-        options={{ headerLargeTitle: true }}
+        options={{headerLargeTitle: true}}
       />
       <SettingsStack.Screen
         name="ServerConfig"
         component={ServerConfigScreen}
-        options={{ title: 'Server Configuration' }}
+        options={{title: 'Server Configuration'}}
       />
       <SettingsStack.Screen
         name="Appearance"
         component={AppearanceScreen}
-        options={{ title: 'Appearance' }}
+        options={{title: 'Appearance'}}
       />
       <SettingsStack.Screen
         name="InventorySettings"
         component={InventorySettingsScreen}
-        options={{ title: 'Inventory Display' }}
+        options={{title: 'Inventory Display'}}
       />
       <SettingsStack.Screen
         name="AddItemSettings"
         component={AddItemSettingsScreen}
-        options={{ title: 'Add Fields' }}
+        options={{title: 'Add Fields'}}
       />
     </SettingsStack.Navigator>
   );
@@ -82,9 +88,12 @@ export const LocationsStackScreen: React.FC = () => {
       <LocationsStack.Screen
         name="LocationsList"
         component={LocationsScreen}
-        options={{ title: 'Locations', headerLargeTitle: true }}
+        options={{title: 'Locations', headerLargeTitle: true}}
       />
-      <LocationsStack.Screen name="LocationItems" component={LocationItemsScreen} />
+      <LocationsStack.Screen
+        name="LocationItems"
+        component={LocationItemsScreen}
+      />
     </LocationsStack.Navigator>
   );
 };
@@ -97,12 +106,12 @@ export const InventoryStackScreen: React.FC = () => {
       <InventoryStack.Screen
         name="Inventory"
         component={InventoryScreen}
-        options={{ title: 'Inventory', headerLargeTitle: true }}
+        options={{title: 'Inventory', headerLargeTitle: true}}
       />
       <InventoryStack.Screen
         name="ItemDetail"
         component={ItemDetailScreen}
-        options={{ title: 'Item Details' }}
+        options={{title: 'Item Details'}}
       />
     </InventoryStack.Navigator>
   );
@@ -116,7 +125,7 @@ export const AddItemStackScreen: React.FC = () => {
       <AddItemStack.Screen
         name="AddItem"
         component={AddItemScreen}
-        options={{ title: 'Add Item', headerLargeTitle: true }}
+        options={{title: 'Add Item', headerLargeTitle: true}}
       />
     </AddItemStack.Navigator>
   );

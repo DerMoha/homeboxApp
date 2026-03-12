@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import {useTheme} from '../theme/ThemeContext';
 import {
+  NavigationProp,
   RouteProp,
   useFocusEffect,
   useNavigation,
@@ -28,7 +29,8 @@ import {
 import {SectionHeader} from '../components/SectionHeader';
 import {BarcodeScannerModal} from '../components/BarcodeScanner';
 import {barcodeService} from '../services/barcodeService';
-import {AddItemStackParamList} from '../types/navigation';
+import ServerService from '../services/serverService';
+import {AddItemStackParamList, RootTabParamList} from '../types/navigation';
 
 const AddItemScreen: React.FC = () => {
   const {theme} = useTheme();
@@ -94,11 +96,16 @@ const AddItemScreen: React.FC = () => {
     updateFormField,
     handleLabelToggle,
     resetForm,
+    populateForm,
     submitItem,
   } = useAddItemForm();
 
   const [scannerVisible, setScannerVisible] = useState(false);
   const [isLookingUpBarcode, setIsLookingUpBarcode] = useState(false);
+  const [isPreparingItem, setIsPreparingItem] = useState(false);
+
+  const itemId = route.params?.itemId;
+  const isEditing = Boolean(itemId);
 
   const submitButtonStyle = useMemo(
     () => [
@@ -157,19 +164,71 @@ const AddItemScreen: React.FC = () => {
 
   useEffect(() => {
     navigation.setOptions({
-      title: 'Add Item',
+      title: isEditing ? 'Edit Item' : 'Add Item',
       headerStyle: {
         backgroundColor: theme.colors.background.primary,
       },
       headerTintColor: theme.colors.text.primary,
     });
-  }, [navigation, theme]);
+  }, [isEditing, navigation, theme]);
+
+  useEffect(() => {
+    if (!itemId) {
+      return;
+    }
+
+    let isMounted = true;
+
+    const loadItem = async () => {
+      try {
+        setIsPreparingItem(true);
+        const result = await ServerService.getInstance().getItemById(itemId);
+
+        if (!isMounted) {
+          return;
+        }
+
+        if (result.success && result.data) {
+          populateForm(result.data);
+          return;
+        }
+
+        navigation
+          .getParent<NavigationProp<RootTabParamList>>()
+          ?.navigate('InventoryTab', {
+            screen: 'Inventory',
+          });
+      } finally {
+        if (isMounted) {
+          setIsPreparingItem(false);
+        }
+      }
+    };
+
+    loadItem();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [itemId, navigation, populateForm]);
 
   const handleSubmit = async () => {
-    const success = await submitItem(selectedImage, enabledFields, () => {
-      resetForm();
-      clearImage();
-    });
+    const success = await submitItem(
+      itemId,
+      selectedImage,
+      enabledFields,
+      item => {
+        resetForm();
+        clearImage();
+        navigation.setParams({barcode: undefined, itemId: undefined});
+        navigation
+          .getParent<NavigationProp<RootTabParamList>>()
+          ?.navigate('InventoryTab', {
+            screen: 'ItemDetail',
+            params: {itemId: item.id},
+          });
+      },
+    );
 
     if (success) {
       navigation.goBack();
@@ -242,6 +301,34 @@ const AddItemScreen: React.FC = () => {
   const handleScanBarcode = useCallback(() => {
     setScannerVisible(true);
   }, []);
+
+  if (isPreparingItem) {
+    return (
+      <View style={styles.loadingContainer}>
+        <View
+          style={[
+            styles.loadingIconContainer,
+            {
+              backgroundColor: theme.colors.background.secondary,
+              borderColor: theme.colors.borderSubtle,
+            },
+          ]}>
+          <ActivityIndicator size="large" color={theme.colors.accent.primary} />
+        </View>
+        <Text
+          style={[
+            styles.loadingText,
+            {
+              color: theme.colors.text.secondary,
+              fontFamily: theme.typography.fonts.regular,
+              fontSize: theme.typography.sizes.md,
+            },
+          ]}>
+          Loading item details...
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View style={screenStyle}>
@@ -325,7 +412,7 @@ const AddItemScreen: React.FC = () => {
         <TouchableOpacity
           style={submitButtonStyle}
           onPress={handleSubmit}
-          disabled={isLoading}
+          disabled={isLoading || isPreparingItem}
           activeOpacity={0.8}>
           {isLoading ? (
             <ActivityIndicator color={theme.colors.text.inverse} />
@@ -333,12 +420,14 @@ const AddItemScreen: React.FC = () => {
             <>
               <View style={submitIconStyle}>
                 <MaterialIcons
-                  name="add"
+                  name={isEditing ? 'edit' : 'add'}
                   size={20}
                   color={theme.colors.text.inverse}
                 />
               </View>
-              <Text style={submitButtonTextStyle}>Add Item</Text>
+              <Text style={submitButtonTextStyle}>
+                {isEditing ? 'Save Changes' : 'Add Item'}
+              </Text>
             </>
           )}
         </TouchableOpacity>
