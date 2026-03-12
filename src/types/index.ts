@@ -80,6 +80,11 @@ export interface CreateItemRequest {
   labels?: string[];
   purchasePrice?: number;
   insured?: boolean;
+  barcode?: string;
+}
+
+export interface UpdateItemRequest extends CreateItemRequest {
+  id: string;
 }
 
 export interface EnabledFields {
@@ -97,6 +102,8 @@ export interface ServerConfig {
   password: string;
   name?: string;
 }
+
+export type StoredServerConfig = Omit<ServerConfig, 'password'>;
 
 // Display preferences
 export interface DisplayPreference {

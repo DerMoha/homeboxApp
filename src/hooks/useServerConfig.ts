@@ -1,6 +1,7 @@
 import {useState, useCallback} from 'react';
 import {Alert} from 'react-native';
-import ServerService, {ServerConfig} from '../services/serverService';
+import ServerService from '../services/serverService';
+import {ServerConfig} from '../types';
 import {logger} from '../utils/logger';
 import {hapticNotification} from '../utils/haptics';
 
@@ -81,7 +82,7 @@ export const useServerConfig = () => {
         setSelectedServer(updatedServers[0].id);
       }
     } catch (error) {
-      logger.error('Error loading servers:', error);
+      logger.error('Error loading servers:', {error});
       Alert.alert('Error', 'Failed to load saved servers');
     }
   }, []);
@@ -110,7 +111,7 @@ export const useServerConfig = () => {
         );
       }
     } catch (error) {
-      logger.error('Error testing connection:', error);
+      logger.error('Error testing connection:', {error});
       Alert.alert('Error', 'Failed to test connection');
     } finally {
       setIsLoading(false);
@@ -132,7 +133,7 @@ export const useServerConfig = () => {
         Alert.alert('Error', 'Failed to save server configuration');
       }
     } catch (error) {
-      logger.error('Error in saveServerConfig:', error);
+      logger.error('Error in saveServerConfig:', {error});
       hapticNotification('error');
       Alert.alert('Error', 'Failed to save server configuration');
     } finally {
@@ -174,7 +175,7 @@ export const useServerConfig = () => {
 
       await saveServerConfig();
     } catch (error) {
-      logger.error('Error saving server:', error);
+      logger.error('Error saving server:', {error});
       Alert.alert('Error', 'Failed to save server configuration');
       setIsSaving(false);
     }
@@ -210,7 +211,7 @@ export const useServerConfig = () => {
                   Alert.alert('Error', 'Failed to delete server');
                 }
               } catch (error) {
-                logger.error('Error deleting server:', error);
+                logger.error('Error deleting server:', {error});
                 hapticNotification('error');
                 Alert.alert('Error', 'Failed to delete server');
               }

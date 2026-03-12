@@ -1,15 +1,20 @@
 import axios, {AxiosError} from 'axios';
 import ServerService from '../serverService';
-import {ServerConfig} from '../../types';
+import {ServerConfig, StoredServerConfig} from '../../types';
 import {storageService, STORAGE_KEYS} from '../storageService';
+import {secureStorageService} from '../secureStorageService';
 
 // Mock dependencies
 jest.mock('axios');
 jest.mock('../storageService');
+jest.mock('../secureStorageService');
 
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 const mockedStorageService = storageService as jest.Mocked<
   typeof storageService
+>;
+const mockedSecureStorageService = secureStorageService as jest.Mocked<
+  typeof secureStorageService
 >;
 
 describe('ServerService', () => {
@@ -22,6 +27,13 @@ describe('ServerService', () => {
     username: 'testuser',
     password: 'testpass',
     name: 'Test Server',
+  };
+
+  const storedConfig: StoredServerConfig = {
+    id: mockConfig.id,
+    host: mockConfig.host,
+    username: mockConfig.username,
+    name: mockConfig.name,
   };
 
   beforeEach(() => {
@@ -42,6 +54,11 @@ describe('ServerService', () => {
 
     mockedAxios.create.mockReturnValue(mockAxiosInstance as any);
     mockedAxios.isAxiosError.mockReturnValue(true);
+    mockedSecureStorageService.getServerPassword.mockResolvedValue(
+      mockConfig.password,
+    );
+    mockedSecureStorageService.setServerPassword.mockResolvedValue(true);
+    mockedSecureStorageService.removeServerPassword.mockResolvedValue(true);
 
     // Clear all mocks
     jest.clearAllMocks();
@@ -129,7 +146,7 @@ describe('ServerService', () => {
       expect(result.error).toBe('Failed to get authentication token');
     });
 
-    it('should add http:// protocol if not present', async () => {
+    it('should default local hosts to http://', async () => {
       mockAxiosInstance.post.mockResolvedValueOnce({
         data: {token: 'test-token'},
       });
@@ -155,6 +172,32 @@ describe('ServerService', () => {
         expect.objectContaining({
           baseURL: 'https://example.com',
         }),
+      );
+    });
+
+    it('should default public hosts to https://', async () => {
+      mockAxiosInstance.post.mockResolvedValueOnce({
+        data: {token: 'test-token'},
+      });
+
+      await serverService.initialize({...mockConfig, host: 'example.com'});
+
+      expect(mockedAxios.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          baseURL: 'https://example.com',
+        }),
+      );
+    });
+
+    it('should reject explicit public http hosts', async () => {
+      const result = await serverService.initialize({
+        ...mockConfig,
+        host: 'http://example.com',
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe(
+        'HTTP is only supported for local or private servers',
       );
     });
   });
@@ -201,7 +244,7 @@ describe('ServerService', () => {
   describe('autoConnect()', () => {
     it('should restore last used server and connect', async () => {
       mockedStorageService.getItem.mockResolvedValueOnce('test-server-1');
-      mockedStorageService.getItem.mockResolvedValueOnce([mockConfig]);
+      mockedStorageService.getItem.mockResolvedValueOnce([storedConfig]);
 
       mockAxiosInstance.post.mockResolvedValueOnce({
         data: {token: 'test-token'},
@@ -226,7 +269,7 @@ describe('ServerService', () => {
 
     it('should handle server not found in saved servers', async () => {
       mockedStorageService.getItem.mockResolvedValueOnce('non-existent-id');
-      mockedStorageService.getItem.mockResolvedValueOnce([mockConfig]);
+      mockedStorageService.getItem.mockResolvedValueOnce([storedConfig]);
 
       const result = await serverService.autoConnect();
 
@@ -378,14 +421,25 @@ describe('ServerService', () => {
       const result = await serverService.saveServer(mockConfig);
 
       expect(result).toBe(true);
+      expect(mockedSecureStorageService.setServerPassword).toHaveBeenCalledWith(
+        mockConfig.id,
+        mockConfig.password,
+      );
       expect(mockedStorageService.setItem).toHaveBeenCalledWith(
         STORAGE_KEYS.SERVERS,
-        [mockConfig],
+        [
+          {
+            id: mockConfig.id,
+            host: mockConfig.host,
+            username: mockConfig.username,
+            name: mockConfig.name,
+          },
+        ],
       );
     });
 
     it('should update existing server', async () => {
-      const existingServers = [mockConfig];
+      const existingServers = [storedConfig];
       const updatedConfig = {...mockConfig, name: 'Updated Name'};
 
       mockedStorageService.getItem.mockResolvedValueOnce(existingServers);
@@ -395,17 +449,27 @@ describe('ServerService', () => {
 
       expect(mockedStorageService.setItem).toHaveBeenCalledWith(
         STORAGE_KEYS.SERVERS,
-        [updatedConfig],
+        [
+          {
+            id: updatedConfig.id,
+            host: updatedConfig.host,
+            username: updatedConfig.username,
+            name: updatedConfig.name,
+          },
+        ],
       );
     });
 
     it('should delete server', async () => {
-      mockedStorageService.getItem.mockResolvedValueOnce([mockConfig]);
+      mockedStorageService.getItem.mockResolvedValueOnce([storedConfig]);
       mockedStorageService.setItem.mockResolvedValueOnce(true);
 
       const result = await serverService.deleteServer('test-server-1');
 
       expect(result).toBe(true);
+      expect(
+        mockedSecureStorageService.removeServerPassword,
+      ).toHaveBeenCalledWith('test-server-1');
       expect(mockedStorageService.setItem).toHaveBeenCalledWith(
         STORAGE_KEYS.SERVERS,
         [],
@@ -413,12 +477,43 @@ describe('ServerService', () => {
     });
 
     it('should get all servers', async () => {
-      const servers = [mockConfig];
+      const servers: StoredServerConfig[] = [
+        {
+          id: mockConfig.id,
+          host: mockConfig.host,
+          username: mockConfig.username,
+          name: mockConfig.name,
+        },
+      ];
       mockedStorageService.getItem.mockResolvedValueOnce(servers);
 
       const result = await serverService.getServers();
 
-      expect(result).toEqual(servers);
+      expect(result).toEqual([mockConfig]);
+    });
+
+    it('should migrate legacy stored passwords into secure storage', async () => {
+      mockedStorageService.getItem.mockResolvedValueOnce([mockConfig]);
+      mockedStorageService.setItem.mockResolvedValueOnce(true);
+
+      const result = await serverService.getServers();
+
+      expect(result).toEqual([mockConfig]);
+      expect(mockedSecureStorageService.setServerPassword).toHaveBeenCalledWith(
+        mockConfig.id,
+        mockConfig.password,
+      );
+      expect(mockedStorageService.setItem).toHaveBeenCalledWith(
+        STORAGE_KEYS.SERVERS,
+        [
+          {
+            id: mockConfig.id,
+            host: mockConfig.host,
+            username: mockConfig.username,
+            name: mockConfig.name,
+          },
+        ],
+      );
     });
 
     it('should handle storage errors gracefully', async () => {

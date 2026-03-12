@@ -1,14 +1,17 @@
 import axios, {AxiosInstance, AxiosError} from 'axios';
 import {storageService, STORAGE_KEYS} from './storageService';
+import {secureStorageService} from './secureStorageService';
 import {logger} from '../utils/logger';
 import {
   ServerConfig,
+  StoredServerConfig,
   ApiResponse,
   Location,
   LocationResponse,
   Label,
   InventoryResponse,
   CreateItemRequest,
+  UpdateItemRequest,
   Item,
 } from '../types';
 
@@ -30,6 +33,94 @@ export interface TreeNode {
   items?: Item[];
   [key: string]: unknown;
 }
+
+const HTTP_PROTOCOL = 'http://';
+const HTTPS_PROTOCOL = 'https://';
+
+const isIpv4Address = (value: string) => /^(\d{1,3}\.){3}\d{1,3}$/.test(value);
+
+const isPrivateIpv4Address = (value: string) => {
+  if (!isIpv4Address(value)) {
+    return false;
+  }
+
+  const octets = value.split('.').map(Number);
+
+  if (octets.some(octet => Number.isNaN(octet) || octet < 0 || octet > 255)) {
+    return false;
+  }
+
+  const [first, second] = octets;
+
+  return (
+    first === 10 ||
+    first === 127 ||
+    (first === 192 && second === 168) ||
+    (first === 172 && second >= 16 && second <= 31)
+  );
+};
+
+const isPrivateHost = (hostname: string) => {
+  const normalizedHost = hostname.toLowerCase();
+
+  return (
+    normalizedHost === 'localhost' ||
+    normalizedHost === '::1' ||
+    normalizedHost === '[::1]' ||
+    normalizedHost.endsWith('.local') ||
+    isPrivateIpv4Address(normalizedHost) ||
+    !normalizedHost.includes('.')
+  );
+};
+
+const extractHostname = (input: string) => {
+  try {
+    return new URL(`${HTTP_PROTOCOL}${input}`).hostname;
+  } catch {
+    return '';
+  }
+};
+
+const normalizeServerHost = (input: string) => {
+  const trimmedInput = input.trim();
+
+  if (!trimmedInput) {
+    throw new Error('Please enter a server address');
+  }
+
+  const hasExplicitProtocol = /^https?:\/\//i.test(trimmedInput);
+  const hostname = hasExplicitProtocol
+    ? new URL(trimmedInput).hostname
+    : extractHostname(trimmedInput);
+
+  const baseUrl = hasExplicitProtocol
+    ? trimmedInput
+    : `${
+        isPrivateHost(hostname) ? HTTP_PROTOCOL : HTTPS_PROTOCOL
+      }${trimmedInput}`;
+
+  let parsedUrl: URL;
+
+  try {
+    parsedUrl = new URL(baseUrl);
+  } catch {
+    throw new Error('Please enter a valid server address');
+  }
+
+  if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+    throw new Error('Server address must use http or https');
+  }
+
+  if (parsedUrl.protocol === 'http:' && !isPrivateHost(parsedUrl.hostname)) {
+    throw new Error('HTTP is only supported for local or private servers');
+  }
+
+  const normalizedPath = parsedUrl.pathname === '/' ? '' : parsedUrl.pathname;
+  return `${parsedUrl.protocol}//${parsedUrl.host}${normalizedPath}`.replace(
+    /\/+$/,
+    '',
+  );
+};
 
 class ServerService {
   // ...existing fields and methods...
@@ -91,15 +182,9 @@ class ServerService {
 
   public async initialize(config: ServerConfig): Promise<ApiResponse> {
     try {
+      const normalizedHost = normalizeServerHost(config.host);
       this.currentConfig = config;
-      const protocol = config.host.startsWith('http') ? '' : 'http://';
-      this.axiosInstance = axios.create({
-        baseURL: `${protocol}${config.host}`,
-        timeout: 5000,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      this.axiosInstance = axios.create(this.createAxiosConfig(normalizedHost));
 
       // First authenticate to get token
       const loginResponse = await this.axiosInstance.post(
@@ -135,14 +220,8 @@ class ServerService {
 
   public async testConnection(config: ServerConfig): Promise<ApiResponse> {
     try {
-      const protocol = config.host.startsWith('http') ? '' : 'http://';
-      const testInstance = axios.create({
-        baseURL: `${protocol}${config.host}`,
-        timeout: 5000,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const normalizedHost = normalizeServerHost(config.host);
+      const testInstance = axios.create(this.createAxiosConfig(normalizedHost));
 
       // Test authentication
       const loginResponse = await testInstance.post('/api/v1/users/login', {
@@ -168,10 +247,15 @@ class ServerService {
 
   public async getServers(): Promise<ServerConfig[]> {
     try {
-      const servers = await storageService.getItem<ServerConfig[]>(
-        STORAGE_KEYS.SERVERS,
-      );
-      return servers || [];
+      const servers = await storageService.getItem<
+        Array<StoredServerConfig | ServerConfig>
+      >(STORAGE_KEYS.SERVERS);
+
+      if (!servers?.length) {
+        return [];
+      }
+
+      return this.hydrateServers(servers);
     } catch (error) {
       logger.error('Error getting servers', {error});
       return [];
@@ -182,6 +266,7 @@ class ServerService {
     try {
       const servers = await this.getServers();
       const existingIndex = servers.findIndex(s => s.id === config.id);
+      const storedConfig = this.toStoredServerConfig(config);
 
       if (existingIndex >= 0) {
         servers[existingIndex] = config;
@@ -189,7 +274,22 @@ class ServerService {
         servers.push(config);
       }
 
-      return await storageService.setItem(STORAGE_KEYS.SERVERS, servers);
+      const passwordSaved = await secureStorageService.setServerPassword(
+        config.id,
+        config.password,
+      );
+
+      if (!passwordSaved) {
+        return false;
+      }
+
+      const storedServers = servers.map(server =>
+        server.id === config.id
+          ? storedConfig
+          : this.toStoredServerConfig(server),
+      );
+
+      return await storageService.setItem(STORAGE_KEYS.SERVERS, storedServers);
     } catch (error) {
       logger.error('Error saving server', {error});
       return false;
@@ -200,7 +300,16 @@ class ServerService {
     try {
       const servers = await this.getServers();
       const updatedServers = servers.filter(s => s.id !== serverId);
-      return await storageService.setItem(STORAGE_KEYS.SERVERS, updatedServers);
+      const storageUpdated = await storageService.setItem(
+        STORAGE_KEYS.SERVERS,
+        updatedServers.map(server => this.toStoredServerConfig(server)),
+      );
+
+      const passwordDeleted = await secureStorageService.removeServerPassword(
+        serverId,
+      );
+
+      return storageUpdated && passwordDeleted;
     } catch (error) {
       logger.error('Error deleting server', {error});
       return false;
@@ -215,10 +324,8 @@ class ServerService {
     if (!this.currentConfig) {
       throw new Error('No active server configuration');
     }
-    const protocol = this.currentConfig.host.startsWith('http')
-      ? ''
-      : 'http://';
-    return `${protocol}${this.currentConfig.host}`;
+
+    return normalizeServerHost(this.currentConfig.host);
   }
 
   public getAxiosInstance(): AxiosInstance | null {
@@ -338,6 +445,67 @@ class ServerService {
     }
   }
 
+  private createAxiosConfig(baseURL: string) {
+    return {
+      baseURL,
+      timeout: 5000,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    };
+  }
+
+  private toStoredServerConfig(config: ServerConfig): StoredServerConfig {
+    return {
+      id: config.id,
+      host: config.host,
+      username: config.username,
+      name: config.name,
+    };
+  }
+
+  private isLegacyServerConfig(
+    server: StoredServerConfig | ServerConfig,
+  ): server is ServerConfig {
+    return 'password' in server && typeof server.password === 'string';
+  }
+
+  private async hydrateServers(
+    servers: Array<StoredServerConfig | ServerConfig>,
+  ): Promise<ServerConfig[]> {
+    let migratedLegacyServers = false;
+
+    const hydratedServers = await Promise.all(
+      servers.map(async server => {
+        if (this.isLegacyServerConfig(server)) {
+          migratedLegacyServers = true;
+          await secureStorageService.setServerPassword(
+            server.id,
+            server.password,
+          );
+          return server;
+        }
+
+        const password = await secureStorageService.getServerPassword(
+          server.id,
+        );
+        return {
+          ...server,
+          password: password ?? '',
+        };
+      }),
+    );
+
+    if (migratedLegacyServers) {
+      await storageService.setItem(
+        STORAGE_KEYS.SERVERS,
+        hydratedServers.map(server => this.toStoredServerConfig(server)),
+      );
+    }
+
+    return hydratedServers;
+  }
+
   /**
    * Transforms a raw array of locations into the expected response format
    * @param locations Array of location objects
@@ -407,13 +575,6 @@ class ServerService {
       const response = await axiosInstance.get('/api/v1/locations/tree');
       const tree = response.data;
       // Helper to recursively search for the location
-      interface TreeNode {
-        id: string;
-        children?: TreeNode[];
-        items?: Item[];
-        [key: string]: unknown;
-      }
-
       function findLocation(node: TreeNode, id: string): TreeNode | null {
         if (node.id === id) {
           return node;
@@ -522,6 +683,28 @@ class ServerService {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to create item',
+      };
+    }
+  }
+
+  async updateItem(item: UpdateItemRequest): Promise<CreateItemResponse> {
+    try {
+      const axiosInstance = this.getAxiosInstance();
+      if (!axiosInstance) {
+        throw new Error('No active server connection');
+      }
+
+      const {id, ...payload} = item;
+      const response = await axiosInstance.put(`/api/v1/items/${id}`, payload);
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error: unknown) {
+      logger.error('Error updating item', {error});
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to update item',
       };
     }
   }

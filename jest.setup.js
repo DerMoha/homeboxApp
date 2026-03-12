@@ -76,3 +76,12 @@ jest.mock('react-native-camera-kit', () => {
     },
   };
 });
+
+jest.mock('react-native-keychain', () => ({
+  ACCESSIBLE: {
+    WHEN_UNLOCKED_THIS_DEVICE_ONLY: 'WHEN_UNLOCKED_THIS_DEVICE_ONLY',
+  },
+  getGenericPassword: jest.fn(() => Promise.resolve(false)),
+  setGenericPassword: jest.fn(() => Promise.resolve(true)),
+  resetGenericPassword: jest.fn(() => Promise.resolve(true)),
+}));
