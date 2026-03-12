@@ -1,10 +1,9 @@
-# Add project specific ProGuard rules here.
-# By default, the flags in this file are appended to flags specified
-# in /usr/local/Cellar/android-sdk/24.3.3/tools/proguard/proguard-android.txt
-# You can edit the include path and order by changing the proguardFiles
-# directive in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# Keep React Native bridge classes commonly accessed by reflection.
+-keep class com.facebook.react.** { *; }
+-keep class com.swmansion.reanimated.** { *; }
 
-# Add any project specific keep options here:
+# Preserve source mapping metadata useful for crash diagnostics.
+-keepattributes SourceFile,LineNumberTable
+
+# Keep app model names readable in stack traces.
+-keep class com.homeboxapp.** { *; }
