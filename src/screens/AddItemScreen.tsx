@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,13 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import {useTheme} from '../theme/ThemeContext';
-import {useNavigation, useFocusEffect} from '@react-navigation/native';
+import {
+  RouteProp,
+  useFocusEffect,
+  useNavigation,
+  useRoute,
+} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useItemData} from '../hooks/useItemData';
 import {useImageHandler} from '../hooks/useImageHandler';
@@ -22,10 +28,15 @@ import {
 import {SectionHeader} from '../components/SectionHeader';
 import {BarcodeScannerModal} from '../components/BarcodeScanner';
 import {barcodeService} from '../services/barcodeService';
+import {AddItemStackParamList} from '../types/navigation';
 
 const AddItemScreen: React.FC = () => {
   const {theme} = useTheme();
-  const navigation = useNavigation();
+  const navigation =
+    useNavigation<
+      NativeStackNavigationProp<AddItemStackParamList, 'AddItem'>
+    >();
+  const route = useRoute<RouteProp<AddItemStackParamList, 'AddItem'>>();
 
   const screenStyle = [
     styles.container,
@@ -47,7 +58,14 @@ const AddItemScreen: React.FC = () => {
     [theme.spacing.md],
   );
 
-  const {locations, labels, enabledFields, loadEnabledFields} = useItemData();
+  const {
+    locations,
+    labels,
+    enabledFields,
+    loadEnabledFields,
+    loadLocations,
+    loadLabels,
+  } = useItemData();
 
   const {
     selectedImage,
@@ -80,7 +98,6 @@ const AddItemScreen: React.FC = () => {
   } = useAddItemForm();
 
   const [scannerVisible, setScannerVisible] = useState(false);
-  const [barcode, setBarcode] = useState<string | null>(null);
   const [isLookingUpBarcode, setIsLookingUpBarcode] = useState(false);
 
   const submitButtonStyle = useMemo(
@@ -128,10 +145,14 @@ const AddItemScreen: React.FC = () => {
   );
 
   useFocusEffect(
-    React.useCallback(() => {
-      loadEnabledFields();
-      loadImageQuality();
-    }, [loadEnabledFields, loadImageQuality]),
+    useCallback(() => {
+      Promise.all([
+        loadEnabledFields(),
+        loadImageQuality(),
+        loadLocations(),
+        loadLabels(),
+      ]);
+    }, [loadEnabledFields, loadImageQuality, loadLabels, loadLocations]),
   );
 
   useEffect(() => {
@@ -169,31 +190,58 @@ const AddItemScreen: React.FC = () => {
     }
   };
 
-  const handleBarcodeDetected = async (scannedBarcode: string) => {
-    setScannerVisible(false);
-    setBarcode(scannedBarcode);
-    setIsLookingUpBarcode(true);
+  const applyBarcode = useCallback(
+    async (scannedBarcode: string) => {
+      const trimmedBarcode = scannedBarcode.trim();
 
-    try {
-      const result = await barcodeService.lookupBarcode(scannedBarcode);
-      if (result.success && result.product) {
-        if (!formData.name && result.product.name) {
-          updateFormField('name', result.product.name);
-        }
-        if (!formData.description && result.product.description) {
-          updateFormField('description', result.product.description);
-        }
+      if (!trimmedBarcode) {
+        return;
       }
-    } catch {
-      // Silently fail - barcode is still saved
-    } finally {
-      setIsLookingUpBarcode(false);
-    }
-  };
 
-  const handleScanBarcode = () => {
+      updateFormField('barcode', trimmedBarcode);
+      setIsLookingUpBarcode(true);
+
+      try {
+        const result = await barcodeService.lookupBarcode(trimmedBarcode);
+        if (result.success && result.product) {
+          if (!formData.name?.trim() && result.product.name) {
+            updateFormField('name', result.product.name);
+          }
+          if (!formData.description?.trim() && result.product.description) {
+            updateFormField('description', result.product.description);
+          }
+        }
+      } catch {
+        // Silently fail - barcode is still saved
+      } finally {
+        setIsLookingUpBarcode(false);
+      }
+    },
+    [formData.description, formData.name, updateFormField],
+  );
+
+  useEffect(() => {
+    const routeBarcode = route.params?.barcode;
+
+    if (!routeBarcode || routeBarcode === formData.barcode) {
+      return;
+    }
+
+    applyBarcode(routeBarcode);
+    navigation.setParams({barcode: undefined});
+  }, [applyBarcode, formData.barcode, navigation, route.params?.barcode]);
+
+  const handleBarcodeDetected = useCallback(
+    (scannedBarcode: string) => {
+      setScannerVisible(false);
+      applyBarcode(scannedBarcode);
+    },
+    [applyBarcode],
+  );
+
+  const handleScanBarcode = useCallback(() => {
     setScannerVisible(true);
-  };
+  }, []);
 
   return (
     <View style={screenStyle}>
@@ -208,7 +256,6 @@ const AddItemScreen: React.FC = () => {
             formData={formData}
             enabledFields={enabledFields}
             isQuantityFocused={isQuantityFocused}
-            barcode={barcode}
             onUpdateField={updateFormField}
             onQuantityFocus={handleQuantityFocus}
             onQuantityBlur={handleQuantityBlur}

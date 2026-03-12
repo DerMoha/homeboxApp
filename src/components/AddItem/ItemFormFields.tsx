@@ -14,7 +14,6 @@ interface ItemFormFieldsProps {
   formData: Record<string, string | number>;
   enabledFields: EnabledFields;
   isQuantityFocused: boolean;
-  barcode?: string | null;
   onUpdateField: (field: string, value: string | number) => void;
   onQuantityFocus: () => void;
   onQuantityBlur: () => void;
@@ -69,7 +68,6 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
   formData,
   enabledFields,
   isQuantityFocused,
-  barcode,
   onUpdateField,
   onQuantityFocus,
   onQuantityBlur,
@@ -167,7 +165,7 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
             style={[inputStyle, styles.barcodeInput]}
             placeholder="Scan or enter barcode"
             placeholderTextColor={theme.colors.text.secondary}
-            value={String(barcode || '')}
+            value={String(formData.barcode || '')}
             onChangeText={text => onUpdateField('barcode', text)}
           />
           {onScanBarcode && (

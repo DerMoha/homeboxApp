@@ -10,6 +10,7 @@ interface FormData {
   description?: string;
   purchasePrice?: string;
   insured?: boolean;
+  barcode?: string;
   [key: string]: any;
 }
 
@@ -74,6 +75,7 @@ export const useAddItemForm = () => {
             ? parseFloat(formData.purchasePrice || '0') || 0
             : 0,
           insured: enabledFields.insured ? formData.insured || false : false,
+          barcode: formData.barcode?.trim() || undefined,
           labels: selectedLabels.map(label => label.id),
         };
 
@@ -85,7 +87,9 @@ export const useAddItemForm = () => {
 
         // Upload image if selected
         if (imageUri) {
-          logger.log('Starting image upload for item:', itemResponse.data.id);
+          logger.log('Starting image upload for item', {
+            itemId: itemResponse.data.id,
+          });
           const imageFormData = new FormData();
 
           const fileExtension = imageUri.split('.').pop() || 'jpg';
@@ -97,33 +101,32 @@ export const useAddItemForm = () => {
             name: fileName,
           };
 
-          logger.log('File object:', file);
+          logger.log('File object', {file});
 
           imageFormData.append('file', file as unknown as Blob);
           imageFormData.append('type', 'photo');
           imageFormData.append('primary', 'true');
           imageFormData.append('name', 'Item Image');
 
-          logger.log('FormData for image upload:', imageFormData);
+          logger.log('FormData prepared for image upload');
 
           const imageResponse = await service.uploadItemImage(
             itemResponse.data.id,
             imageFormData,
           );
-          logger.log('Image upload response:', imageResponse);
+          logger.log('Image upload response', {imageResponse});
 
           if (!imageResponse.success) {
-            logger.warn('Failed to upload image:', imageResponse.error);
+            logger.warn('Failed to upload image', {
+              error: imageResponse.error,
+            });
             Alert.alert('Warning', 'Item was created but image upload failed');
           } else if (imageResponse.data) {
-            logger.log(
-              'Image uploaded successfully, updated item:',
-              imageResponse.data,
-            );
+            logger.log('Image uploaded successfully, updated item', {
+              item: imageResponse.data,
+            });
           } else {
-            logger.log(
-              'Image uploaded successfully but no updated item data received',
-            );
+            logger.log('Image uploaded successfully without updated item data');
           }
         }
 
@@ -133,7 +136,7 @@ export const useAddItemForm = () => {
 
         return true;
       } catch (error) {
-        logger.error('Error creating item:', error);
+        logger.error('Error creating item:', {error});
         Alert.alert('Error', 'Failed to create item. Please try again.');
         return false;
       } finally {

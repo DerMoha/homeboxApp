@@ -90,12 +90,16 @@ const InventoryScreen: React.FC = () => {
     activeFilterCount,
   } = useInventoryFilters();
 
-  const {locations, labels} = useItemData();
+  const {locations, labels, loadLocations, loadLabels} = useItemData();
 
   const initializeScreen = useCallback(async () => {
-    await loadDisplayPreferences();
-    await loadInventory();
-  }, [loadDisplayPreferences, loadInventory]);
+    await Promise.all([
+      loadDisplayPreferences(),
+      loadInventory(),
+      loadLocations(),
+      loadLabels(),
+    ]);
+  }, [loadDisplayPreferences, loadInventory, loadLabels, loadLocations]);
 
   useEffect(() => {
     initializeScreen();
@@ -269,7 +273,11 @@ const InventoryScreen: React.FC = () => {
 
   if (isLoading && inventory.length === 0) {
     return (
-      <View style={{flex: 1, backgroundColor: theme.colors.background.primary}}>
+      <View
+        style={[
+          styles.loadingContainer,
+          {backgroundColor: theme.colors.background.primary},
+        ]}>
         <InventorySkeletonList
           viewMode={viewMode}
           itemsPerRow={itemsPerRow}
@@ -383,6 +391,9 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   emptyStateContainer: {
+    flex: 1,
+  },
+  loadingContainer: {
     flex: 1,
   },
 });

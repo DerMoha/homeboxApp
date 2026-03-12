@@ -10,7 +10,6 @@ import {
 } from 'react-native';
 import {
   NavigationProp,
-  NavigatorScreenParams,
   useFocusEffect,
   useNavigation,
 } from '@react-navigation/native';
@@ -18,7 +17,7 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useTheme} from '../theme/ThemeContext';
 import ServerService from '../services/serverService';
 import {InventoryItem} from '../types';
-import {LocationsStackParamList} from '../types/navigation';
+import {RootTabParamList} from '../types/navigation';
 import {BarcodeScannerModal} from '../components/BarcodeScanner';
 import {formatRelativeTime} from '../utils/dateUtils';
 
@@ -30,16 +29,6 @@ interface StatCardProps {
   label: string;
   variant?: 'card' | 'panel';
 }
-
-type RootTabParamList = {
-  Home: undefined;
-  InventoryTab:
-    | {screen?: 'Inventory' | 'ItemDetail'; params?: {itemId?: string}}
-    | undefined;
-  AddItemTab: undefined;
-  Locations: NavigatorScreenParams<LocationsStackParamList> | undefined;
-  SettingsTab: undefined;
-};
 
 interface RecentItemRowProps {
   item: InventoryItem;
@@ -410,7 +399,10 @@ const HomeScreen: React.FC = () => {
         return;
       }
 
-      navigation.navigate('AddItemTab');
+      navigation.navigate('AddItemTab', {
+        screen: 'AddItem',
+        params: {barcode: barcode.trim()},
+      });
     },
     [navigation],
   );

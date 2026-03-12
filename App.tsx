@@ -16,10 +16,11 @@ import {
 } from './src/navigation/stacks';
 import HomeScreen from './src/screens/HomeScreen';
 import {useServerConnection} from './src/hooks/useServerConnection';
+import {RootTabParamList} from './src/types/navigation';
 
 type FontWeight = TextStyle['fontWeight'];
 
-const Tab = createBottomTabNavigator();
+const Tab = createBottomTabNavigator<RootTabParamList>();
 
 const defaultFontFamily = 'Sora';
 const TextComponent = Text as unknown as {
