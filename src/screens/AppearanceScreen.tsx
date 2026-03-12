@@ -167,10 +167,10 @@ const AppearanceScreen: React.FC = () => {
               <Text
                 style={[
                   styles.sectionTitle,
+                  styles.settingTitle,
                   {
                     color: theme.colors.text.primary,
                     fontFamily: theme.typography.fonts.semibold,
-                    marginBottom: 4,
                   },
                 ]}>
                 Haptic Feedback
@@ -274,6 +274,9 @@ const styles = StyleSheet.create({
   settingDescription: {
     fontSize: 14,
     lineHeight: 20,
+  },
+  settingTitle: {
+    marginBottom: 4,
   },
 });
 

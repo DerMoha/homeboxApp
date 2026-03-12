@@ -1,4 +1,4 @@
-import React, {useCallback, useMemo} from 'react';
+import React, {useCallback, useEffect, useMemo} from 'react';
 import {Text, TextStyle} from 'react-native';
 import {NavigationContainer} from '@react-navigation/native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
@@ -17,6 +17,7 @@ import {
 import HomeScreen from './src/screens/HomeScreen';
 import {useServerConnection} from './src/hooks/useServerConnection';
 import {RootTabParamList} from './src/types/navigation';
+import {logger} from './src/utils/logger';
 
 type FontWeight = TextStyle['fontWeight'];
 
@@ -41,6 +42,36 @@ TextComponent.defaultProps = {
 const AppContent: React.FC = () => {
   const {theme, isDarkMode} = useTheme();
   const {isConnecting} = useServerConnection();
+
+  useEffect(() => {
+    const errorUtils = (
+      global as typeof global & {
+        ErrorUtils?: {
+          getGlobalHandler?: () => (error: Error, isFatal?: boolean) => void;
+          setGlobalHandler?: (
+            handler: (error: Error, isFatal?: boolean) => void,
+          ) => void;
+        };
+      }
+    ).ErrorUtils;
+
+    const previousHandler = errorUtils?.getGlobalHandler?.();
+
+    errorUtils?.setGlobalHandler?.((error, isFatal) => {
+      logger.error('Unhandled JavaScript error', {
+        error,
+        isFatal: Boolean(isFatal),
+      });
+
+      previousHandler?.(error, isFatal);
+    });
+
+    return () => {
+      if (previousHandler) {
+        errorUtils?.setGlobalHandler?.(previousHandler);
+      }
+    };
+  }, []);
 
   const navigationTheme = useMemo(
     () => ({

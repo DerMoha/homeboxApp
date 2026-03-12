@@ -122,16 +122,14 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         <View
           style={[
             styles.iconBackground,
+            styles.iconBorder,
+            styles.iconShadow,
             {
               backgroundColor: theme.colors.background.secondary,
               borderRadius: theme.borderRadius.full,
               borderColor: theme.colors.borderSubtle,
-              borderWidth: 1,
               shadowColor: theme.colors.accent.primary,
               shadowOffset: {width: 0, height: 4},
-              shadowOpacity: 0.15,
-              shadowRadius: 12,
-              elevation: 8,
             },
           ]}>
           <MaterialIcons
@@ -206,6 +204,14 @@ const styles = StyleSheet.create({
     height: 110,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  iconBorder: {
+    borderWidth: 1,
+  },
+  iconShadow: {
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
   },
   message: {
     textAlign: 'center',

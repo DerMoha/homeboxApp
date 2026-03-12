@@ -10,12 +10,13 @@ import {
 import {Picker} from '@react-native-picker/picker';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import ServerService, {ServerConfig} from '../services/serverService';
+import ServerService from '../services/serverService';
 import {useTheme} from '../theme/ThemeContext';
 import {SettingsStackParamList} from '../types/navigation';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {logger} from '../utils/logger';
 import {SectionHeader} from '../components/SectionHeader';
+import {ServerConfig} from '../types';
 
 type SettingsScreenNavigationProp = NativeStackNavigationProp<
   SettingsStackParamList,
@@ -147,7 +148,7 @@ const SettingsScreen: React.FC = () => {
         setSelectedServer('');
       }
     } catch (error) {
-      logger.error('Error loading servers:', error);
+      logger.error('Error loading servers:', {error});
     }
   }, [checkServerStatus]);
 
@@ -181,7 +182,7 @@ const SettingsScreen: React.FC = () => {
         setSelectedServer(serverId);
       }
     } catch (error) {
-      logger.error('Error changing server:', error);
+      logger.error('Error changing server:', {error});
       Alert.alert('Error', 'Failed to change server. Please try again.');
     }
   };

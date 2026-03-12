@@ -155,7 +155,7 @@ const InventoryItemSkeleton: React.FC<InventoryItemSkeletonProps> = ({
           styles.listContent,
           {
             padding: theme.spacing.md,
-            paddingLeft: 18,
+            paddingLeft: theme.spacing.lg + theme.spacing.xs,
           },
         ]}>
         <View style={styles.listHeader}>
