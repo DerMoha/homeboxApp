@@ -69,8 +69,8 @@ export const Card: React.FC<CardProps> = ({
       style,
       theme.borderRadius.lg,
       theme.colors.card.background,
-      theme.colors.card.border,
-      theme.shadows.md,
+      theme.colors.borderSubtle,
+      theme.shadows.sm,
     ],
   );
 
@@ -99,9 +99,10 @@ export const Card: React.FC<CardProps> = ({
     ],
     [
       theme.colors.text.primary,
-      theme.typography.letterSpacing.tight,
+      theme.typography.fonts.semibold,
+      theme.typography.letterSpacing.normal,
       theme.typography.sizes.lg,
-      theme.typography.weights.bold,
+      theme.typography.weights.semibold,
     ],
   );
 

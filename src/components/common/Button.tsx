@@ -78,10 +78,10 @@ export const Button: React.FC<ButtonProps> = ({
     }
   }, [
     disabled,
+    theme.colors.background.tertiary,
     theme.colors.accent.primary,
     theme.colors.button.secondary,
     theme.colors.error,
-    theme.colors.text.tertiary,
     variant,
   ]);
 
@@ -103,7 +103,6 @@ export const Button: React.FC<ButtonProps> = ({
     }
   }, [
     disabled,
-    theme.colors.button.text,
     theme.colors.text.inverse,
     theme.colors.text.primary,
     theme.colors.text.tertiary,
@@ -226,7 +225,7 @@ export const Button: React.FC<ButtonProps> = ({
 
   const shadowStyle = useMemo(
     () => (variant === 'primary' && !disabled ? theme.shadows.sm : null),
-    [disabled, theme.shadows.sm, variant],
+    [disabled, theme, variant],
   );
 
   const textStyle = useMemo(

@@ -1,5 +1,5 @@
 import React, {useMemo, useCallback} from 'react';
-import {View, Text, TouchableOpacity, Image, StyleSheet} from 'react-native';
+import {View, Text, Image, StyleSheet} from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useTheme} from '../../theme/ThemeContext';
 import type {Theme} from '../../theme/theme';
@@ -10,12 +10,17 @@ import {
 } from '../../hooks/useDisplayPreferences';
 import {getImageSource, formatDate} from '../../utils/imageUtils';
 import {QuantityBadge, MetaItem, ItemCardBase} from './shared';
+import {hapticImpact} from '../../utils/haptics';
 
 interface InventoryListItemProps {
   item: InventoryItem;
   displayPreferences: DisplayPreference[];
   listZoom: number;
   onPress: (itemId: string) => void;
+  isSelectionMode?: boolean;
+  isSelected?: boolean;
+  onToggleSelection?: (itemId: string) => void;
+  onLongPress?: (itemId: string) => void;
 }
 
 const ItemNameText: React.FC<{
@@ -43,6 +48,10 @@ const InventoryListItemComponent: React.FC<InventoryListItemProps> = ({
   displayPreferences,
   listZoom,
   onPress,
+  isSelectionMode = false,
+  isSelected: _isSelected = false,
+  onToggleSelection,
+  onLongPress: _onLongPress,
 }) => {
   const {theme} = useTheme();
 
@@ -72,7 +81,14 @@ const InventoryListItemComponent: React.FC<InventoryListItemProps> = ({
     [displayPreferences, item.location, item.labels.length, item.purchasePrice],
   );
 
-  const handlePress = useCallback(() => onPress(item.id), [onPress, item.id]);
+  const handlePress = useCallback(() => {
+    if (isSelectionMode && onToggleSelection) {
+      hapticImpact('light');
+      onToggleSelection(item.id);
+    } else {
+      onPress(item.id);
+    }
+  }, [isSelectionMode, onToggleSelection, onPress, item.id]);
 
   const cardStyle = useMemo(
     () => ({

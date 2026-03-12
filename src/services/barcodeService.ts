@@ -18,7 +18,6 @@ export interface BarcodeLookupResult {
 }
 
 const OPEN_FOOD_FACTS_API = 'https://world.openfoodfacts.org/api/v2/product';
-const UPC_DATABASE_API = 'https://api.upcdatabase.org/product';
 
 class BarcodeService {
   async lookupBarcode(barcode: string): Promise<BarcodeLookupResult> {

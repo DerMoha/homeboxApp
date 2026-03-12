@@ -47,33 +47,6 @@ const AddItemScreen: React.FC = () => {
     [theme.spacing.md],
   );
 
-  const loadingIconStyle = useMemo(
-    () => [
-      styles.loadingIconContainer,
-      {
-        backgroundColor: theme.colors.background.secondary,
-        borderColor: theme.colors.borderSubtle,
-      },
-    ],
-    [theme.colors.background.secondary, theme.colors.borderSubtle],
-  );
-
-  const loadingTextStyle = useMemo(
-    () => [
-      styles.loadingText,
-      {
-        color: theme.colors.text.secondary,
-        fontSize: theme.typography.sizes.md,
-        fontFamily: theme.typography.fonts.regular,
-      },
-    ],
-    [
-      theme.colors.text.secondary,
-      theme.typography.fonts.regular,
-      theme.typography.sizes.md,
-    ],
-  );
-
   const {locations, labels, enabledFields, loadEnabledFields} = useItemData();
 
   const {

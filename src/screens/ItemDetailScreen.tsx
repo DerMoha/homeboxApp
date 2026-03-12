@@ -248,7 +248,7 @@ const ItemDetailScreen: React.FC = () => {
   }, [item?.location?.id]);
 
   const handleBreadcrumbPress = useCallback(
-    (breadcrumbItem: BreadcrumbItem, index: number) => {
+    (breadcrumbItem: BreadcrumbItem, _index: number) => {
       hapticImpact('light');
       navigation.navigate(
         'Locations' as never,
@@ -268,7 +268,10 @@ const ItemDetailScreen: React.FC = () => {
   const labels = item?.labels ?? [];
 
   const buildShareMessage = useCallback(() => {
-    if (!item) return '';
+    if (!item) {
+      return '';
+    }
+
     const lines = [item.name];
     if (item.location?.name) {
       lines.push(`Location: ${item.location.name}`);
@@ -284,7 +287,10 @@ const ItemDetailScreen: React.FC = () => {
   }, [item, description]);
 
   const handleShare = useCallback(async () => {
-    if (!item) return;
+    if (!item) {
+      return;
+    }
+
     hapticImpact('light');
     const message = buildShareMessage();
     try {
@@ -292,7 +298,7 @@ const ItemDetailScreen: React.FC = () => {
         message,
         title: item.name,
       });
-    } catch (error) {
+    } catch {
       // Share was cancelled or failed
     }
   }, [item, buildShareMessage]);

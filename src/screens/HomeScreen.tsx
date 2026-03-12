@@ -1,7 +1,6 @@
 import React, {useCallback, useState} from 'react';
 import {
   ActivityIndicator,
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -406,6 +405,11 @@ const HomeScreen: React.FC = () => {
   const handleBarcodeDetected = useCallback(
     (barcode: string) => {
       setScannerVisible(false);
+
+      if (!barcode.trim()) {
+        return;
+      }
+
       navigation.navigate('AddItemTab');
     },
     [navigation],

@@ -1,4 +1,4 @@
-import {renderHook, act, waitFor} from '@testing-library/react-native';
+import {renderHook, act} from '@testing-library/react-native';
 import {useAsyncState} from '../useAsyncState';
 
 describe('useAsyncState', () => {
@@ -55,13 +55,11 @@ describe('useAsyncState', () => {
     it('should set loading state during execution', async () => {
       const {result} = renderHook(() => useAsyncState<string>());
 
-      let loadingDuringExecution = false;
       let loadingAfterExecution = false;
 
       await act(async () => {
         const promise = result.current.execute(async () => {
           await new Promise(resolve => setTimeout(resolve, 10));
-          loadingDuringExecution = result.current.isLoading;
           return 'test';
         });
         await promise;

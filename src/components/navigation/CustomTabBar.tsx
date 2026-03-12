@@ -211,7 +211,7 @@ export const CustomTabBar: React.FC<BottomTabBarProps> = ({
     ],
     [
       insets.bottom,
-      theme.colors.background.elevated,
+      theme.colors.background.secondary,
       theme.colors.borderSubtle,
     ],
   );

@@ -30,7 +30,7 @@ jest.mock('react-native-fs', () => ({
   writeFile: jest.fn(() => Promise.resolve()),
   unlink: jest.fn(() => Promise.resolve()),
   exists: jest.fn(() => Promise.resolve(true)),
-  stat: jest.fn(() => Promise.resolve({ size: 0 })),
+  stat: jest.fn(() => Promise.resolve({size: 0})),
 }));
 
 // Mock react-native-image-resizer
@@ -43,7 +43,7 @@ jest.mock('@bam.tech/react-native-image-resizer', () => ({
         path: 'mocked-path',
         name: 'mocked-name',
         size: 1000,
-      })
+      }),
     ),
   },
 }));
@@ -53,3 +53,26 @@ jest.mock('react-native-image-crop-picker', () => ({
   openPicker: jest.fn(),
   openCamera: jest.fn(),
 }));
+
+// Mock react-native-camera-kit
+jest.mock('react-native-camera-kit', () => {
+  const React = require('react');
+  const {View} = require('react-native');
+
+  const MockCamera = React.forwardRef((_props, ref) => {
+    React.useImperativeHandle(ref, () => ({
+      requestDeviceCameraAuthorization: jest.fn(() => Promise.resolve(true)),
+    }));
+
+    return React.createElement(View, {testID: 'mock-camera-kit'});
+  });
+
+  return {
+    __esModule: true,
+    default: MockCamera,
+    CameraType: {
+      Back: 'back',
+      Front: 'front',
+    },
+  };
+});

@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useRef, useState, useMemo} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
   View,
   Text,
@@ -11,9 +11,15 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import Camera, {CameraType, type CameraApi} from 'react-native-camera-kit';
-import type {OnReadCodeData} from 'react-native-camera-kit/dist/CameraProps';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useTheme} from '../../theme/ThemeContext';
+
+interface BarcodeReadEvent {
+  nativeEvent: {
+    codeStringValue: string;
+    codeFormat: string;
+  };
+}
 
 interface BarcodeScannerModalProps {
   visible: boolean;
@@ -39,24 +45,7 @@ const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
   const scanAnimation = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
-  useEffect(() => {
-    if (visible) {
-      requestCameraPermission();
-    }
-  }, [visible]);
-
-  useEffect(() => {
-    if (visible && hasPermission) {
-      startScanAnimation();
-      startPulseAnimation();
-    }
-    return () => {
-      scanAnimation.stopAnimation();
-      pulseAnim.stopAnimation();
-    };
-  }, [visible, hasPermission]);
-
-  const requestCameraPermission = async () => {
+  const requestCameraPermission = useCallback(async () => {
     try {
       const result =
         await cameraRef.current?.requestDeviceCameraAuthorization();
@@ -64,9 +53,9 @@ const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
     } catch {
       setHasPermission(false);
     }
-  };
+  }, []);
 
-  const startScanAnimation = () => {
+  const startScanAnimation = useCallback(() => {
     Animated.loop(
       Animated.sequence([
         Animated.timing(scanAnimation, {
@@ -81,9 +70,9 @@ const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
         }),
       ]),
     ).start();
-  };
+  }, [scanAnimation]);
 
-  const startPulseAnimation = () => {
+  const startPulseAnimation = useCallback(() => {
     Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
@@ -98,11 +87,38 @@ const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
         }),
       ]),
     ).start();
-  };
+  }, [pulseAnim]);
+
+  useEffect(() => {
+    if (visible) {
+      requestCameraPermission();
+    }
+  }, [requestCameraPermission, visible]);
+
+  useEffect(() => {
+    if (visible && hasPermission) {
+      startScanAnimation();
+      startPulseAnimation();
+    }
+
+    return () => {
+      scanAnimation.stopAnimation();
+      pulseAnim.stopAnimation();
+    };
+  }, [
+    hasPermission,
+    pulseAnim,
+    scanAnimation,
+    startPulseAnimation,
+    startScanAnimation,
+    visible,
+  ]);
 
   const handleBarcodeRead = useCallback(
-    (event: OnReadCodeData) => {
-      if (isProcessing) return;
+    (event: BarcodeReadEvent) => {
+      if (isProcessing) {
+        return;
+      }
 
       const {codeStringValue, codeFormat} = event.nativeEvent;
       setScannedBarcode(codeStringValue);
@@ -242,7 +258,9 @@ const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
     [theme.colors.text.inverse, theme.typography.fonts.semibold],
   );
 
-  if (!visible) return null;
+  if (!visible) {
+    return null;
+  }
 
   return (
     <Modal
