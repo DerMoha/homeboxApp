@@ -11,10 +11,13 @@ import {useTheme} from '../../theme/ThemeContext';
 import type {EnabledFields} from '../../types';
 
 interface ItemFormFieldsProps {
-  formData: Record<string, string | number>;
+  formData: Record<string, string | number | boolean | undefined>;
   enabledFields: EnabledFields;
   isQuantityFocused: boolean;
-  onUpdateField: (field: string, value: string | number) => void;
+  onUpdateField: (
+    field: string,
+    value: string | number | boolean | undefined,
+  ) => void;
   onQuantityFocus: () => void;
   onQuantityBlur: () => void;
   onScanBarcode?: () => void;

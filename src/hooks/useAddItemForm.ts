@@ -1,69 +1,12 @@
-import {useState, useCallback} from 'react';
+import {useCallback} from 'react';
 import {Alert} from 'react-native';
-import ServerService from '../services/serverService';
-import {
-  Location,
-  Label,
-  EnabledFields,
-  FormDataFile,
-  Item,
-  UpdateItemRequest,
-} from '../types';
-import {logger} from '../utils/logger';
-
-interface FormData {
-  quantity: string;
-  name?: string;
-  description?: string;
-  purchasePrice?: string;
-  insured?: boolean;
-  barcode?: string;
-  [key: string]: any;
-}
+import {EnabledFields, Item} from '../types';
+import {useItemFormState} from './useItemFormState';
+import {useSaveItem} from './useSaveItem';
 
 export const useAddItemForm = () => {
-  const [formData, setFormData] = useState<FormData>({quantity: '1'});
-  const [selectedLocation, setSelectedLocation] = useState<Location | null>(
-    null,
-  );
-  const [selectedLabels, setSelectedLabels] = useState<Label[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isQuantityFocused, setIsQuantityFocused] = useState(false);
-
-  const updateFormField = useCallback((field: string, value: any) => {
-    setFormData(prev => ({...prev, [field]: value}));
-  }, []);
-
-  const handleLabelToggle = useCallback((label: Label) => {
-    setSelectedLabels(prev => {
-      const exists = prev.find(l => l.id === label.id);
-      if (exists) {
-        return prev.filter(l => l.id !== label.id);
-      } else {
-        return [...prev, label];
-      }
-    });
-  }, []);
-
-  const resetForm = useCallback(() => {
-    setFormData({quantity: '1'});
-    setSelectedLocation(null);
-    setSelectedLabels([]);
-  }, []);
-
-  const populateForm = useCallback((item: Item) => {
-    setFormData({
-      name: item.name,
-      quantity: String(item.quantity || 1),
-      description: item.description || '',
-      purchasePrice:
-        item.purchasePrice > 0 ? String(item.purchasePrice) : undefined,
-      insured: item.insured,
-      barcode: item.barcode || '',
-    });
-    setSelectedLocation(item.location);
-    setSelectedLabels(item.labels || []);
-  }, []);
+  const formState = useItemFormState();
+  const {isLoading, saveItem} = useSaveItem();
 
   const submitItem = useCallback(
     async (
@@ -72,136 +15,58 @@ export const useAddItemForm = () => {
       enabledFields: EnabledFields,
       onSuccess: (item: Item) => void,
     ): Promise<boolean> => {
-      if (!formData.name?.trim()) {
-        Alert.alert('Error', 'Please enter an item name');
+      const result = await saveItem({
+        itemId,
+        imageUri,
+        enabledFields,
+        formData: formState.formData,
+        selectedLocation: formState.selectedLocation,
+        selectedLabels: formState.selectedLabels,
+      });
+
+      if (result.validationError) {
+        Alert.alert('Error', result.validationError);
         return false;
       }
 
-      if (!selectedLocation) {
-        Alert.alert('Error', 'Please select a location');
-        return false;
-      }
-
-      try {
-        setIsLoading(true);
-        const service = ServerService.getInstance();
-
-        const itemData = {
-          name: formData.name,
-          quantity: parseInt(formData.quantity || '1', 10),
-          locationId: selectedLocation?.id,
-          description: enabledFields.description
-            ? formData.description || ''
-            : '',
-          purchasePrice: enabledFields.purchasePrice
-            ? parseFloat(formData.purchasePrice || '0') || 0
-            : 0,
-          insured: enabledFields.insured ? formData.insured || false : false,
-          barcode: formData.barcode?.trim() || undefined,
-          labels: selectedLabels.map(label => label.id),
-        };
-
-        const itemResponse = itemId
-          ? await service.updateItem({
-              ...(itemData as UpdateItemRequest),
-              id: itemId,
-            })
-          : await service.createItem(itemData);
-
-        if (!itemResponse.success || !itemResponse.data) {
-          throw new Error(
-            itemId ? 'Failed to update item' : 'Failed to create item',
-          );
-        }
-
-        let savedItem = itemResponse.data;
-
-        // Upload image if selected
-        if (imageUri) {
-          logger.log('Starting image upload for item', {
-            itemId: itemResponse.data.id,
-          });
-          const imageFormData = new FormData();
-
-          const fileExtension = imageUri.split('.').pop() || 'jpg';
-          const fileName = `image.${fileExtension}`;
-
-          const file: FormDataFile = {
-            uri: imageUri,
-            type: `image/${fileExtension}`,
-            name: fileName,
-          };
-
-          logger.log('File object', {file});
-
-          imageFormData.append('file', file as unknown as Blob);
-          imageFormData.append('type', 'photo');
-          imageFormData.append('primary', 'true');
-          imageFormData.append('name', 'Item Image');
-
-          logger.log('FormData prepared for image upload');
-
-          const imageResponse = await service.uploadItemImage(
-            itemResponse.data.id,
-            imageFormData,
-          );
-          logger.log('Image upload response', {imageResponse});
-
-          if (!imageResponse.success) {
-            logger.warn('Failed to upload image', {
-              error: imageResponse.error,
-            });
-            Alert.alert(
-              'Warning',
-              itemId
-                ? 'Item was updated but image upload failed'
-                : 'Item was created but image upload failed',
-            );
-          } else if (imageResponse.data) {
-            logger.log('Image uploaded successfully, updated item', {
-              item: imageResponse.data,
-            });
-            savedItem = imageResponse.data;
-          } else {
-            logger.log('Image uploaded successfully without updated item data');
-          }
-        }
-
-        Alert.alert(
-          'Success',
-          itemId ? 'Item updated successfully!' : 'Item added successfully!',
-          [{text: 'OK', onPress: () => onSuccess(savedItem)}],
-        );
-
-        return true;
-      } catch (error) {
-        logger.error('Error creating item:', {error});
+      if (!result.success || !result.item) {
         Alert.alert(
           'Error',
-          itemId
-            ? 'Failed to update item. Please try again.'
-            : 'Failed to create item. Please try again.',
+          result.error ||
+            (itemId
+              ? 'Failed to update item. Please try again.'
+              : 'Failed to create item. Please try again.'),
         );
         return false;
-      } finally {
-        setIsLoading(false);
       }
+
+      if (result.warning) {
+        Alert.alert('Warning', result.warning);
+      }
+
+      Alert.alert(
+        'Success',
+        itemId ? 'Item updated successfully!' : 'Item added successfully!',
+        [{text: 'OK', onPress: () => onSuccess(result.item as Item)}],
+      );
+
+      return true;
     },
-    [formData, selectedLocation, selectedLabels],
+    [formState, saveItem],
   );
 
   return {
-    formData,
-    selectedLocation,
-    selectedLabels,
+    formData: formState.formData,
+    selectedLocation: formState.selectedLocation,
+    selectedLabels: formState.selectedLabels,
     isLoading,
-    isQuantityFocused,
-    setIsQuantityFocused,
-    setSelectedLocation,
-    updateFormField,
-    handleLabelToggle,
-    resetForm,
-    populateForm,
+    isQuantityFocused: formState.isQuantityFocused,
+    setIsQuantityFocused: formState.setIsQuantityFocused,
+    setSelectedLocation: formState.setSelectedLocation,
+    updateFormField: formState.updateFormField,
+    handleLabelToggle: formState.handleLabelToggle,
+    resetForm: formState.resetForm,
+    populateForm: formState.populateForm,
     submitItem,
   };
 };
