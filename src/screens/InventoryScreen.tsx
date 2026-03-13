@@ -8,11 +8,15 @@ import {useInventoryDisplay} from '../hooks/useInventoryDisplay';
 import {useDisplayPreferences} from '../hooks/useDisplayPreferences';
 import {useInventoryFilters} from '../hooks/useInventoryFilters';
 import {useItemData} from '../hooks/useItemData';
+import {useBatchSelection} from '../hooks/useBatchSelection';
 import {
+  BatchActionBar,
+  LabelPickerModal,
   InventoryHeader,
   SortModal,
   InventoryListItem,
   InventoryGridItem,
+  LocationPickerModal,
   SearchBar,
   FilterModal,
   SwipeableItem,
@@ -81,6 +85,7 @@ const InventoryScreen: React.FC = () => {
   } = useInventoryFilters();
 
   const {locations, labels, loadLocations, loadLabels} = useItemData();
+  const batchSelection = useBatchSelection();
 
   const initializeScreen = useCallback(async () => {
     await Promise.all([
@@ -106,6 +111,23 @@ const InventoryScreen: React.FC = () => {
 
     return result;
   }, [inventory, debouncedQuery, filters]);
+
+  const selectedItems = useMemo(
+    () => inventory.filter(item => batchSelection.selectedIds.has(item.id)),
+    [batchSelection.selectedIds, inventory],
+  );
+
+  const filteredIds = useMemo(
+    () => filteredInventory.map(item => item.id),
+    [filteredInventory],
+  );
+
+  const isAllSelected = useMemo(
+    () =>
+      filteredIds.length > 0 &&
+      filteredIds.every(itemId => batchSelection.selectedIds.has(itemId)),
+    [batchSelection.selectedIds, filteredIds],
+  );
 
   const renderHeaderRight = useCallback(
     () => (
@@ -195,20 +217,166 @@ const InventoryScreen: React.FC = () => {
     [loadInventory],
   );
 
+  const buildUpdatePayload = useCallback(
+    (
+      item: InventoryItem,
+      overrides?: {locationId?: string; labels?: string[]},
+    ) => ({
+      id: item.id,
+      name: item.name,
+      description: item.description,
+      quantity: item.quantity,
+      locationId:
+        overrides && 'locationId' in overrides
+          ? overrides.locationId
+          : item.location?.id,
+      labels: overrides?.labels ?? item.labels.map(label => label.id),
+      purchasePrice: item.purchasePrice,
+      insured: item.insured,
+      barcode: item.barcode || undefined,
+    }),
+    [],
+  );
+
+  const finishBatchAction = useCallback(async () => {
+    await loadInventory();
+    batchSelection.exitSelectionMode();
+    batchSelection.clearSelectedLabels();
+  }, [batchSelection, loadInventory]);
+
+  const handleBatchDelete = useCallback(() => {
+    if (!selectedItems.length) {
+      return;
+    }
+
+    Alert.alert(
+      'Delete Items',
+      `Delete ${selectedItems.length} selected items? This action cannot be undone.`,
+      [
+        {text: 'Cancel', style: 'cancel'},
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              batchSelection.setIsApplying(true);
+              const service = ServerService.getInstance();
+              const results = await Promise.all(
+                selectedItems.map(item => service.deleteItem(item.id)),
+              );
+              const failed = results.find(result => !result.success);
+
+              if (failed) {
+                Alert.alert('Error', failed.error || 'Failed to delete items');
+                return;
+              }
+
+              await finishBatchAction();
+            } finally {
+              batchSelection.setIsApplying(false);
+            }
+          },
+        },
+      ],
+    );
+  }, [batchSelection, finishBatchAction, selectedItems]);
+
+  const handleBatchMove = useCallback(
+    async (locationId: string | null) => {
+      try {
+        batchSelection.setIsApplying(true);
+        const service = ServerService.getInstance();
+        const results = await Promise.all(
+          selectedItems.map(item =>
+            service.updateItem(
+              buildUpdatePayload(item, {locationId: locationId || undefined}),
+            ),
+          ),
+        );
+        const failed = results.find(result => !result.success);
+
+        if (failed) {
+          Alert.alert('Error', failed.error || 'Failed to move items');
+          return;
+        }
+
+        await finishBatchAction();
+      } finally {
+        batchSelection.setIsApplying(false);
+      }
+    },
+    [batchSelection, buildUpdatePayload, finishBatchAction, selectedItems],
+  );
+
+  const handleBatchLabel = useCallback(async () => {
+    if (!batchSelection.selectedLabelIds.length) {
+      Alert.alert('Select Labels', 'Choose at least one label to apply.');
+      return;
+    }
+
+    try {
+      batchSelection.setIsApplying(true);
+      const service = ServerService.getInstance();
+      const results = await Promise.all(
+        selectedItems.map(item => {
+          const mergedLabels = Array.from(
+            new Set([
+              ...item.labels.map(label => label.id),
+              ...batchSelection.selectedLabelIds,
+            ]),
+          );
+
+          return service.updateItem(
+            buildUpdatePayload(item, {labels: mergedLabels}),
+          );
+        }),
+      );
+      const failed = results.find(result => !result.success);
+
+      if (failed) {
+        Alert.alert('Error', failed.error || 'Failed to apply labels');
+        return;
+      }
+
+      await finishBatchAction();
+    } finally {
+      batchSelection.setIsApplying(false);
+    }
+  }, [batchSelection, buildUpdatePayload, finishBatchAction, selectedItems]);
+
+  const handleSelectionLongPress = useCallback(
+    (itemId: string) => {
+      batchSelection.enterSelectionMode(itemId);
+    },
+    [batchSelection],
+  );
+
   const renderItem = useCallback(
     ({item}: {item: InventoryItem}) => {
       if (viewMode === 'list') {
+        const listItem = (
+          <InventoryListItem
+            item={item}
+            displayPreferences={displayPreferences}
+            listZoom={listZoom}
+            onPress={() => handleItemPress(item.id)}
+            isSelectionMode={batchSelection.isSelectionMode}
+            isSelected={batchSelection.selectedIds.has(item.id)}
+            onToggleSelection={batchSelection.toggleSelection}
+            onLongPress={handleSelectionLongPress}
+          />
+        );
+
+        if (batchSelection.isSelectionMode) {
+          return listItem;
+        }
+
         return (
           <SwipeableItem
             onEdit={() => handleEditItem(item.id)}
             onDelete={() => handleDeleteItem(item)}
             itemName={item.name}>
-            <InventoryListItem
-              item={item}
-              displayPreferences={displayPreferences}
-              listZoom={listZoom}
-              onPress={() => handleItemPress(item.id)}
-            />
+            {listItem}
           </SwipeableItem>
         );
       }
@@ -219,6 +387,10 @@ const InventoryScreen: React.FC = () => {
           displayPreferences={displayPreferences}
           itemsPerRow={itemsPerRow}
           onPress={() => handleItemPress(item.id)}
+          isSelectionMode={batchSelection.isSelectionMode}
+          isSelected={batchSelection.selectedIds.has(item.id)}
+          onToggleSelection={batchSelection.toggleSelection}
+          onLongPress={handleSelectionLongPress}
         />
       );
     },
@@ -227,9 +399,13 @@ const InventoryScreen: React.FC = () => {
       displayPreferences,
       listZoom,
       itemsPerRow,
+      batchSelection.isSelectionMode,
+      batchSelection.selectedIds,
+      batchSelection.toggleSelection,
       handleItemPress,
       handleEditItem,
       handleDeleteItem,
+      handleSelectionLongPress,
     ],
   );
 
@@ -350,6 +526,19 @@ const InventoryScreen: React.FC = () => {
           listZoom in ITEM_HEIGHTS && {getItemLayout})}
       />
 
+      <BatchActionBar
+        visible={
+          batchSelection.isSelectionMode && batchSelection.selectedCount > 0
+        }
+        selectedCount={batchSelection.selectedCount}
+        onDelete={handleBatchDelete}
+        onMove={batchSelection.openMoveModal}
+        onLabel={batchSelection.openLabelModal}
+        onSelectAll={() => batchSelection.selectAll(filteredIds)}
+        onClearSelection={batchSelection.exitSelectionMode}
+        isAllSelected={isAllSelected}
+      />
+
       <SortModal
         visible={sortModalVisible}
         sortOption={sortOption}
@@ -372,6 +561,28 @@ const InventoryScreen: React.FC = () => {
           resetTempFilters();
           setFilterModalVisible(false);
         }}
+      />
+
+      <LocationPickerModal
+        visible={batchSelection.isMoveModalVisible}
+        locations={locations}
+        onClose={batchSelection.closeMoveModal}
+        onSelect={locationId => {
+          batchSelection.closeMoveModal();
+          handleBatchMove(locationId);
+        }}
+      />
+
+      <LabelPickerModal
+        visible={batchSelection.isLabelModalVisible}
+        labels={labels}
+        selectedLabelIds={batchSelection.selectedLabelIds}
+        onToggleLabel={batchSelection.toggleLabelSelection}
+        onApply={() => {
+          batchSelection.closeLabelModal();
+          handleBatchLabel();
+        }}
+        onClose={batchSelection.closeLabelModal}
       />
     </View>
   );

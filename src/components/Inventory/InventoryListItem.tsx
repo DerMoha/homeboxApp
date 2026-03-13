@@ -49,9 +49,9 @@ const InventoryListItemComponent: React.FC<InventoryListItemProps> = ({
   listZoom,
   onPress,
   isSelectionMode = false,
-  isSelected: _isSelected = false,
+  isSelected = false,
   onToggleSelection,
-  onLongPress: _onLongPress,
+  onLongPress,
 }) => {
   const {theme} = useTheme();
 
@@ -90,6 +90,10 @@ const InventoryListItemComponent: React.FC<InventoryListItemProps> = ({
     }
   }, [isSelectionMode, onToggleSelection, onPress, item.id]);
 
+  const handleLongPress = useCallback(() => {
+    onLongPress?.(item.id);
+  }, [item.id, onLongPress]);
+
   const cardStyle = useMemo(
     () => ({
       marginHorizontal: theme.spacing.sm,
@@ -102,7 +106,13 @@ const InventoryListItemComponent: React.FC<InventoryListItemProps> = ({
 
   if (listZoom === 0) {
     return (
-      <ItemCardBase theme={theme} style={cardStyle} onPress={handlePress}>
+      <ItemCardBase
+        theme={theme}
+        style={cardStyle}
+        onPress={handlePress}
+        onLongPress={handleLongPress}
+        isSelected={isSelected}
+        isSelectionMode={isSelectionMode}>
         <View style={styles.headerRow}>
           <View style={styles.titleContainer}>
             <ItemNameText name={item.name} theme={theme} />
@@ -142,7 +152,13 @@ const InventoryListItemComponent: React.FC<InventoryListItemProps> = ({
 
   if (listZoom === 1) {
     return (
-      <ItemCardBase theme={theme} style={cardStyle} onPress={handlePress}>
+      <ItemCardBase
+        theme={theme}
+        style={cardStyle}
+        onPress={handlePress}
+        onLongPress={handleLongPress}
+        isSelected={isSelected}
+        isSelectionMode={isSelectionMode}>
         <View style={[styles.standardRow, {gap: theme.spacing.md}]}>
           <View style={styles.textSection}>
             <ItemNameText name={item.name} theme={theme} />
@@ -197,7 +213,13 @@ const InventoryListItemComponent: React.FC<InventoryListItemProps> = ({
   }
 
   return (
-    <ItemCardBase theme={theme} style={cardStyle} onPress={handlePress}>
+    <ItemCardBase
+      theme={theme}
+      style={cardStyle}
+      onPress={handlePress}
+      onLongPress={handleLongPress}
+      isSelected={isSelected}
+      isSelectionMode={isSelectionMode}>
       <View style={styles.headerRow}>
         <View style={styles.titleContainer}>
           <ItemNameText name={item.name} size="xl" theme={theme} />

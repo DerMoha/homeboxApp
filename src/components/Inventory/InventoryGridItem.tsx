@@ -24,6 +24,10 @@ interface InventoryGridItemProps {
   displayPreferences: DisplayPreference[];
   onPress: (itemId: string) => void;
   itemsPerRow: number;
+  isSelectionMode?: boolean;
+  isSelected?: boolean;
+  onToggleSelection?: (itemId: string) => void;
+  onLongPress?: (itemId: string) => void;
 }
 
 const InventoryGridItemComponent: React.FC<InventoryGridItemProps> = ({
@@ -31,6 +35,10 @@ const InventoryGridItemComponent: React.FC<InventoryGridItemProps> = ({
   displayPreferences,
   onPress,
   itemsPerRow,
+  isSelectionMode = false,
+  isSelected = false,
+  onToggleSelection,
+  onLongPress,
 }) => {
   const {theme} = useTheme();
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -75,8 +83,17 @@ const InventoryGridItemComponent: React.FC<InventoryGridItemProps> = ({
   }, [scaleAnim]);
 
   const handlePress = useCallback(() => {
+    if (isSelectionMode && onToggleSelection) {
+      onToggleSelection(item.id);
+      return;
+    }
+
     onPress(item.id);
-  }, [onPress, item.id]);
+  }, [isSelectionMode, item.id, onPress, onToggleSelection]);
+
+  const handleLongPress = useCallback(() => {
+    onLongPress?.(item.id);
+  }, [item.id, onLongPress]);
 
   const wrapperStyle = useMemo(
     () => ({
@@ -93,14 +110,18 @@ const InventoryGridItemComponent: React.FC<InventoryGridItemProps> = ({
         backgroundColor: theme.colors.background.secondary,
         width: itemWidth,
         borderRadius: theme.borderRadius.lg,
-        borderWidth: StyleSheet.hairlineWidth,
-        borderColor: theme.colors.borderSubtle,
+        borderWidth: isSelected ? 1.5 : StyleSheet.hairlineWidth,
+        borderColor: isSelected
+          ? theme.colors.accent.primary
+          : theme.colors.borderSubtle,
       },
       theme.shadows.sm,
     ],
     [
+      isSelected,
       itemWidth,
       theme.borderRadius.lg,
+      theme.colors.accent.primary,
       theme.colors.background.secondary,
       theme.colors.borderSubtle,
       theme.shadows.sm,
@@ -231,9 +252,32 @@ const InventoryGridItemComponent: React.FC<InventoryGridItemProps> = ({
       <TouchableOpacity
         style={containerStyle}
         onPress={handlePress}
+        onLongPress={handleLongPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         activeOpacity={1}>
+        {isSelectionMode && (
+          <View
+            style={[
+              styles.selectionBadge,
+              {
+                borderColor: isSelected
+                  ? theme.colors.accent.primary
+                  : theme.colors.borderSubtle,
+                backgroundColor: isSelected
+                  ? theme.colors.accent.primary
+                  : theme.colors.background.secondary,
+              },
+            ]}>
+            {isSelected && (
+              <MaterialIcons
+                name="check"
+                size={12}
+                color={theme.colors.text.inverse}
+              />
+            )}
+          </View>
+        )}
         <View style={imageContainerStyle}>
           {item.imageId ? (
             <Image
@@ -317,6 +361,18 @@ const styles = StyleSheet.create({
   gridItemContainer: {
     overflow: 'hidden',
     position: 'relative',
+  },
+  selectionBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    zIndex: 2,
   },
   placeholderContainer: {
     flex: 1,
