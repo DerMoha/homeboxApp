@@ -1,5 +1,3 @@
-export type LogContext = Record<string, unknown>;
-
 const sensitiveKeys = [
   'password',
   'token',

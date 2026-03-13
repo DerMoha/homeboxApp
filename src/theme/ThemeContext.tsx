@@ -2,6 +2,7 @@ import React, {createContext, useContext, useState, useEffect} from 'react';
 import {useColorScheme} from 'react-native';
 import {Theme, lightTheme, darkTheme, oledTheme} from './theme';
 import {storageService, STORAGE_KEYS} from '../services/storageService';
+import {logger} from '../utils/logger';
 
 type ThemeMode = 'auto' | 'light' | 'dark' | 'oled';
 
@@ -42,7 +43,7 @@ export const ThemeProvider: React.FC<{children: React.ReactNode}> = ({
           setCustomColors(savedColors);
         }
       } catch (error) {
-        console.error('Error loading theme preferences:', error);
+        logger.error('Error loading theme preferences', {error});
       }
     };
 
@@ -54,7 +55,7 @@ export const ThemeProvider: React.FC<{children: React.ReactNode}> = ({
       setThemeMode(mode);
       await storageService.setItem(STORAGE_KEYS.THEME_MODE, mode);
     } catch (error) {
-      console.error('Error saving theme mode:', error);
+      logger.error('Error saving theme mode', {error});
     }
   };
 
@@ -67,7 +68,7 @@ export const ThemeProvider: React.FC<{children: React.ReactNode}> = ({
       setCustomColors(newColors);
       await storageService.setItem(STORAGE_KEYS.CUSTOM_COLORS, newColors);
     } catch (error) {
-      console.error('Error saving custom color:', error);
+      logger.error('Error saving custom color', {error});
     }
   };
 

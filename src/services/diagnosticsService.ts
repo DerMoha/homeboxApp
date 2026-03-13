@@ -3,9 +3,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const DIAGNOSTICS_STORAGE_KEY = 'homebox_diagnostics';
 const MAX_DIAGNOSTIC_EVENTS = 100;
 
+export type DiagnosticLevel = 'warn' | 'error';
+
 export interface DiagnosticEvent {
   id: string;
-  level: 'warn' | 'error';
+  level: DiagnosticLevel;
   message: string;
   context?: unknown;
   timestamp: string;
@@ -14,15 +16,7 @@ export interface DiagnosticEvent {
 class DiagnosticsService {
   private writeQueue: Promise<void> = Promise.resolve();
 
-  record(level: 'warn' | 'error', message: string, context?: unknown): void {
-    const event: DiagnosticEvent = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
-      level,
-      message,
-      context,
-      timestamp: new Date().toISOString(),
-    };
-
+  private enqueueWrite(event: DiagnosticEvent): void {
     this.writeQueue = this.writeQueue
       .then(async () => {
         const existing = await this.getEvents();
@@ -33,6 +27,18 @@ class DiagnosticsService {
         );
       })
       .catch(() => undefined);
+  }
+
+  record(level: DiagnosticLevel, message: string, context?: unknown): void {
+    const event: DiagnosticEvent = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+      level,
+      message,
+      context,
+      timestamp: new Date().toISOString(),
+    };
+
+    this.enqueueWrite(event);
   }
 
   async getEvents(): Promise<DiagnosticEvent[]> {

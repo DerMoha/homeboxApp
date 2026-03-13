@@ -1,45 +1,50 @@
 const isDevelopment = __DEV__;
 import {diagnosticsService} from '../services/diagnosticsService';
-import {LogContext, sanitizeForLogging} from './logSanitizer';
+import {sanitizeForLogging} from './logSanitizer';
 
-const recordDiagnostic = (
-  level: 'warn' | 'error',
-  message: string,
-  context?: LogContext,
-) => {
-  diagnosticsService.record(level, message, sanitizeForLogging(context));
+type LogLevel = 'log' | 'info' | 'warn' | 'error';
+
+const emitLog = (level: LogLevel, message: string, context?: unknown) => {
+  const sanitized = context ? sanitizeForLogging(context) : undefined;
+
+  if (level === 'warn' || level === 'error') {
+    diagnosticsService.record(level, message, sanitized);
+  }
+
+  if (!isDevelopment) {
+    return;
+  }
+
+  switch (level) {
+    case 'error':
+      console.error(message, sanitized);
+      break;
+    case 'warn':
+      console.warn(message, sanitized);
+      break;
+    case 'info':
+      console.info(message, sanitized);
+      break;
+    default:
+      console.log(message, sanitized);
+      break;
+  }
 };
 
 export const logger = {
-  log: (message: string, context?: LogContext): void => {
-    if (isDevelopment) {
-      const sanitized = context ? sanitizeForLogging(context) : undefined;
-      console.log(message, sanitized);
-    }
+  log: (message: string, context?: unknown): void => {
+    emitLog('log', message, context);
   },
 
-  error: (message: string, context?: LogContext): void => {
-    recordDiagnostic('error', message, context);
-
-    if (isDevelopment) {
-      const sanitized = context ? sanitizeForLogging(context) : undefined;
-      console.error(message, sanitized);
-    }
+  error: (message: string, context?: unknown): void => {
+    emitLog('error', message, context);
   },
 
-  warn: (message: string, context?: LogContext): void => {
-    recordDiagnostic('warn', message, context);
-
-    if (isDevelopment) {
-      const sanitized = context ? sanitizeForLogging(context) : undefined;
-      console.warn(message, sanitized);
-    }
+  warn: (message: string, context?: unknown): void => {
+    emitLog('warn', message, context);
   },
 
-  info: (message: string, context?: LogContext): void => {
-    if (isDevelopment) {
-      const sanitized = context ? sanitizeForLogging(context) : undefined;
-      console.info(message, sanitized);
-    }
+  info: (message: string, context?: unknown): void => {
+    emitLog('info', message, context);
   },
 };
