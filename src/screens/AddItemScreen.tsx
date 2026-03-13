@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo} from 'react';
 import {
   View,
   Text,
@@ -17,9 +17,12 @@ import {
 } from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import {useItemData} from '../hooks/useItemData';
+import {useAddItemMetadata} from '../hooks/useAddItemMetadata';
+import {useBarcodeAutofill} from '../hooks/useBarcodeAutofill';
+import {useEditableItemLoader} from '../hooks/useEditableItemLoader';
 import {useImageHandler} from '../hooks/useImageHandler';
 import {useAddItemForm} from '../hooks/useAddItemForm';
+import {usePostSaveNavigation} from '../hooks/usePostSaveNavigation';
 import {
   ImagePickerSection,
   LocationSelector,
@@ -28,8 +31,6 @@ import {
 } from '../components/AddItem';
 import {SectionHeader} from '../components/SectionHeader';
 import {BarcodeScannerModal} from '../components/BarcodeScanner';
-import {barcodeService} from '../services/barcodeService';
-import ServerService from '../services/serverService';
 import {AddItemStackParamList, RootTabParamList} from '../types/navigation';
 
 const AddItemScreen: React.FC = () => {
@@ -61,15 +62,6 @@ const AddItemScreen: React.FC = () => {
   );
 
   const {
-    locations,
-    labels,
-    enabledFields,
-    loadEnabledFields,
-    loadLocations,
-    loadLabels,
-  } = useItemData();
-
-  const {
     selectedImage,
     imageRotation,
     imageFlip,
@@ -84,6 +76,9 @@ const AddItemScreen: React.FC = () => {
     clearImage,
     formatFileSize,
   } = useImageHandler();
+
+  const {locations, labels, enabledFields, loadMetadata} =
+    useAddItemMetadata(loadImageQuality);
 
   const {
     formData,
@@ -100,12 +95,45 @@ const AddItemScreen: React.FC = () => {
     submitItem,
   } = useAddItemForm();
 
-  const [scannerVisible, setScannerVisible] = useState(false);
-  const [isLookingUpBarcode, setIsLookingUpBarcode] = useState(false);
-  const [isPreparingItem, setIsPreparingItem] = useState(false);
-
   const itemId = route.params?.itemId;
   const isEditing = Boolean(itemId);
+  const handleSaveSuccess = usePostSaveNavigation(
+    navigation,
+    resetForm,
+    clearImage,
+  );
+
+  const {
+    scannerVisible,
+    isLookingUpBarcode,
+    setScannerVisible,
+    handleBarcodeDetected,
+  } = useBarcodeAutofill({
+    routeBarcode: route.params?.barcode,
+    currentName: typeof formData.name === 'string' ? formData.name : undefined,
+    currentDescription:
+      typeof formData.description === 'string'
+        ? formData.description
+        : undefined,
+    currentBarcode:
+      typeof formData.barcode === 'string' ? formData.barcode : undefined,
+    setField: (field, value) => updateFormField(field, value),
+    clearRouteBarcode: () => navigation.setParams({barcode: undefined}),
+  });
+
+  const handleMissingItem = useCallback(() => {
+    navigation
+      .getParent<NavigationProp<RootTabParamList>>()
+      ?.navigate('InventoryTab', {
+        screen: 'Inventory',
+      });
+  }, [navigation]);
+
+  const {isPreparingItem} = useEditableItemLoader(
+    itemId,
+    populateForm,
+    handleMissingItem,
+  );
 
   const submitButtonStyle = useMemo(
     () => [
@@ -153,13 +181,8 @@ const AddItemScreen: React.FC = () => {
 
   useFocusEffect(
     useCallback(() => {
-      Promise.all([
-        loadEnabledFields(),
-        loadImageQuality(),
-        loadLocations(),
-        loadLabels(),
-      ]);
-    }, [loadEnabledFields, loadImageQuality, loadLabels, loadLocations]),
+      loadMetadata();
+    }, [loadMetadata]),
   );
 
   useEffect(() => {
@@ -172,67 +195,8 @@ const AddItemScreen: React.FC = () => {
     });
   }, [isEditing, navigation, theme]);
 
-  useEffect(() => {
-    if (!itemId) {
-      return;
-    }
-
-    let isMounted = true;
-
-    const loadItem = async () => {
-      try {
-        setIsPreparingItem(true);
-        const result = await ServerService.getInstance().getItemById(itemId);
-
-        if (!isMounted) {
-          return;
-        }
-
-        if (result.success && result.data) {
-          populateForm(result.data);
-          return;
-        }
-
-        navigation
-          .getParent<NavigationProp<RootTabParamList>>()
-          ?.navigate('InventoryTab', {
-            screen: 'Inventory',
-          });
-      } finally {
-        if (isMounted) {
-          setIsPreparingItem(false);
-        }
-      }
-    };
-
-    loadItem();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [itemId, navigation, populateForm]);
-
   const handleSubmit = async () => {
-    const success = await submitItem(
-      itemId,
-      selectedImage,
-      enabledFields,
-      item => {
-        resetForm();
-        clearImage();
-        navigation.setParams({barcode: undefined, itemId: undefined});
-        navigation
-          .getParent<NavigationProp<RootTabParamList>>()
-          ?.navigate('InventoryTab', {
-            screen: 'ItemDetail',
-            params: {itemId: item.id},
-          });
-      },
-    );
-
-    if (success) {
-      navigation.goBack();
-    }
+    await submitItem(itemId, selectedImage, enabledFields, handleSaveSuccess);
   };
 
   const handleQuantityFocus = () => {
@@ -249,58 +213,9 @@ const AddItemScreen: React.FC = () => {
     }
   };
 
-  const applyBarcode = useCallback(
-    async (scannedBarcode: string) => {
-      const trimmedBarcode = scannedBarcode.trim();
-
-      if (!trimmedBarcode) {
-        return;
-      }
-
-      updateFormField('barcode', trimmedBarcode);
-      setIsLookingUpBarcode(true);
-
-      try {
-        const result = await barcodeService.lookupBarcode(trimmedBarcode);
-        if (result.success && result.product) {
-          if (!formData.name?.trim() && result.product.name) {
-            updateFormField('name', result.product.name);
-          }
-          if (!formData.description?.trim() && result.product.description) {
-            updateFormField('description', result.product.description);
-          }
-        }
-      } catch {
-        // Silently fail - barcode is still saved
-      } finally {
-        setIsLookingUpBarcode(false);
-      }
-    },
-    [formData.description, formData.name, updateFormField],
-  );
-
-  useEffect(() => {
-    const routeBarcode = route.params?.barcode;
-
-    if (!routeBarcode || routeBarcode === formData.barcode) {
-      return;
-    }
-
-    applyBarcode(routeBarcode);
-    navigation.setParams({barcode: undefined});
-  }, [applyBarcode, formData.barcode, navigation, route.params?.barcode]);
-
-  const handleBarcodeDetected = useCallback(
-    (scannedBarcode: string) => {
-      setScannerVisible(false);
-      applyBarcode(scannedBarcode);
-    },
-    [applyBarcode],
-  );
-
   const handleScanBarcode = useCallback(() => {
     setScannerVisible(true);
-  }, []);
+  }, [setScannerVisible]);
 
   if (isPreparingItem) {
     return (
