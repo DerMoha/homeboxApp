@@ -2,7 +2,7 @@ import {useCallback} from 'react';
 import {NavigationProp} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {Item} from '../types';
-import {AddItemStackParamList, RootTabParamList} from '../types/navigation';
+import {AddItemStackParamList, RootTabParamList} from '../navigation/types';
 
 export const usePostSaveNavigation = (
   navigation: NativeStackNavigationProp<AddItemStackParamList, 'AddItem'>,

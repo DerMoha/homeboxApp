@@ -17,7 +17,7 @@ import {
   InventoryStackParamList,
   LocationsStackParamList,
   SettingsStackParamList,
-} from '../types/navigation';
+} from './types';
 
 const SettingsStack = createNativeStackNavigator<SettingsStackParamList>();
 const LocationsStack = createNativeStackNavigator<LocationsStackParamList>();

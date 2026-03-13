@@ -16,7 +16,7 @@ import {
 } from './src/navigation/stacks';
 import HomeScreen from './src/screens/HomeScreen';
 import {useServerConnection} from './src/hooks/useServerConnection';
-import {RootTabParamList} from './src/types/navigation';
+import {RootTabParamList} from './src/navigation/types';
 import {logger} from './src/utils/logger';
 
 type FontWeight = TextStyle['fontWeight'];

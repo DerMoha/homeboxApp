@@ -17,23 +17,12 @@ import {EmptyState} from '../components/common/EmptyState';
 import {InventoryListItem} from '../components/Inventory';
 import {InventoryItem} from '../types';
 import {DisplayPreference} from '../hooks/useDisplayPreferences';
-import {LocationsStackParamList} from '../types/navigation';
-import {NavigatorScreenParams} from '@react-navigation/native';
+import {LocationsStackParamList, RootTabParamList} from '../navigation/types';
 
 type LocationItemsRouteProp = RouteProp<
   LocationsStackParamList,
   'LocationItems'
 >;
-
-type RootTabParamList = {
-  Home: undefined;
-  InventoryTab:
-    | {screen?: 'Inventory' | 'ItemDetail'; params?: {itemId?: string}}
-    | undefined;
-  AddItemTab: undefined;
-  Locations: NavigatorScreenParams<LocationsStackParamList> | undefined;
-  SettingsTab: undefined;
-};
 
 const LocationItemsScreen: React.FC = () => {
   const {theme} = useTheme();

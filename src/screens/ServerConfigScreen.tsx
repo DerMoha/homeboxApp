@@ -10,14 +10,9 @@ import {useRoute, RouteProp} from '@react-navigation/native';
 import {useTheme} from '../theme/ThemeContext';
 import {useServerConfig} from '../hooks/useServerConfig';
 import {ServerFormFields, ServerActions} from '../components/ServerConfig';
-import {ServerConfig} from '../services/serverService';
+import {SettingsStackParamList} from '../navigation/types';
 
-type RootStackParamList = {
-  Settings: undefined;
-  ServerConfig: {server?: ServerConfig};
-};
-
-type ServerConfigRouteProp = RouteProp<RootStackParamList, 'ServerConfig'>;
+type ServerConfigRouteProp = RouteProp<SettingsStackParamList, 'ServerConfig'>;
 
 const ServerConfigScreen: React.FC = () => {
   const route = useRoute<ServerConfigRouteProp>();

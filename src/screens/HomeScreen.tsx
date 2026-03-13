@@ -17,7 +17,7 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useTheme} from '../theme/ThemeContext';
 import ServerService from '../services/serverService';
 import {InventoryItem} from '../types';
-import {RootTabParamList} from '../types/navigation';
+import {RootTabParamList} from '../navigation/types';
 import {BarcodeScannerModal} from '../components/BarcodeScanner';
 import {formatRelativeTime} from '../utils/dateUtils';
 

@@ -31,7 +31,7 @@ import {
 } from '../components/AddItem';
 import {SectionHeader} from '../components/SectionHeader';
 import {BarcodeScannerModal} from '../components/BarcodeScanner';
-import {AddItemStackParamList, RootTabParamList} from '../types/navigation';
+import {AddItemStackParamList, RootTabParamList} from '../navigation/types';
 
 const AddItemScreen: React.FC = () => {
   const {theme} = useTheme();

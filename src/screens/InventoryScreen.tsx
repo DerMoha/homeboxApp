@@ -20,7 +20,7 @@ import {
 import {EmptyState} from '../components/common/EmptyState';
 import {InventorySkeletonList} from '../components/common/Skeleton';
 import {InventoryItem} from '../types';
-import {InventoryStackParamList, RootTabParamList} from '../types/navigation';
+import {InventoryStackParamList, RootTabParamList} from '../navigation/types';
 import {matchesSearch, applyFilters} from '../utils/inventoryFilters';
 import {hapticImpact} from '../utils/haptics';
 import ServerService from '../services/serverService';

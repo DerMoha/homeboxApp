@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Input } from '../common';
-import { ServerConfig } from '../../services/serverService';
+import {View, StyleSheet} from 'react-native';
+import {Input} from '../common';
+import {ServerConfig} from '../../types';
 
 interface ServerFormFieldsProps {
   formData: ServerConfig;
@@ -12,7 +12,6 @@ export const ServerFormFields: React.FC<ServerFormFieldsProps> = ({
   formData,
   onUpdateField,
 }) => {
-
   return (
     <View>
       <View style={styles.inputWrapper}>
@@ -20,7 +19,7 @@ export const ServerFormFields: React.FC<ServerFormFieldsProps> = ({
           label="Server Name"
           placeholder="My Server"
           value={formData.name || ''}
-          onChangeText={(text) => onUpdateField('name', text)}
+          onChangeText={text => onUpdateField('name', text)}
         />
       </View>
 
@@ -29,7 +28,7 @@ export const ServerFormFields: React.FC<ServerFormFieldsProps> = ({
           label="Host"
           placeholder="localhost:8080 or 192.168.1.100:8080"
           value={formData.host}
-          onChangeText={(text) => onUpdateField('host', text)}
+          onChangeText={text => onUpdateField('host', text)}
           autoCapitalize="none"
           required
         />
@@ -40,7 +39,7 @@ export const ServerFormFields: React.FC<ServerFormFieldsProps> = ({
           label="Username"
           placeholder="admin"
           value={formData.username}
-          onChangeText={(text) => onUpdateField('username', text)}
+          onChangeText={text => onUpdateField('username', text)}
           autoCapitalize="none"
           autoCorrect={false}
           required
@@ -52,7 +51,7 @@ export const ServerFormFields: React.FC<ServerFormFieldsProps> = ({
           label="Password"
           placeholder="••••••••"
           value={formData.password}
-          onChangeText={(text) => onUpdateField('password', text)}
+          onChangeText={text => onUpdateField('password', text)}
           secureTextEntry
           autoCapitalize="none"
           autoCorrect={false}

@@ -14,13 +14,11 @@ import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import ServerService from '../services/serverService';
-import {LocationsStackParamList} from '../types/navigation';
+import {LocationsStackParamList} from '../navigation/types';
 import axios from 'axios';
 import {logger} from '../utils/logger';
 import {useAsyncState} from '../hooks/useAsyncState';
 import {LoadingState, ErrorState} from '../components/common';
-
-type RootStackParamList = LocationsStackParamList;
 
 interface LocationNode {
   id: string;
@@ -252,7 +250,7 @@ const LocationTreeItem = React.memo(LocationTreeItemComponent);
 const LocationsScreen: React.FC = () => {
   const {theme} = useTheme();
   const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    useNavigation<NativeStackNavigationProp<LocationsStackParamList>>();
   const {
     data: locationTree,
     isLoading,
@@ -278,7 +276,7 @@ const LocationsScreen: React.FC = () => {
       },
       {
         onError: err => {
-          logger.error('Error loading locations:', err);
+          logger.error('Error loading locations', {error: err});
           if (axios.isAxiosError(err)) {
             if (err.response?.status === 500) {
               throw new Error(
