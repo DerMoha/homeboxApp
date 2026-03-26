@@ -59,15 +59,12 @@ This document outlines potential improvements to enhance the HomeboxApp user exp
 **Current State:** Fully implemented (2026-01)
 
 - Camera-based barcode scanning using `react-native-camera-kit`
-- Auto-fill item details from Open Food Facts API
 - Integrated in AddItemScreen and HomeScreen
 - Supports UPC/EAN formats
 - Animated scan line and permission handling
 
 **Potential Enhancements:**
 
-- Add UPC Database API as secondary lookup source
-- Cache barcode lookups to reduce API calls
 - Add QR code support
 - Manual barcode entry fallback
 - Track which items were added via barcode

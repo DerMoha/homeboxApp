@@ -103,23 +103,14 @@ const AddItemScreen: React.FC = () => {
     clearImage,
   );
 
-  const {
-    scannerVisible,
-    isLookingUpBarcode,
-    setScannerVisible,
-    handleBarcodeDetected,
-  } = useBarcodeAutofill({
-    routeBarcode: route.params?.barcode,
-    currentName: typeof formData.name === 'string' ? formData.name : undefined,
-    currentDescription:
-      typeof formData.description === 'string'
-        ? formData.description
-        : undefined,
-    currentBarcode:
-      typeof formData.barcode === 'string' ? formData.barcode : undefined,
-    setField: (field, value) => updateFormField(field, value),
-    clearRouteBarcode: () => navigation.setParams({barcode: undefined}),
-  });
+  const {scannerVisible, setScannerVisible, handleBarcodeDetected} =
+    useBarcodeAutofill({
+      routeBarcode: route.params?.barcode,
+      currentBarcode:
+        typeof formData.barcode === 'string' ? formData.barcode : undefined,
+      setField: (field, value) => updateFormField(field, value),
+      clearRouteBarcode: () => navigation.setParams({barcode: undefined}),
+    });
 
   const handleMissingItem = useCallback(() => {
     navigation
@@ -263,21 +254,6 @@ const AddItemScreen: React.FC = () => {
             onQuantityBlur={handleQuantityBlur}
             onScanBarcode={handleScanBarcode}
           />
-          {isLookingUpBarcode && (
-            <View style={styles.lookupIndicator}>
-              <ActivityIndicator
-                size="small"
-                color={theme.colors.accent.primary}
-              />
-              <Text
-                style={[
-                  styles.lookupText,
-                  {color: theme.colors.text.secondary},
-                ]}>
-                Looking up product...
-              </Text>
-            </View>
-          )}
         </View>
 
         <SectionHeader title="Location" icon="place" variant="withIcon" />
@@ -413,15 +389,6 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: 24,
-  },
-  lookupIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 12,
-    gap: 8,
-  },
-  lookupText: {
-    fontSize: 13,
   },
 });
 
