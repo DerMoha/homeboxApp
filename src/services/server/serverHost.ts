@@ -37,6 +37,24 @@ export const isPrivateHost = (hostname: string) => {
   );
 };
 
+/**
+ * Hosts for which the app can safely support cleartext during local setup.
+ * Private network IPs intentionally still require HTTPS so a release build
+ * cannot silently send credentials over a shared Wi-Fi network.
+ */
+export const isLocalHttpHost = (hostname: string) => {
+  const normalizedHost = hostname.toLowerCase();
+
+  return (
+    normalizedHost === 'localhost' ||
+    normalizedHost === '127.0.0.1' ||
+    normalizedHost === '::1' ||
+    normalizedHost === '[::1]' ||
+    normalizedHost === '10.0.2.2' ||
+    normalizedHost.endsWith('.local')
+  );
+};
+
 export const extractHostname = (input: string) => {
   try {
     return new URL(`${HTTP_PROTOCOL}${input}`).hostname;
@@ -60,7 +78,7 @@ export const normalizeServerHost = (input: string) => {
   const baseUrl = hasExplicitProtocol
     ? trimmedInput
     : `${
-        isPrivateHost(hostname) ? HTTP_PROTOCOL : HTTPS_PROTOCOL
+        isLocalHttpHost(hostname) ? HTTP_PROTOCOL : HTTPS_PROTOCOL
       }${trimmedInput}`;
 
   let parsedUrl: URL;
@@ -75,8 +93,10 @@ export const normalizeServerHost = (input: string) => {
     throw new Error('Server address must use http or https');
   }
 
-  if (parsedUrl.protocol === 'http:' && !isPrivateHost(parsedUrl.hostname)) {
-    throw new Error('HTTP is only supported for local or private servers');
+  if (parsedUrl.protocol === 'http:' && !isLocalHttpHost(parsedUrl.hostname)) {
+    throw new Error(
+      'HTTP is only supported for localhost, loopback, and .local hosts',
+    );
   }
 
   const normalizedPath = parsedUrl.pathname === '/' ? '' : parsedUrl.pathname;
