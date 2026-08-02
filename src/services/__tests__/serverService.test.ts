@@ -3,6 +3,7 @@ import ServerService from '../serverService';
 import {ServerConfig, StoredServerConfig} from '../../types';
 import {storageService, STORAGE_KEYS} from '../storageService';
 import {secureStorageService} from '../secureStorageService';
+import {resetAuthenticationRateLimit} from '../server/serverAuth';
 
 // Mock dependencies
 jest.mock('axios');
@@ -37,6 +38,7 @@ describe('ServerService', () => {
   };
 
   beforeEach(() => {
+    resetAuthenticationRateLimit();
     // Reset singleton instance
     (ServerService as any).instance = undefined;
     serverService = ServerService.getInstance();
@@ -86,6 +88,7 @@ describe('ServerService', () => {
         {
           username: mockConfig.username,
           password: mockConfig.password,
+          stayLoggedIn: false,
         },
       );
     });
@@ -118,7 +121,9 @@ describe('ServerService', () => {
       const result = await serverService.initialize(mockConfig);
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain('401');
+      expect(result.error).toBe(
+        'Authentication failed. Please check your credentials.',
+      );
     });
 
     it('should handle network errors', async () => {
@@ -189,6 +194,34 @@ describe('ServerService', () => {
       );
     });
 
+    it('should require https for private network IPs', async () => {
+      mockAxiosInstance.post.mockResolvedValueOnce({
+        data: {token: 'test-token'},
+      });
+
+      await serverService.initialize({...mockConfig, host: '192.168.1.20'});
+
+      expect(mockedAxios.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          baseURL: 'https://192.168.1.20',
+        }),
+      );
+    });
+
+    it('should keep Android emulator loopback available over http', async () => {
+      mockAxiosInstance.post.mockResolvedValueOnce({
+        data: {token: 'test-token'},
+      });
+
+      await serverService.initialize({...mockConfig, host: '10.0.2.2:3100'});
+
+      expect(mockedAxios.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          baseURL: 'http://10.0.2.2:3100',
+        }),
+      );
+    });
+
     it('should reject explicit public http hosts', async () => {
       const result = await serverService.initialize({
         ...mockConfig,
@@ -197,7 +230,7 @@ describe('ServerService', () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toBe(
-        'HTTP is only supported for local or private servers',
+        'HTTP is only supported for localhost, loopback, and .local hosts',
       );
     });
   });
@@ -237,7 +270,7 @@ describe('ServerService', () => {
       const result = await serverService.testConnection(mockConfig);
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Failed to authenticate');
+      expect(result.error).toBe('Failed to get authentication token');
     });
   });
 
@@ -391,9 +424,15 @@ describe('ServerService', () => {
       const result = await serverService.getItemById('item-1');
 
       expect(result.success).toBe(true);
-      expect(result.data).toEqual(mockItem);
+      expect(result.data).toEqual(
+        expect.objectContaining({
+          id: mockItem.id,
+          name: mockItem.name,
+          quantity: mockItem.quantity,
+        }),
+      );
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(
-        '/api/v1/items/item-1',
+        '/api/v1/entities/item-1',
       );
     });
 
@@ -489,7 +528,7 @@ describe('ServerService', () => {
 
       const result = await serverService.getServers();
 
-      expect(result).toEqual([mockConfig]);
+      expect(result).toEqual([{...mockConfig, password: ''}]);
     });
 
     it('should migrate legacy stored passwords into secure storage', async () => {
@@ -498,7 +537,7 @@ describe('ServerService', () => {
 
       const result = await serverService.getServers();
 
-      expect(result).toEqual([mockConfig]);
+      expect(result).toEqual([{...mockConfig, password: ''}]);
       expect(mockedSecureStorageService.setServerPassword).toHaveBeenCalledWith(
         mockConfig.id,
         mockConfig.password,

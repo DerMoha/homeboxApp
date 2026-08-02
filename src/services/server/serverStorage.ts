@@ -32,13 +32,16 @@ export const saveServer = async (config: ServerConfig): Promise<boolean> => {
       servers.push(config);
     }
 
-    const passwordSaved = await secureStorageService.setServerPassword(
-      config.id,
-      config.password,
-    );
-
-    if (!passwordSaved) {
-      return false;
+    // Only update the Keychain entry when the caller supplies a non-empty
+    // password (e.g. blank means "keep existing" from the edit form).
+    if (config.password !== '') {
+      const passwordSaved = await secureStorageService.setServerPassword(
+        config.id,
+        config.password,
+      );
+      if (!passwordSaved) {
+        return false;
+      }
     }
 
     return storageService.setItem(
@@ -59,11 +62,28 @@ export const deleteServer = async (serverId: string): Promise<boolean> => {
       STORAGE_KEYS.SERVERS,
       updatedServers.map(server => toStoredServerConfig(server)),
     );
-    const passwordDeleted = await secureStorageService.removeServerPassword(
+
+    if (!storageUpdated) {
+      return false;
+    }
+
+    let passwordDeleted = await secureStorageService.removeServerPassword(
       serverId,
     );
+    if (!passwordDeleted) {
+      // Retry Keychain removal once before giving up
+      passwordDeleted = await secureStorageService.removeServerPassword(
+        serverId,
+      );
+      if (!passwordDeleted) {
+        logger.warn(
+          'Keychain cleanup failed for deleted server; entry may be orphaned',
+          {serverId},
+        );
+      }
+    }
 
-    return storageUpdated && passwordDeleted;
+    return true;
   } catch (error) {
     logger.error('Error deleting server', {error});
     return false;

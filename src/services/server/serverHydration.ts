@@ -20,27 +20,33 @@ export const hydrateServers = async (
   servers: Array<StoredServerConfig | ServerConfig>,
 ): Promise<ServerConfig[]> => {
   let migratedLegacyServers = false;
+  let migrationFailed = false;
 
   const hydratedServers = await Promise.all(
     servers.map(async server => {
       if (isLegacyServerConfig(server)) {
         migratedLegacyServers = true;
-        await secureStorageService.setServerPassword(
+        const migrated = await secureStorageService.setServerPassword(
           server.id,
           server.password,
         );
-        return server;
+        if (!migrated) {
+          migrationFailed = true;
+          return server;
+        }
+
+        // The password is intentionally not read back into application state.
+        return {...server, password: ''};
       }
 
-      const password = await secureStorageService.getServerPassword(server.id);
       return {
         ...server,
-        password: password ?? '',
+        password: '',
       };
     }),
   );
 
-  if (migratedLegacyServers) {
+  if (migratedLegacyServers && !migrationFailed) {
     await storageService.setItem(
       STORAGE_KEYS.SERVERS,
       hydratedServers.map(server => toStoredServerConfig(server)),

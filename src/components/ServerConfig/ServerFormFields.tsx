@@ -20,6 +20,7 @@ export const ServerFormFields: React.FC<ServerFormFieldsProps> = ({
           placeholder="My Server"
           value={formData.name || ''}
           onChangeText={text => onUpdateField('name', text)}
+          maxLength={100}
         />
       </View>
 
@@ -31,6 +32,7 @@ export const ServerFormFields: React.FC<ServerFormFieldsProps> = ({
           onChangeText={text => onUpdateField('host', text)}
           autoCapitalize="none"
           required
+          maxLength={253}
         />
       </View>
 
@@ -43,6 +45,7 @@ export const ServerFormFields: React.FC<ServerFormFieldsProps> = ({
           autoCapitalize="none"
           autoCorrect={false}
           required
+          maxLength={100}
         />
       </View>
 

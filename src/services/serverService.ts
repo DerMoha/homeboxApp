@@ -13,7 +13,7 @@ import {
   applyAuthorizationHeader,
   authenticateServer,
   createAxiosClient,
-  testServerAuthentication,
+  logoutServer,
 } from './server/serverAuth';
 import {
   deleteServer,
@@ -22,6 +22,7 @@ import {
   saveServer,
   setLastUsedServer,
 } from './server/serverStorage';
+import {secureStorageService} from './secureStorageService';
 import {toBootstrapError} from './server/serverErrors';
 import {normalizeServerHost} from './server/serverHost';
 import {
@@ -48,7 +49,7 @@ class ServerService {
 
   private static instance: ServerService;
   private axiosInstance: AxiosInstance | null = null;
-  private currentConfig: ServerConfig | null = null;
+  private currentConfig: Omit<ServerConfig, 'password'> | null = null;
   private token: string | null = null;
 
   private constructor() {}
@@ -63,16 +64,42 @@ class ServerService {
   public async initialize(config: ServerConfig): Promise<ApiResponse> {
     try {
       const normalizedHost = normalizeServerHost(config.host);
-      this.currentConfig = config;
-      this.axiosInstance = createAxiosClient(normalizedHost);
+      const nextAxiosInstance = createAxiosClient(normalizedHost);
+      const password =
+        config.password ||
+        (await secureStorageService.getServerPassword(config.id)) ||
+        '';
 
-      const authResult = await authenticateServer(this.axiosInstance, config);
+      if (!password) {
+        return {
+          success: false,
+          error: 'A password is required to connect to this server.',
+        };
+      }
+
+      const authResult = await authenticateServer(nextAxiosInstance, {
+        ...config,
+        password,
+      });
       if (!authResult.success) {
         return {success: false, error: authResult.error};
       }
 
+      const previousAxiosInstance = this.axiosInstance;
+      const previousToken = this.token;
+      this.axiosInstance = nextAxiosInstance;
+      this.currentConfig = {
+        id: config.id,
+        host: config.host,
+        username: config.username,
+        name: config.name,
+      };
       this.token = authResult.token;
-      applyAuthorizationHeader(this.axiosInstance, authResult.token);
+      applyAuthorizationHeader(nextAxiosInstance, authResult.token);
+
+      if (previousAxiosInstance && previousToken) {
+        await logoutServer(previousAxiosInstance);
+      }
 
       return {
         success: true,
@@ -87,11 +114,29 @@ class ServerService {
     try {
       const normalizedHost = normalizeServerHost(config.host);
       const testInstance = createAxiosClient(normalizedHost);
-      const authResult = await testServerAuthentication(testInstance, config);
+      const password =
+        config.password ||
+        (await secureStorageService.getServerPassword(config.id)) ||
+        '';
+
+      if (!password) {
+        return {
+          success: false,
+          error: 'A password is required to connect to this server.',
+        };
+      }
+
+      const authResult = await authenticateServer(testInstance, {
+        ...config,
+        password,
+      });
 
       if (!authResult.success) {
         return {success: false, error: authResult.error};
       }
+
+      applyAuthorizationHeader(testInstance, authResult.token);
+      await logoutServer(testInstance);
 
       return {success: true, data: authResult.data};
     } catch (error) {
@@ -108,10 +153,37 @@ class ServerService {
   }
 
   public async deleteServer(serverId: string): Promise<boolean> {
-    return deleteServer(serverId);
+    const isCurrentServer = this.currentConfig?.id === serverId;
+    const result = await deleteServer(serverId);
+    if (result && isCurrentServer) {
+      await this.disconnect();
+    }
+    return result;
   }
 
-  public getCurrentConfig(): ServerConfig | null {
+  public async disconnect(): Promise<void> {
+    const activeAxiosInstance = this.axiosInstance;
+    const activeToken = this.token;
+
+    try {
+      if (activeAxiosInstance && activeToken) {
+        await logoutServer(activeAxiosInstance);
+      }
+    } finally {
+      this.clearAuthState();
+    }
+  }
+
+  private clearAuthState(): void {
+    this.token = null;
+    this.currentConfig = null;
+    if (this.axiosInstance) {
+      delete this.axiosInstance.defaults.headers.common.Authorization;
+      this.axiosInstance = null;
+    }
+  }
+
+  public getCurrentConfig(): Omit<ServerConfig, 'password'> | null {
     return this.currentConfig;
   }
 
@@ -123,8 +195,8 @@ class ServerService {
     return normalizeServerHost(this.currentConfig.host);
   }
 
-  public getAxiosInstance(): AxiosInstance | null {
-    return this.axiosInstance;
+  public getAuthHeaders(): Record<string, string> {
+    return this.token ? {Authorization: `Bearer ${this.token}`} : {};
   }
 
   public async getInventory(

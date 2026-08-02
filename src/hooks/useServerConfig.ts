@@ -88,7 +88,12 @@ export const useServerConfig = () => {
   }, []);
 
   const testConnection = useCallback(async (): Promise<void> => {
-    if (!formData.host || !formData.username || !formData.password) {
+    const isSavedServer = servers.some(server => server.id === formData.id);
+    if (
+      !formData.host ||
+      !formData.username ||
+      (!formData.password && !isSavedServer)
+    ) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
@@ -116,7 +121,7 @@ export const useServerConfig = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [formData]);
+  }, [formData, servers]);
 
   const saveServerConfig = useCallback(async (): Promise<void> => {
     try {
@@ -142,7 +147,12 @@ export const useServerConfig = () => {
   }, [formData, loadServers, resetForm]);
 
   const saveServer = useCallback(async (): Promise<void> => {
-    if (!formData.host || !formData.username || !formData.password) {
+    const isSavedServer = servers.some(server => server.id === formData.id);
+    if (
+      !formData.host ||
+      !formData.username ||
+      (!formData.password && !isSavedServer)
+    ) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
@@ -179,7 +189,7 @@ export const useServerConfig = () => {
       Alert.alert('Error', 'Failed to save server configuration');
       setIsSaving(false);
     }
-  }, [formData, saveServerConfig]);
+  }, [formData, saveServerConfig, servers]);
 
   const deleteServer = useCallback(
     async (serverId: string): Promise<void> => {
@@ -235,7 +245,10 @@ export const useServerConfig = () => {
 
   const editServer = useCallback((server: ServerWithStatus): void => {
     setSelectedServer(server.id);
-    setFormData(server);
+    // Do not load password into React state — leave field empty so the user
+    // must re-enter only if they want to change it. saveServer preserves the
+    // existing Keychain entry when the password field is left blank.
+    setFormData({...server, password: ''});
   }, []);
 
   const clearSelection = useCallback((): void => {
