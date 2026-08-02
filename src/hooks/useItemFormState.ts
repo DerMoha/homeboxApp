@@ -7,6 +7,7 @@ export interface ItemFormData {
   description?: string;
   purchasePrice?: string;
   insured?: boolean;
+  assetId?: string;
   barcode?: string;
   [key: string]: string | number | boolean | undefined;
 }
@@ -49,7 +50,8 @@ export const useItemFormState = () => {
       purchasePrice:
         item.purchasePrice > 0 ? String(item.purchasePrice) : undefined,
       insured: item.insured,
-      barcode: item.barcode || '',
+      assetId: item.assetId || '',
+      barcode: item.barcode || item.assetId || '',
     });
     setSelectedLocation(item.location);
     setSelectedLabels(item.labels || []);

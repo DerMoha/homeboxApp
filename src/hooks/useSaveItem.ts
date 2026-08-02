@@ -49,13 +49,19 @@ export const useSaveItem = () => {
           name: formData.name,
           quantity: parseInt(formData.quantity || '1', 10),
           locationId: selectedLocation.id,
-          description: enabledFields.description
-            ? formData.description || ''
-            : '',
-          purchasePrice: enabledFields.purchasePrice
-            ? parseFloat(formData.purchasePrice || '0') || 0
-            : 0,
-          insured: enabledFields.insured ? formData.insured || false : false,
+          ...(enabledFields.description
+            ? {description: formData.description || ''}
+            : {}),
+          ...(enabledFields.purchasePrice
+            ? {purchasePrice: parseFloat(formData.purchasePrice || '0') || 0}
+            : {}),
+          ...(enabledFields.insured
+            ? {insured: formData.insured || false}
+            : {}),
+          assetId:
+            typeof formData.assetId === 'string' && formData.assetId.trim()
+              ? formData.assetId.trim()
+              : formData.barcode?.trim() || undefined,
           barcode: formData.barcode?.trim() || undefined,
           labels: selectedLabels.map(label => label.id),
         };
@@ -80,7 +86,8 @@ export const useSaveItem = () => {
           });
 
           const imageFormData = new FormData();
-          const fileExtension = imageUri.split('.').pop() || 'jpg';
+          const fileExtension =
+            imageUri.split(/[?#]/)[0].split('.').pop()?.toLowerCase() || 'jpg';
           const file: FormDataFile = {
             uri: imageUri,
             type: `image/${fileExtension}`,
@@ -90,7 +97,7 @@ export const useSaveItem = () => {
           imageFormData.append('file', file as unknown as Blob);
           imageFormData.append('type', 'photo');
           imageFormData.append('primary', 'true');
-          imageFormData.append('name', 'Item Image');
+          imageFormData.append('name', `item-image.${fileExtension}`);
 
           const imageResponse = await service.uploadItemImage(
             itemResponse.data.id,

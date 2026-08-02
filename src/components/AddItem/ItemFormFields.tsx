@@ -160,13 +160,13 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
       {/* Barcode */}
       <View style={sectionSpacingStyle}>
         <View style={styles.labelRow}>
-          <Text style={labelStyle}>Barcode</Text>
+          <Text style={labelStyle}>Asset ID / barcode</Text>
           <FieldTag label="Optional" theme={theme} />
         </View>
         <View style={styles.barcodeRow}>
           <TextInput
             style={[inputStyle, styles.barcodeInput]}
-            placeholder="Scan or enter barcode"
+            placeholder="Scan or enter a numeric ID"
             placeholderTextColor={theme.colors.text.secondary}
             value={String(formData.barcode || '')}
             onChangeText={text => onUpdateField('barcode', text)}
