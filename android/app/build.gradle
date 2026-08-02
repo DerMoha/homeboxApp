@@ -64,6 +64,13 @@ def releaseStorePassword = System.getenv("HOMEBOX_RELEASE_STORE_PASSWORD") ?: pr
 def releaseKeyAlias = System.getenv("HOMEBOX_RELEASE_KEY_ALIAS") ?: project.findProperty("HOMEBOX_RELEASE_KEY_ALIAS")
 def releaseKeyPassword = System.getenv("HOMEBOX_RELEASE_KEY_PASSWORD") ?: project.findProperty("HOMEBOX_RELEASE_KEY_PASSWORD")
 def hasReleaseSigning = releaseStoreFile && releaseStorePassword && releaseKeyAlias && releaseKeyPassword
+def releaseTaskRequested = gradle.startParameter.taskNames.any { taskName ->
+    def normalizedTaskName = taskName.toLowerCase()
+    normalizedTaskName.contains("release") ||
+        normalizedTaskName.endsWith("build") ||
+        normalizedTaskName.endsWith("assemble") ||
+        normalizedTaskName.endsWith("bundle")
+}
 
 /**
  * The preferred build flavor of JavaScriptCore (JSC)
@@ -113,11 +120,13 @@ android {
             signingConfig signingConfigs.debug
         }
         release {
-            if (!hasReleaseSigning) {
+            if (!hasReleaseSigning && releaseTaskRequested) {
                 throw new GradleException("Release signing credentials are missing. Set HOMEBOX_RELEASE_STORE_FILE, HOMEBOX_RELEASE_STORE_PASSWORD, HOMEBOX_RELEASE_KEY_ALIAS, and HOMEBOX_RELEASE_KEY_PASSWORD before building a release.")
             }
 
-            signingConfig signingConfigs.release
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled enableProguardInReleaseBuilds
             shrinkResources enableShrinkResourcesInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
