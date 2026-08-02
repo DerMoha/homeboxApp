@@ -1,28 +1,21 @@
 import {AxiosInstance} from 'axios';
+import {ApiResponse, InventoryResponse, LocationResponse} from '../../../types';
+import {toAuthenticatedRequestError} from '../serverErrors';
 import {
-  ApiResponse,
-  InventoryResponse,
-  Item,
-  Location,
-  LocationResponse,
-} from '../../../types';
-import {logger} from '../../../utils/logger';
-import {findLocationInTree, getNodeItems} from '../locationTree';
-import {toBootstrapError} from '../serverErrors';
+  HOMEBOX_ENDPOINTS,
+  HomeboxEntityListResponse,
+  HomeboxTreeItem,
+  mapHomeboxLocation,
+  mapHomeboxSummary,
+  mapHomeboxTree,
+} from '../homeboxAdapter';
 import {TreeNode} from '../types';
+
+const noConnectionError = 'No active server connection or authentication token';
 
 const noConnectionResponse = <T>(): ApiResponse<T> => ({
   success: false,
-  error: 'No active server connection or authentication token',
-});
-
-const transformLocationsResponse = (
-  locations: Location[],
-): LocationResponse => ({
-  locations,
-  page: 1,
-  pageSize: locations.length,
-  total: locations.length,
+  error: noConnectionError,
 });
 
 export const getLocations = async (
@@ -34,10 +27,33 @@ export const getLocations = async (
       return noConnectionResponse();
     }
 
-    const response = await axiosInstance.get('/api/v1/locations');
-    return {success: true, data: transformLocationsResponse(response.data)};
+    const response = await axiosInstance.get<HomeboxEntityListResponse>(
+      HOMEBOX_ENDPOINTS.entities,
+      {
+        params: {
+          isLocation: true,
+          page: -1,
+          pageSize: -1,
+        },
+      },
+    );
+
+    if (!response.data || !Array.isArray(response.data.items)) {
+      return {success: false, error: 'Invalid response format from server'};
+    }
+
+    const locations = response.data.items.map(mapHomeboxLocation);
+    return {
+      success: true,
+      data: {
+        locations,
+        page: response.data.page ?? 1,
+        pageSize: response.data.pageSize ?? locations.length,
+        total: response.data.total ?? locations.length,
+      },
+    };
   } catch (error) {
-    return toBootstrapError(error as any) as ApiResponse<LocationResponse>;
+    return toAuthenticatedRequestError(error, 'Failed to get locations');
   }
 };
 
@@ -50,32 +66,33 @@ export const getLocationItems = async (
       return {success: false, error: 'No active server connection'};
     }
 
-    const response = await axiosInstance.get('/api/v1/locations/tree');
-    const locationNode = findLocationInTree(response.data, locationId);
-    let items = getNodeItems(locationNode);
+    const response = await axiosInstance.get<HomeboxEntityListResponse>(
+      HOMEBOX_ENDPOINTS.entities,
+      {
+        params: {
+          isLocation: false,
+          parentIds: [locationId],
+          page: -1,
+          pageSize: -1,
+        },
+      },
+    );
 
-    if (!items.length) {
-      const itemsResponse = await axiosInstance.get('/api/v1/items', {
-        params: {page: 1, pageSize: 1000},
-      });
-      const allItems = itemsResponse.data.items || [];
-      items = allItems.filter(
-        (item: Item) => item.location && item.location.id === locationId,
-      );
+    if (!response.data || !Array.isArray(response.data.items)) {
+      return {success: false, error: 'Invalid response format from server'};
     }
 
     return {
       success: true,
       data: {
-        items,
-        page: 1,
-        pageSize: items.length,
-        total: items.length,
+        items: response.data.items.map(mapHomeboxSummary),
+        page: response.data.page ?? 1,
+        pageSize: response.data.pageSize ?? response.data.items.length,
+        total: response.data.total ?? response.data.items.length,
       },
     };
   } catch (error) {
-    logger.error('Error getting location items', {error});
-    return {success: false, error: 'Failed to get location items'};
+    return toAuthenticatedRequestError(error, 'Failed to get location items');
   }
 };
 
@@ -87,10 +104,17 @@ export const getLocationTree = async (
       return {success: false, error: 'No active server connection'};
     }
 
-    const response = await axiosInstance.get('/api/v1/locations/tree');
-    return {success: true, data: response.data};
+    const response = await axiosInstance.get<HomeboxTreeItem[]>(
+      HOMEBOX_ENDPOINTS.entityTree,
+      {params: {withItems: false}},
+    );
+
+    if (!Array.isArray(response.data)) {
+      return {success: false, error: 'Invalid response format from server'};
+    }
+
+    return {success: true, data: response.data.map(mapHomeboxTree)};
   } catch (error) {
-    logger.error('Error getting location tree', {error});
-    return {success: false, error: 'Failed to get location tree'};
+    return toAuthenticatedRequestError(error, 'Failed to get location tree');
   }
 };

@@ -8,6 +8,15 @@ import {
 } from '../../../types';
 import {logger} from '../../../utils/logger';
 import {toAuthenticatedRequestError, toMutationError} from '../serverErrors';
+import {
+  HOMEBOX_ENDPOINTS,
+  HomeboxEntity,
+  HomeboxEntityListResponse,
+  mapHomeboxEntity,
+  mapHomeboxSummary,
+  toHomeboxEntityCreate,
+  toHomeboxEntityUpdate,
+} from '../homeboxAdapter';
 import {CreateItemResponse} from '../types';
 
 const noConnectionError = 'No active server connection or authentication token';
@@ -23,15 +32,26 @@ export const getInventory = async (
       return {success: false, error: noConnectionError};
     }
 
-    const response = await axiosInstance.get('/api/v1/items', {
-      params: {page, pageSize},
-    });
+    const response = await axiosInstance.get<HomeboxEntityListResponse>(
+      HOMEBOX_ENDPOINTS.entities,
+      {
+        params: {page, pageSize, isLocation: false},
+      },
+    );
 
     if (!response.data || !Array.isArray(response.data.items)) {
       return {success: false, error: 'Invalid response format from server'};
     }
 
-    return {success: true, data: response.data};
+    return {
+      success: true,
+      data: {
+        items: response.data.items.map(mapHomeboxSummary),
+        page: response.data.page ?? page,
+        pageSize: response.data.pageSize ?? pageSize,
+        total: response.data.total ?? response.data.items.length,
+      },
+    };
   } catch (error) {
     return toAuthenticatedRequestError(error, 'Failed to get inventory');
   }
@@ -47,13 +67,15 @@ export const getItemById = async (
       return {success: false, error: noConnectionError};
     }
 
-    const response = await axiosInstance.get(`/api/v1/items/${id}`);
+    const response = await axiosInstance.get<HomeboxEntity>(
+      HOMEBOX_ENDPOINTS.entity(id),
+    );
 
     if (!response.data || !response.data.id) {
       return {success: false, error: 'Invalid response format from server'};
     }
 
-    return {success: true, data: response.data};
+    return {success: true, data: mapHomeboxEntity(response.data)};
   } catch (error) {
     return toAuthenticatedRequestError(error, 'Failed to get item');
   }
@@ -68,8 +90,41 @@ export const createItem = async (
       throw new Error('No active server connection');
     }
 
-    const response = await axiosInstance.post('/api/v1/items', item);
-    return {success: true, data: response.data};
+    const response = await axiosInstance.post<HomeboxEntity>(
+      HOMEBOX_ENDPOINTS.entities,
+      toHomeboxEntityCreate(item),
+    );
+
+    if (!response.data?.id) {
+      return {success: false, error: 'Invalid response format from server'};
+    }
+
+    let savedItem = mapHomeboxEntity(response.data);
+
+    // Homebox accepts purchase/insurance/asset-id fields on update, not on
+    // create. Apply them in a second request only when the caller supplied
+    // values that the create contract cannot carry.
+    if (item.purchasePrice || item.insured || item.barcode || item.assetId) {
+      const updatePayload = toHomeboxEntityUpdate(
+        {...item, id: response.data.id},
+        response.data,
+      );
+      const updateResponse = await axiosInstance.put<HomeboxEntity>(
+        HOMEBOX_ENDPOINTS.entity(response.data.id),
+        updatePayload,
+      );
+
+      if (!updateResponse.data?.id) {
+        return {
+          success: false,
+          error: 'Item was created but optional fields could not be saved',
+        };
+      }
+
+      savedItem = mapHomeboxEntity(updateResponse.data);
+    }
+
+    return {success: true, data: savedItem};
   } catch (error) {
     logger.error('Error creating item', {error});
     return toMutationError(
@@ -88,9 +143,25 @@ export const updateItem = async (
       throw new Error('No active server connection');
     }
 
-    const {id, ...payload} = item;
-    const response = await axiosInstance.put(`/api/v1/items/${id}`, payload);
-    return {success: true, data: response.data};
+    // EntityUpdate is intentionally a full document update in Homebox. Read
+    // first so fields that this mobile UI does not edit are not erased.
+    const currentResponse = await axiosInstance.get<HomeboxEntity>(
+      HOMEBOX_ENDPOINTS.entity(item.id),
+    );
+    if (!currentResponse.data?.id) {
+      return {success: false, error: 'Invalid response format from server'};
+    }
+
+    const response = await axiosInstance.put<HomeboxEntity>(
+      HOMEBOX_ENDPOINTS.entity(item.id),
+      toHomeboxEntityUpdate(item, currentResponse.data),
+    );
+
+    if (!response.data?.id) {
+      return {success: false, error: 'Invalid response format from server'};
+    }
+
+    return {success: true, data: mapHomeboxEntity(response.data)};
   } catch (error) {
     logger.error('Error updating item', {error});
     return toMutationError(
@@ -111,11 +182,11 @@ export const uploadItemImage = async (
     }
 
     logger.log('Uploading image', {
-      path: `/api/v1/items/${itemId}/attachments`,
+      path: HOMEBOX_ENDPOINTS.entityAttachments(itemId),
     });
 
-    const response = await axiosInstance.post(
-      `/api/v1/items/${itemId}/attachments`,
+    const response = await axiosInstance.post<HomeboxEntity>(
+      HOMEBOX_ENDPOINTS.entityAttachments(itemId),
       formData,
       {
         headers: {
@@ -124,8 +195,12 @@ export const uploadItemImage = async (
       },
     );
 
+    if (!response.data?.id) {
+      return {success: false, error: 'Invalid response format from server'};
+    }
+
     logger.log('Upload response received');
-    return {success: true, data: response.data};
+    return {success: true, data: mapHomeboxEntity(response.data)};
   } catch (error) {
     logger.error('Error uploading image', {error});
     return toMutationError(
@@ -144,7 +219,7 @@ export const deleteItem = async (
       return {success: false, error: 'No active server connection'};
     }
 
-    await axiosInstance.delete(`/api/v1/items/${itemId}`);
+    await axiosInstance.delete(HOMEBOX_ENDPOINTS.entity(itemId));
     return {success: true};
   } catch (error) {
     logger.error('Error deleting item', {error});

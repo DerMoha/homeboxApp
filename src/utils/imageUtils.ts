@@ -1,4 +1,5 @@
 import ServerService from '../services/serverService';
+import {HOMEBOX_ENDPOINTS} from '../services/server/homeboxAdapter';
 
 /**
  * Generates the full URL for an item's image attachment
@@ -9,11 +10,24 @@ import ServerService from '../services/serverService';
  *
  * @example
  * const url = getImageUrl('123', 'abc-456');
- * // Returns: "http://server.com/api/v1/items/123/attachments/abc-456"
+ * // Returns: "http://server.com/api/v1/entities/123/attachments/abc-456"
  */
+const SAFE_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
+
+function validatePathSegment(value: string, fieldName: string): void {
+  if (!SAFE_ID_PATTERN.test(value)) {
+    throw new Error(`Invalid ${fieldName}: contains disallowed characters`);
+  }
+}
+
 export const getImageUrl = (itemId: string, imageId: string): string => {
+  validatePathSegment(itemId, 'itemId');
+  validatePathSegment(imageId, 'imageId');
   const service = ServerService.getInstance();
-  return `${service.getBaseUrl()}/api/v1/items/${itemId}/attachments/${imageId}`;
+  return `${service.getBaseUrl()}${HOMEBOX_ENDPOINTS.entityAttachment(
+    itemId,
+    imageId,
+  )}`;
 };
 
 /**
@@ -36,13 +50,7 @@ export const getImageUrl = (itemId: string, imageId: string): string => {
  */
 export const getAuthHeaders = (): Record<string, string> => {
   const service = ServerService.getInstance();
-  const axiosInstance = service.getAxiosInstance();
-  const authHeader = axiosInstance?.defaults.headers.common.Authorization;
-
-  // The token already includes "Bearer " prefix, so use it directly
-  return {
-    Authorization: (authHeader as string) || '',
-  };
+  return service.getAuthHeaders();
 };
 
 /**
@@ -58,8 +66,8 @@ export const getAuthHeaders = (): Record<string, string> => {
  */
 export const getImageSource = (
   itemId: string,
-  imageId: string
-): { uri: string; headers: Record<string, string> } => {
+  imageId: string,
+): {uri: string; headers: Record<string, string>} => {
   return {
     uri: getImageUrl(itemId, imageId),
     headers: getAuthHeaders(),

@@ -15,7 +15,6 @@ import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import ServerService from '../services/serverService';
 import {LocationsStackParamList} from '../navigation/types';
-import axios from 'axios';
 import {logger} from '../utils/logger';
 import {useAsyncState} from '../hooks/useAsyncState';
 import {LoadingState, ErrorState} from '../components/common';
@@ -259,52 +258,29 @@ const LocationsScreen: React.FC = () => {
     execute,
   } = useAsyncState<LocationNode[]>([]);
 
+  const fetchLocations = useCallback(async (): Promise<LocationNode[]> => {
+    const service = ServerService.getInstance();
+    const response = await service.getLocationTree();
+    if (!response.success || !response.data) {
+      throw new Error(
+        response.error ||
+          'No active server connection. Please check your server settings.',
+      );
+    }
+
+    return response.data as LocationNode[];
+  }, []);
+
   const loadLocations = useCallback(async (): Promise<void> => {
-    await execute(
-      async () => {
-        const service = ServerService.getInstance();
+    await execute(fetchLocations, {
+      onError: loadError =>
+        logger.error('Error loading locations', {error: loadError}),
+    });
+  }, [execute, fetchLocations]);
 
-        const axiosInstance = service.getAxiosInstance();
-        if (!axiosInstance) {
-          throw new Error(
-            'No active server connection. Please check your server settings.',
-          );
-        }
-
-        const response = await axiosInstance.get('/api/v1/locations/tree');
-        return response.data;
-      },
-      {
-        onError: err => {
-          logger.error('Error loading locations', {error: err});
-          if (axios.isAxiosError(err)) {
-            if (err.response?.status === 500) {
-              throw new Error(
-                'Server error occurred. Please check if the server is running and try again.',
-              );
-            }
-          }
-        },
-      },
-    );
-  }, [execute]);
-
-  const onRefresh = (): void => {
-    execute(
-      async () => {
-        const service = ServerService.getInstance();
-        const axiosInstance = service.getAxiosInstance();
-        if (!axiosInstance) {
-          throw new Error(
-            'No active server connection. Please check your server settings.',
-          );
-        }
-        const response = await axiosInstance.get('/api/v1/locations/tree');
-        return response.data;
-      },
-      {isRefresh: true},
-    );
-  };
+  const onRefresh = useCallback((): void => {
+    execute(fetchLocations, {isRefresh: true});
+  }, [execute, fetchLocations]);
 
   const handleLocationPress = (locationId: string, locationName: string) => {
     navigation.navigate('LocationItems', {

@@ -1,6 +1,7 @@
 import {AxiosInstance} from 'axios';
 import {ApiResponse, Label} from '../../../types';
-import {toBootstrapError} from '../serverErrors';
+import {toAuthenticatedRequestError} from '../serverErrors';
+import {HOMEBOX_ENDPOINTS, HomeboxTag, mapHomeboxTag} from '../homeboxAdapter';
 
 export const getLabels = async (
   axiosInstance: AxiosInstance | null,
@@ -14,9 +15,18 @@ export const getLabels = async (
       };
     }
 
-    const response = await axiosInstance.get('/api/v1/labels');
-    return {success: true, data: response.data};
+    const response = await axiosInstance.get<HomeboxTag[]>(
+      HOMEBOX_ENDPOINTS.tags,
+    );
+    if (!Array.isArray(response.data)) {
+      return {success: false, error: 'Invalid response format from server'};
+    }
+
+    return {success: true, data: response.data.map(mapHomeboxTag)};
   } catch (error) {
-    return toBootstrapError(error as any) as ApiResponse<Label[]>;
+    return toAuthenticatedRequestError(
+      error,
+      'Failed to get labels',
+    ) as ApiResponse<Label[]>;
   }
 };

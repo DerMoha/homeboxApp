@@ -80,6 +80,8 @@ export interface CreateItemRequest {
   labels?: string[];
   purchasePrice?: number;
   insured?: boolean;
+  /** Numeric Homebox asset id, entered through the legacy barcode field. */
+  assetId?: string;
   barcode?: string;
 }
 

@@ -14,6 +14,7 @@ export interface CreateItemResponse {
 export interface TreeNode {
   id: string;
   name?: string;
+  type?: string;
   children?: TreeNode[];
   items?: Item[];
   [key: string]: unknown;
