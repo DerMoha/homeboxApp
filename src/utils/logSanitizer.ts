@@ -13,15 +13,34 @@ const sensitiveKeys = [
   'jwt',
   'privatekey',
   'private_key',
+  'username',
+  'host',
+  'baseurl',
+  'url',
 ];
+
+const MAX_LOG_STRING_LENGTH = 512;
+
+const sanitizeString = (value: string): string =>
+  value
+    .replace(/(https?:\/\/)([^\s/@:]+)(?::[^\s/@]*)?@/gi, '$1[REDACTED]@')
+    .replace(
+      /\b(password|token|secret|authorization|apikey|api_key|bearer)=([^\s&]+)/gi,
+      '$1=[REDACTED]',
+    )
+    .slice(0, MAX_LOG_STRING_LENGTH);
 
 export function sanitizeForLogging(data: unknown): unknown {
   if (data instanceof Error) {
     return {
       name: data.name,
-      message: data.message,
-      stack: data.stack,
+      // Stack traces can contain request URLs, local paths, and user data.
+      message: sanitizeString(data.message),
     };
+  }
+
+  if (typeof data === 'string') {
+    return sanitizeString(data);
   }
 
   if (typeof data !== 'object' || data === null) {

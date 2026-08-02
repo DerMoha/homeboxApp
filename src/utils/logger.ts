@@ -1,4 +1,4 @@
-const isDevelopment = __DEV__;
+const isDevelopment = __DEV__ && process.env.NODE_ENV !== 'test';
 import {diagnosticsService} from '../services/diagnosticsService';
 import {sanitizeForLogging} from './logSanitizer';
 

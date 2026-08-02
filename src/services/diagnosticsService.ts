@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const DIAGNOSTICS_STORAGE_KEY = 'homebox_diagnostics';
 const MAX_DIAGNOSTIC_EVENTS = 100;
+const EVENT_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 export type DiagnosticLevel = 'warn' | 'error';
 
@@ -50,7 +51,24 @@ class DiagnosticsService {
       }
 
       const parsedValue = JSON.parse(rawValue);
-      return Array.isArray(parsedValue) ? parsedValue : [];
+      if (!Array.isArray(parsedValue)) {
+        return [];
+      }
+
+      const cutoff = Date.now() - EVENT_TTL_MS;
+      const fresh = parsedValue.filter(
+        (e: DiagnosticEvent) => new Date(e.timestamp).getTime() > cutoff,
+      );
+
+      // Persist the pruned list if stale events were removed
+      if (fresh.length < parsedValue.length) {
+        await AsyncStorage.setItem(
+          DIAGNOSTICS_STORAGE_KEY,
+          JSON.stringify(fresh),
+        ).catch(() => undefined);
+      }
+
+      return fresh;
     } catch {
       return [];
     }
