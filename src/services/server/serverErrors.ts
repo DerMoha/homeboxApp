@@ -1,15 +1,27 @@
 import axios, {AxiosError} from 'axios';
 import {ApiResponse} from '../../types';
-import {ErrorResponse} from './types';
+
+const statusToMessage: Record<number, string> = {
+  400: 'Invalid request. Please check your server settings.',
+  401: 'Authentication failed. Please check your credentials.',
+  403: 'Access denied.',
+  404: 'Server endpoint not found. Please check your host address.',
+  429: 'Too many requests. Please try again later.',
+  500: 'Server error. Please try again later.',
+  502: 'Server unavailable. Please try again later.',
+  503: 'Server unavailable. Please try again later.',
+  422: 'The server rejected the submitted data. Please check the fields and try again.',
+};
+
+const messageForStatus = (status: number, fallback: string): string =>
+  statusToMessage[status] ?? fallback;
 
 export const toBootstrapError = (error: AxiosError): ApiResponse => {
   if (error.response) {
-    const errorData = error.response.data as ErrorResponse;
+    const genericMessage = statusToMessage[error.response.status];
     return {
       success: false,
-      error: `Server error: ${error.response.status} - ${
-        errorData.message || 'Unknown error'
-      }`,
+      error: genericMessage ?? 'An unexpected server error occurred.',
     };
   }
 
@@ -39,10 +51,15 @@ export const toAuthenticatedRequestError = <T>(
       return {success: false, error: 'Access denied'};
     }
 
-    return {
-      success: false,
-      error: error.response?.data?.message || fallbackMessage,
-    };
+    return error.response
+      ? {
+          success: false,
+          error: messageForStatus(error.response.status, fallbackMessage),
+        }
+      : {
+          success: false,
+          error: `${fallbackMessage}. Please check your connection.`,
+        };
   }
 
   return {success: false, error: 'An unexpected error occurred'};
@@ -53,9 +70,18 @@ export const toMutationError = (
   fallbackMessage: string,
 ): ApiResponse => {
   if (axios.isAxiosError(error)) {
+    if (error.response) {
+      return {
+        success: false,
+        error: messageForStatus(error.response.status, fallbackMessage),
+      };
+    }
+
     return {
       success: false,
-      error: error.response?.data?.message || error.message || fallbackMessage,
+      error: error.request
+        ? `${fallbackMessage}. Please check your connection.`
+        : fallbackMessage,
     };
   }
 
