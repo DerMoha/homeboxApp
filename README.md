@@ -52,6 +52,28 @@ export HOMEBOX_RELEASE_KEY_PASSWORD=your-key-password
 
 Then build the release artifact from `android/` with your usual Gradle command.
 
+## Standalone Android Field Test
+
+Build a test APK with bundled JavaScript, Hermes, and release optimizations:
+
+```bash
+cd android
+./gradlew assembleFieldTest -PreactNativeArchitectures=arm64-v8a
+adb install -r app/build/outputs/apk/fieldTest/app-fieldTest.apk
+```
+
+This build runs without Metro or a connected computer. It uses the local debug
+signing key for personal testing; public releases still require the release
+keystore. The architecture above targets modern ARM64 phones.
+
+The app requires a reachable server and does not queue inventory changes
+offline. This client uses the entity/tag API verified against Homebox v0.26.2.
+Create locations in Homebox before starting inventory. The scan field maps to
+Homebox's numeric asset ID, rather than a separate product barcode field.
+
+Before a large inventory session, save one item with a photo and location,
+check it in the Homebox web interface, then restart the app and verify it loads.
+
 Android cleartext traffic is disabled by default. The network security policy
 only permits it for localhost, the Android emulator loopback alias, and `.local`
 development names.
