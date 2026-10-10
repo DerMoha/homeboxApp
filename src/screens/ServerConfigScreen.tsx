@@ -4,13 +4,13 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
 } from 'react-native';
 import {useRoute, RouteProp} from '@react-navigation/native';
 import {useTheme} from '../theme/ThemeContext';
 import {useServerConfig} from '../hooks/useServerConfig';
 import {ServerFormFields, ServerActions} from '../components/ServerConfig';
 import {SettingsStackParamList} from '../navigation/types';
+import {KeyboardFormScrollView} from '../components/common/KeyboardFormScrollView';
 
 type ServerConfigRouteProp = RouteProp<SettingsStackParamList, 'ServerConfig'>;
 
@@ -52,7 +52,7 @@ const ServerConfigScreen: React.FC = () => {
   const isEditingForm = selectedServer && formData.id === selectedServer;
 
   return (
-    <ScrollView
+    <KeyboardFormScrollView
       style={[
         styles.container,
         {backgroundColor: theme.colors.background.primary},
@@ -203,7 +203,7 @@ const ServerConfigScreen: React.FC = () => {
           ))}
         </View>
       )}
-    </ScrollView>
+    </KeyboardFormScrollView>
   );
 };
 

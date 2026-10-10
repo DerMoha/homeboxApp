@@ -27,7 +27,7 @@ export const ServerFormFields: React.FC<ServerFormFieldsProps> = ({
       <View style={styles.inputWrapper}>
         <Input
           label="Host"
-          placeholder="localhost:8080 or 192.168.1.100:8080"
+          placeholder="https://homebox.example.com"
           value={formData.host}
           onChangeText={text => onUpdateField('host', text)}
           autoCapitalize="none"

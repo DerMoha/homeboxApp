@@ -1,6 +1,7 @@
 import React from 'react';
 import {View, Text, TextInput, StyleSheet, TextInputProps} from 'react-native';
 import {useTheme} from '../../theme/ThemeContext';
+import {useFormInputFocus} from './KeyboardFormScrollView';
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -16,6 +17,7 @@ export const Input: React.FC<InputProps> = ({
   ...props
 }) => {
   const {theme} = useTheme();
+  const revealInput = useFormInputFocus();
 
   return (
     <View style={styles.container}>
@@ -48,6 +50,10 @@ export const Input: React.FC<InputProps> = ({
         ]}
         placeholderTextColor={theme.colors.text.secondary}
         {...props}
+        onFocus={event => {
+          props.onFocus?.(event);
+          revealInput();
+        }}
       />
       {error && (
         <Text

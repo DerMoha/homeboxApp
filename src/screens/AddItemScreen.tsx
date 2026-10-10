@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
   ActivityIndicator,
 } from 'react-native';
 import {useTheme} from '../theme/ThemeContext';
@@ -32,6 +31,7 @@ import {
 import {SectionHeader} from '../components/SectionHeader';
 import {BarcodeScannerModal} from '../components/BarcodeScanner';
 import {AddItemStackParamList, RootTabParamList} from '../navigation/types';
+import {KeyboardFormScrollView} from '../components/common/KeyboardFormScrollView';
 
 const AddItemScreen: React.FC = () => {
   const {theme} = useTheme();
@@ -238,7 +238,7 @@ const AddItemScreen: React.FC = () => {
 
   return (
     <View style={screenStyle}>
-      <ScrollView
+      <KeyboardFormScrollView
         style={styles.scrollView}
         contentContainerStyle={contentStyle}
         showsVerticalScrollIndicator={false}>
@@ -324,7 +324,7 @@ const AddItemScreen: React.FC = () => {
         </TouchableOpacity>
 
         <View style={styles.bottomSpacer} />
-      </ScrollView>
+      </KeyboardFormScrollView>
 
       <BarcodeScannerModal
         visible={scannerVisible}

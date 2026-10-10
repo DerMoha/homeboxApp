@@ -1,15 +1,19 @@
-import { useState, useCallback } from 'react';
+import {useState, useCallback} from 'react';
+import {Alert, PermissionsAndroid, Platform} from 'react-native';
 import * as ImagePicker from 'react-native-image-picker';
 import ImageResizer from '@bam.tech/react-native-image-resizer';
 import * as FileSystem from 'react-native-fs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { logger } from '../utils/logger';
+import {logger} from '../utils/logger';
 
 export const useImageHandler = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [imageRotation, setImageRotation] = useState(0);
   const [imageFlip, setImageFlip] = useState(false);
-  const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null);
+  const [imageSize, setImageSize] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
   const [imageQuality, setImageQuality] = useState(0.8);
   const [originalSize, setOriginalSize] = useState<number | null>(null);
   const [compressedSize, setCompressedSize] = useState<number | null>(null);
@@ -37,72 +41,131 @@ export const useImageHandler = () => {
   };
 
   const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) {return '0 B';}
+    if (bytes === 0) {
+      return '0 B';
+    }
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const handleImagePicker = useCallback(async (type: 'camera' | 'library') => {
-    const options: ImagePicker.ImageLibraryOptions = {
-      mediaType: 'photo',
-      quality: 1,
-      includeBase64: false,
-    };
+  const handleImagePicker = useCallback(
+    async (type: 'camera' | 'library') => {
+      const options: ImagePicker.ImageLibraryOptions = {
+        mediaType: 'photo',
+        quality: 1,
+        includeBase64: false,
+      };
 
-    try {
-      const result = type === 'camera'
-        ? await ImagePicker.launchCamera(options)
-        : await ImagePicker.launchImageLibrary(options);
-
-      if (result.assets && result.assets[0]?.uri) {
-        const originalFileSize = await getFileSize(result.assets[0].uri);
-        setOriginalSize(originalFileSize);
-
-        const compressedImage = await ImageResizer.createResizedImage(
-          result.assets[0].uri,
-          1200,
-          1200,
-          'JPEG',
-          Math.round(imageQuality * 100),
-          0,
-          FileSystem.CachesDirectoryPath,
-          false,
-          { mode: 'contain', onlyScaleDown: true }
-        );
-
-        setSelectedImage(compressedImage.uri);
-        setCompressedSize(compressedImage.size || 0);
-
-        try {
-          const size = await new Promise<{ width: number; height: number }>((resolve, reject) => {
-            const Image = require('react-native').Image;
-            Image.getSize(
-              compressedImage.uri,
-              (width: number, height: number) => resolve({ width, height }),
-              reject
+      try {
+        if (type === 'camera' && Platform.OS === 'android') {
+          const permission = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.CAMERA,
+          );
+          if (permission !== PermissionsAndroid.RESULTS.GRANTED) {
+            Alert.alert(
+              'Camera access required',
+              'Allow camera access to photograph your items.',
             );
-          });
-          setImageSize(size);
-        } catch (error) {
-          logger.error('Error getting image size:', error);
+            return;
+          }
+        }
+        const result =
+          type === 'camera'
+            ? await ImagePicker.launchCamera(options)
+            : await ImagePicker.launchImageLibrary(options);
+
+        if (result.errorCode) {
+          Alert.alert(
+            'Photo unavailable',
+            'The photo could not be opened. Please try again.',
+          );
+          return;
         }
 
-        try {
-          await FileSystem.unlink(result.assets[0].uri);
-        } catch (error) {
-          logger.error('Error cleaning up original file:', error);
+        if (result.assets && result.assets[0]?.uri) {
+          const originalFileSize = await getFileSize(result.assets[0].uri);
+          setOriginalSize(originalFileSize);
+
+          const compressedImage = await ImageResizer.createResizedImage(
+            result.assets[0].uri,
+            1200,
+            1200,
+            'JPEG',
+            Math.round(imageQuality * 100),
+            0,
+            FileSystem.CachesDirectoryPath,
+            false,
+            {mode: 'contain', onlyScaleDown: true},
+          );
+
+          setSelectedImage(compressedImage.uri);
+          setCompressedSize(compressedImage.size || 0);
+
+          try {
+            const size = await new Promise<{width: number; height: number}>(
+              (resolve, reject) => {
+                const Image = require('react-native').Image;
+                Image.getSize(
+                  compressedImage.uri,
+                  (width: number, height: number) => resolve({width, height}),
+                  reject,
+                );
+              },
+            );
+            setImageSize(size);
+          } catch (error) {
+            logger.error('Error getting image size:', error);
+          }
+
+          try {
+            if (
+              type === 'camera' &&
+              result.assets[0].uri.startsWith(
+                `file://${FileSystem.CachesDirectoryPath}/`,
+              )
+            ) {
+              await FileSystem.unlink(result.assets[0].uri);
+            }
+          } catch (error) {
+            logger.error('Error cleaning up original file:', error);
+          }
         }
+      } catch (error) {
+        logger.error('Error picking image:', error);
       }
-    } catch (error) {
-      logger.error('Error picking image:', error);
-    }
-  }, [imageQuality]);
+    },
+    [imageQuality],
+  );
 
-  const handleRotateImage = useCallback(() => {
-    setImageRotation(prev => (prev + 90) % 360);
-  }, []);
+  const handleRotateImage = useCallback(async () => {
+    if (!selectedImage) {
+      return;
+    }
+    try {
+      const rotated = await ImageResizer.createResizedImage(
+        selectedImage,
+        1200,
+        1200,
+        'JPEG',
+        Math.round(imageQuality * 100),
+        90,
+        FileSystem.CachesDirectoryPath,
+        false,
+        {mode: 'contain', onlyScaleDown: true},
+      );
+      setSelectedImage(rotated.uri);
+      setCompressedSize(rotated.size || 0);
+      setImageSize({width: rotated.width, height: rotated.height});
+      setImageRotation(0);
+    } catch {
+      Alert.alert(
+        'Photo unavailable',
+        'The photo could not be rotated. Please try again.',
+      );
+    }
+  }, [selectedImage, imageQuality]);
 
   const handleFlipImage = useCallback(() => {
     setImageFlip(prev => !prev);

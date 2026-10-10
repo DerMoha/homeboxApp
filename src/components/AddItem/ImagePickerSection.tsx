@@ -88,7 +88,6 @@ export const ImagePickerSection: React.FC<ImagePickerSectionProps> = ({
   isPreviewVisible,
   onPickImage,
   onRotateImage,
-  onFlipImage,
   onClearImage,
   onTogglePreview,
   formatFileSize,
@@ -326,7 +325,6 @@ export const ImagePickerSection: React.FC<ImagePickerSectionProps> = ({
               label="Rotate"
               onPress={onRotateImage}
             />
-            <ActionButton icon="flip" label="Flip" onPress={onFlipImage} />
             <ActionButton
               icon="delete-outline"
               label="Remove"

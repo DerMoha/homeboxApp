@@ -9,6 +9,7 @@ import {
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useTheme} from '../../theme/ThemeContext';
 import type {EnabledFields} from '../../types';
+import {useFormInputFocus} from '../common/KeyboardFormScrollView';
 
 interface ItemFormFieldsProps {
   formData: Record<string, string | number | boolean | undefined>;
@@ -77,6 +78,7 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
   onScanBarcode,
 }) => {
   const {theme} = useTheme();
+  const revealInput = useFormInputFocus();
 
   const inputStyle = [
     styles.input,
@@ -132,6 +134,7 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
           placeholderTextColor={theme.colors.text.secondary}
           value={String(formData.name || '')}
           onChangeText={text => onUpdateField('name', text)}
+          onFocus={revealInput}
         />
       </View>
 
@@ -152,7 +155,10 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
             const numericValue = text.replace(/[^0-9]/g, '');
             onUpdateField('quantity', numericValue);
           }}
-          onFocus={onQuantityFocus}
+          onFocus={() => {
+            onQuantityFocus();
+            revealInput();
+          }}
           onBlur={onQuantityBlur}
         />
       </View>
@@ -170,6 +176,7 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
             placeholderTextColor={theme.colors.text.secondary}
             value={String(formData.barcode || '')}
             onChangeText={text => onUpdateField('barcode', text)}
+            onFocus={revealInput}
           />
           {onScanBarcode && (
             <TouchableOpacity style={scanButtonStyle} onPress={onScanBarcode}>
@@ -196,6 +203,7 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
             placeholderTextColor={theme.colors.text.secondary}
             value={String(formData.description || '')}
             onChangeText={text => onUpdateField('description', text)}
+            onFocus={revealInput}
             multiline
             numberOfLines={4}
             textAlignVertical="top"
@@ -217,6 +225,7 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
             keyboardType="decimal-pad"
             value={String(formData.purchasePrice || '')}
             onChangeText={text => onUpdateField('purchasePrice', text)}
+            onFocus={revealInput}
           />
         </View>
       )}

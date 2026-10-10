@@ -9,6 +9,7 @@ import {
   Dimensions,
   Platform,
   ActivityIndicator,
+  PermissionsAndroid,
 } from 'react-native';
 import Camera, {CameraType, type CameraApi} from 'react-native-camera-kit';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
@@ -48,7 +49,11 @@ const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
   const requestCameraPermission = useCallback(async () => {
     try {
       const result =
-        await cameraRef.current?.requestDeviceCameraAuthorization();
+        Platform.OS === 'android'
+          ? (await PermissionsAndroid.request(
+              PermissionsAndroid.PERMISSIONS.CAMERA,
+            )) === PermissionsAndroid.RESULTS.GRANTED
+          : await cameraRef.current?.requestDeviceCameraAuthorization();
       setHasPermission(result ?? false);
     } catch {
       setHasPermission(false);
