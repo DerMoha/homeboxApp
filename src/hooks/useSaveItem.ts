@@ -41,6 +41,26 @@ export const useSaveItem = () => {
         return {success: false, validationError: 'Please select a location'};
       }
 
+      const assetId = (formData.barcode || formData.assetId || '').trim();
+      if (assetId && !/^[0-9]{1,18}(?:-[0-9]{1,18})?$/.test(assetId)) {
+        return {
+          success: false,
+          validationError:
+            'Homebox asset IDs must be numeric, optionally with a hyphen. Clear this field to use an automatically assigned ID.',
+        };
+      }
+      if (
+        (formData.name?.trim().length || 0) > 255 ||
+        (enabledFields.description &&
+          (formData.description?.length || 0) > 1000)
+      ) {
+        return {
+          success: false,
+          validationError:
+            'Use at most 255 characters for the name and 1000 for the description.',
+        };
+      }
+
       try {
         setIsLoading(true);
         const service = ServerService.getInstance();
@@ -78,7 +98,7 @@ export const useSaveItem = () => {
         }
 
         let savedItem = itemResponse.data;
-        let warning: string | undefined;
+        let warning = itemResponse.warning;
 
         if (imageUri) {
           logger.log('Starting image upload for item', {
@@ -105,9 +125,10 @@ export const useSaveItem = () => {
           );
 
           if (!imageResponse.success) {
-            warning = itemId
+            const imageWarning = itemId
               ? 'Item was updated but image upload failed'
               : 'Item was created but image upload failed';
+            warning = [warning, imageWarning].filter(Boolean).join('. ');
             logger.warn('Failed to upload image', {error: imageResponse.error});
           } else if (imageResponse.data) {
             savedItem = imageResponse.data;

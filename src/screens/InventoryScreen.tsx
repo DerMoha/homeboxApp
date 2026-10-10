@@ -1,7 +1,11 @@
 import React, {useEffect, useCallback, useMemo} from 'react';
 import {View, StyleSheet, FlatList, RefreshControl, Alert} from 'react-native';
 import {useTheme} from '../theme/ThemeContext';
-import {CompositeNavigationProp, useNavigation} from '@react-navigation/native';
+import {
+  CompositeNavigationProp,
+  useNavigation,
+  useFocusEffect,
+} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useInventoryData} from '../hooks/useInventoryData';
 import {useInventoryDisplay} from '../hooks/useInventoryDisplay';
@@ -96,9 +100,11 @@ const InventoryScreen: React.FC = () => {
     ]);
   }, [loadDisplayPreferences, loadInventory, loadLabels, loadLocations]);
 
-  useEffect(() => {
-    initializeScreen();
-  }, [initializeScreen]);
+  useFocusEffect(
+    useCallback(() => {
+      initializeScreen();
+    }, [initializeScreen]),
+  );
 
   const filteredInventory = useMemo(() => {
     let result = [...inventory];

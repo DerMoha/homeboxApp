@@ -83,6 +83,7 @@ export interface HomeboxEntitySummary {
 
 export interface HomeboxEntity extends HomeboxEntitySummary {
   location?: HomeboxEntitySummary | null;
+  locationId?: string | null;
   serialNumber?: string;
   modelNumber?: string;
   manufacturer?: string;
@@ -128,6 +129,7 @@ export interface HomeboxEntityUpdatePayload {
   description: string;
   quantity: number;
   parentId: string | null;
+  locationId?: string | null;
   tagIds: string[];
   assetId?: string;
   archived: boolean;
@@ -266,12 +268,21 @@ export const toHomeboxEntityUpdate = (
     normalizeAssetId(item.assetId) ??
     normalizeAssetId(current.assetId);
 
+  // Editing an item inside a container must retain that parent when its
+  // resolved location has not changed. Preserve explicit location overrides.
+  const keepParent =
+    item.locationId === undefined ||
+    item.locationId === getNearestLocation(current)?.id;
+
   return {
     id: item.id,
     name: item.name.trim(),
     description: item.description ?? current.description ?? '',
     quantity: Math.max(0, Number(item.quantity) || 0),
-    parentId: item.locationId ?? current.parent?.id ?? null,
+    parentId: keepParent ? current.parent?.id ?? null : item.locationId ?? null,
+    ...(keepParent && current.locationId !== undefined
+      ? {locationId: current.locationId}
+      : {}),
     tagIds: item.labels ?? (current.tags ?? []).map(tag => tag.id),
     ...(assetId ? {assetId} : {}),
     archived: current.archived === true,

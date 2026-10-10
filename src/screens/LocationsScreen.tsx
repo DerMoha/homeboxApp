@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useCallback, useMemo, useRef} from 'react';
+import React, {useState, useCallback, useMemo, useRef} from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import {useTheme} from '../theme/ThemeContext';
 import type {Theme} from '../theme/theme';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import ServerService from '../services/serverService';
@@ -289,9 +289,11 @@ const LocationsScreen: React.FC = () => {
     });
   };
 
-  useEffect(() => {
-    loadLocations();
-  }, [loadLocations]);
+  useFocusEffect(
+    useCallback(() => {
+      loadLocations();
+    }, [loadLocations]),
+  );
 
   const containerStyle = useMemo(
     () => [

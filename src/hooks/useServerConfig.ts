@@ -128,11 +128,20 @@ export const useServerConfig = () => {
       const serverService = ServerService.getInstance();
       const saved = await serverService.saveServer(formData);
       if (saved) {
+        const connection = await serverService.initialize(formData);
+        if (!connection.success) {
+          Alert.alert(
+            'Server saved, connection failed',
+            connection.error || 'Could not connect to the server.',
+          );
+          await loadServers();
+          return;
+        }
+        await serverService.setLastUsedServer(formData.id);
         hapticNotification('success');
         await loadServers();
         resetForm();
-        Alert.alert('Success', 'Server configuration saved successfully');
-        await serverService.setLastUsedServer(formData.id);
+        Alert.alert('Success', 'Server saved and connected successfully');
       } else {
         hapticNotification('error');
         Alert.alert('Error', 'Failed to save server configuration');
@@ -236,9 +245,17 @@ export const useServerConfig = () => {
 
   const selectServer = useCallback(
     async (server: ServerWithStatus): Promise<void> => {
-      setSelectedServer(server.id);
       const serverService = ServerService.getInstance();
-      await serverService.initialize(server);
+      const result = await serverService.initialize(server);
+      if (!result.success) {
+        Alert.alert(
+          'Connection Failed',
+          result.error || 'Could not connect to the server.',
+        );
+        return;
+      }
+      await serverService.setLastUsedServer(server.id);
+      setSelectedServer(server.id);
     },
     [],
   );

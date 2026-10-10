@@ -105,23 +105,34 @@ export const createItem = async (
     // create. Apply them in a second request only when the caller supplied
     // values that the create contract cannot carry.
     if (item.purchasePrice || item.insured || item.barcode || item.assetId) {
-      const updatePayload = toHomeboxEntityUpdate(
-        {...item, id: response.data.id},
-        response.data,
-      );
-      const updateResponse = await axiosInstance.put<HomeboxEntity>(
-        HOMEBOX_ENDPOINTS.entity(response.data.id),
-        updatePayload,
-      );
+      try {
+        const updatePayload = toHomeboxEntityUpdate(
+          {...item, id: response.data.id},
+          response.data,
+        );
+        const updateResponse = await axiosInstance.put<HomeboxEntity>(
+          HOMEBOX_ENDPOINTS.entity(response.data.id),
+          updatePayload,
+        );
 
-      if (!updateResponse.data?.id) {
+        if (!updateResponse.data?.id) {
+          return {
+            success: true,
+            data: savedItem,
+            warning:
+              'Item was created but optional fields could not be saved. Edit this item to retry.',
+          };
+        }
+
+        savedItem = mapHomeboxEntity(updateResponse.data);
+      } catch {
         return {
-          success: false,
-          error: 'Item was created but optional fields could not be saved',
+          success: true,
+          data: savedItem,
+          warning:
+            'Item was created but optional fields could not be saved. Edit this item to retry.',
         };
       }
-
-      savedItem = mapHomeboxEntity(updateResponse.data);
     }
 
     return {success: true, data: savedItem};

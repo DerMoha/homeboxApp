@@ -40,13 +40,10 @@ export const useAddItemForm = () => {
         return false;
       }
 
-      if (result.warning) {
-        Alert.alert('Warning', result.warning);
-      }
-
       Alert.alert(
-        'Success',
-        itemId ? 'Item updated successfully!' : 'Item added successfully!',
+        result.warning ? 'Item saved with a warning' : 'Success',
+        result.warning ||
+          (itemId ? 'Item updated successfully!' : 'Item added successfully!'),
         [{text: 'OK', onPress: () => onSuccess(result.item as Item)}],
       );
 

@@ -75,6 +75,7 @@ export const getLocationItems = async (
           page: -1,
           pageSize: -1,
         },
+        paramsSerializer: {indexes: null},
       },
     );
 

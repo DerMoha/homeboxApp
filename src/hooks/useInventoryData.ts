@@ -68,7 +68,7 @@ export const useInventoryData = () => {
       setIsLoading(true);
       setError(null);
       const service = ServerService.getInstance();
-      const response = await service.getInventory();
+      const response = await service.getInventory(-1, -1);
 
       logger.log('API Response:', response);
 

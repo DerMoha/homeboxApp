@@ -9,6 +9,7 @@ export interface CreateItemResponse {
   success: boolean;
   data?: Item;
   error?: string;
+  warning?: string;
 }
 
 export interface TreeNode {

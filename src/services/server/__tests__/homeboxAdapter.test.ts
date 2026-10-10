@@ -8,6 +8,39 @@ import {
 } from '../homeboxAdapter';
 
 describe('Homebox adapter', () => {
+  it('preserves a container parent and explicit location when editing in the same location', () => {
+    const location = {
+      id: 'basement',
+      name: 'Basement',
+      entityType: {id: 'location', isLocation: true},
+    };
+    const current: HomeboxEntity = {
+      id: 'tool',
+      name: 'Tool',
+      quantity: 1,
+      parent: {
+        id: 'box',
+        name: 'Box',
+        entityType: {id: 'item', isLocation: false},
+      },
+      location,
+      locationId: 'basement',
+    };
+    expect(
+      toHomeboxEntityUpdate(
+        {id: 'tool', name: 'Renamed', quantity: 1, locationId: 'basement'},
+        current,
+      ),
+    ).toEqual(
+      expect.objectContaining({parentId: 'box', locationId: 'basement'}),
+    );
+    expect(
+      toHomeboxEntityUpdate(
+        {id: 'tool', name: 'Moved', quantity: 1, locationId: 'attic'},
+        current,
+      ),
+    ).toEqual(expect.objectContaining({parentId: 'attic'}));
+  });
   it('keeps the current Homebox route contract in one place', () => {
     expect(HOMEBOX_ENDPOINTS.status).toBe('/api/v1/status');
     expect(HOMEBOX_ENDPOINTS.login).toBe('/api/v1/users/login');
