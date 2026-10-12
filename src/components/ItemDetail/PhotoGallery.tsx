@@ -10,6 +10,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import {attachmentName} from '../../utils/attachmentNames';
 import {ItemAttachment} from '../../types';
 import {getImageSource} from '../../utils/imageUtils';
 import {Button} from '../common/Button';
@@ -85,7 +86,7 @@ function ZoomPhoto({
         style={styles.photoArea}
         {...responder.panHandlers}
         accessible
-        accessibilityLabel={`Photo ${photo.title || ''}, zoom ${Math.round(transform.scale * 100)} percent`}
+        accessibilityLabel={`Photo ${attachmentName(photo)}, zoom ${Math.round(transform.scale * 100)} percent`}
         accessibilityRole="adjustable"
         accessibilityActions={[{name: 'increment'}, {name: 'decrement'}]}
         onAccessibilityAction={event =>

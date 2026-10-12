@@ -1,3 +1,4 @@
+import {attachmentName} from '../utils/attachmentNames';
 import {safeFileName} from '../utils/localFiles';
 import {
   keepLocalCopy,
@@ -109,6 +110,6 @@ export async function openAttachment(
   await viewDocument({
     uri: `file://${path}`,
     mimeType: attachment.mimeType,
-    headerTitle: attachment.title,
+    headerTitle: attachmentName(attachment),
   });
 }

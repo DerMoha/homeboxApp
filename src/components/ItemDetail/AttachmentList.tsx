@@ -8,6 +8,7 @@ import {
   View,
   StyleSheet,
 } from 'react-native';
+import {attachmentName} from '../../utils/attachmentNames';
 import {Item} from '../../types';
 import {openAttachment} from '../../services/attachmentService';
 import ServerService from '../../services/serverService';
@@ -61,11 +62,11 @@ export function AttachmentList({
       {files.map(file => (
         <View key={file.id} style={styles.file}>
           <Text style={{color: theme.colors.text.primary}}>
-            {file.title || file.type || 'Attachment'}
+            {attachmentName(file)}
             {file.primary ? ' · Primary photo' : ''}
           </Text>
           <Button
-            title={`Open ${file.title || 'attachment'}`}
+            title={`Open ${attachmentName(file)}`}
             variant="secondary"
             disabled={busy}
             onPress={() => perform(() => openAttachment(item.id, file))}
@@ -96,12 +97,12 @@ export function AttachmentList({
             variant="ghost"
             disabled={offline || busy}
             onPress={() => {
-              setTitle(file.title || '');
+              setTitle(attachmentName(file));
               setEditing(file.id);
             }}
           />
           <Button
-            title={`Remove ${file.title || 'attachment'}`}
+            title={`Remove ${attachmentName(file)}`}
             variant="danger"
             disabled={offline || busy}
             onPress={() =>
