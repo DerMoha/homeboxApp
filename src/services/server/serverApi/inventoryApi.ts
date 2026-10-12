@@ -26,6 +26,7 @@ export const getInventory = async (
   token: string | null,
   page: number,
   pageSize: number,
+  query: string = '',
 ): Promise<ApiResponse<InventoryResponse>> => {
   try {
     if (!axiosInstance || !token) {
@@ -35,7 +36,12 @@ export const getInventory = async (
     const response = await axiosInstance.get<HomeboxEntityListResponse>(
       HOMEBOX_ENDPOINTS.entities,
       {
-        params: {page, pageSize, isLocation: false},
+        params: {
+          page,
+          pageSize,
+          isLocation: false,
+          ...(query ? {q: query} : {}),
+        },
       },
     );
 

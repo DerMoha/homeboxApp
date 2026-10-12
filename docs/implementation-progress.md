@@ -14,7 +14,8 @@ Scope accepted on 12 October 2026. Each feature gets its own verified commit.
   - Detail action opens an isolated duplicate draft; common fields copied; unique identity/photos excluded; original remains unchanged (158 tests total).
 - [x] Multiple photos, receipts/manuals, and attachment management
   - Durable multi-file drafts/recovery; gallery with pinch/accessible zoom; native document viewer; rename/primary/delete. 162 tests and both native builds passed.
-- [ ] Paginated inventory and server search
+- [x] Paginated inventory and server search
+  - 50-item pages, debounced Homebox queries, stale-request protection, retry/load-more, explicit partial counts, load-all/offline snapshot. 164 tests passed.
 - [ ] Saved searches and data-quality review lists
 - [ ] Automated login/create/photo/edit/reload end-to-end coverage
 - [ ] Accessibility: screen reader semantics, large text, and checks

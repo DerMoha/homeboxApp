@@ -271,12 +271,13 @@ class ServerService {
   public async getInventory(
     page: number = 1,
     pageSize: number = 50,
+    query: string = '',
   ): Promise<ApiResponse<InventoryResponse>> {
     const config = this.getBrowsingConfig();
     let response = await offlineCacheService.read(
       config?.id || null,
-      `inventory:${page}:${pageSize}`,
-      () => getInventory(this.axiosInstance, this.token, page, pageSize),
+      `inventory:${page}:${pageSize}${query ? `:q:${encodeURIComponent(query)}` : ''}`,
+      () => getInventory(this.axiosInstance, this.token, page, pageSize, query),
     );
     if (config && !response.success) {
       const full = await offlineCacheService.get<InventoryResponse>(
@@ -284,16 +285,23 @@ class ServerService {
         'inventory:-1:-1',
       );
       if (full) {
+        const matching = query
+          ? full.data.items.filter(item =>
+              `${item.name} ${item.description} ${item.assetId}`
+                .toLowerCase()
+                .includes(query.toLowerCase()),
+            )
+          : full.data.items;
         const items =
           pageSize > 0
-            ? full.data.items.slice(
+            ? matching.slice(
                 Math.max(0, page - 1) * pageSize,
                 Math.max(0, page - 1) * pageSize + pageSize,
               )
-            : full.data.items;
+            : matching;
         response = {
           success: true,
-          data: {...full.data, items, page, pageSize},
+          data: {...full.data, items, page, pageSize, total: matching.length},
           fromCache: true,
           cachedAt: full.updatedAt,
         };

@@ -1,5 +1,7 @@
 import React, {useEffect, useCallback, useMemo} from 'react';
 import {View, StyleSheet, FlatList, RefreshControl, Alert} from 'react-native';
+import {Text} from 'react-native';
+import {Button} from '../components/common/Button';
 import {CacheStatus} from '../components/common/CacheStatus';
 import {useTheme} from '../theme/ThemeContext';
 import {
@@ -31,7 +33,7 @@ import {EmptyState} from '../components/common/EmptyState';
 import {InventorySkeletonList} from '../components/common/Skeleton';
 import {InventoryItem} from '../types';
 import {InventoryStackParamList, RootTabParamList} from '../navigation/types';
-import {matchesSearch, applyFilters} from '../utils/inventoryFilters';
+import {applyFilters} from '../utils/inventoryFilters';
 import {hapticImpact} from '../utils/haptics';
 import ServerService from '../services/serverService';
 
@@ -40,17 +42,31 @@ type InventoryScreenNavigationProp = CompositeNavigationProp<
   NativeStackNavigationProp<RootTabParamList>
 >;
 
-const ITEM_HEIGHTS = {
-  0: 60,
-  1: 90,
-} as const;
-
 const InventoryScreen: React.FC = () => {
   const {theme} = useTheme();
   const navigation = useNavigation<InventoryScreenNavigationProp>();
 
   const {
+    searchQuery,
+    debouncedQuery,
+    setSearchQuery,
+    clearSearch,
+    filters,
+    tempFilters,
+    updateTempFilters,
+    applyFilters: applyFilterChanges,
+    clearAllFilters,
+    resetTempFilters,
+    activeFilterCount,
+  } = useInventoryFilters();
+
+  const {
     inventory,
+    total,
+    loadAll,
+    cancelLoading,
+    hasMore,
+    loadMore,
     cacheInfo,
     error,
     sortOption,
@@ -59,7 +75,7 @@ const InventoryScreen: React.FC = () => {
     loadInventory,
     onRefresh,
     updateSortOption,
-  } = useInventoryData();
+  } = useInventoryData(debouncedQuery);
 
   const {
     viewMode,
@@ -77,20 +93,6 @@ const InventoryScreen: React.FC = () => {
   } = useInventoryDisplay();
 
   const {displayPreferences, loadDisplayPreferences} = useDisplayPreferences();
-
-  const {
-    searchQuery,
-    debouncedQuery,
-    setSearchQuery,
-    clearSearch,
-    filters,
-    tempFilters,
-    updateTempFilters,
-    applyFilters: applyFilterChanges,
-    clearAllFilters,
-    resetTempFilters,
-    activeFilterCount,
-  } = useInventoryFilters();
 
   const {locations, labels, loadLocations, loadLabels} = useItemData();
   const batchSelection = useBatchSelection();
@@ -113,14 +115,10 @@ const InventoryScreen: React.FC = () => {
   const filteredInventory = useMemo(() => {
     let result = [...inventory];
 
-    if (debouncedQuery.trim()) {
-      result = result.filter(item => matchesSearch(item, debouncedQuery));
-    }
-
     result = applyFilters(result, filters);
 
     return result;
-  }, [inventory, debouncedQuery, filters]);
+  }, [inventory, filters]);
 
   const selectedItems = useMemo(
     () => inventory.filter(item => batchSelection.selectedIds.has(item.id)),
@@ -419,38 +417,12 @@ const InventoryScreen: React.FC = () => {
     ],
   );
 
-  const getItemLayout = useCallback(
-    (_data: any, index: number) => {
-      const height = ITEM_HEIGHTS[listZoom as keyof typeof ITEM_HEIGHTS] ?? 90;
-      return {
-        length: height,
-        offset: height * index,
-        index,
-      };
-    },
-    [listZoom],
-  );
-
-  const emptyStateStyle = useMemo(
-    () => [
-      styles.emptyStateContainer,
-      {backgroundColor: theme.colors.background.primary},
-    ],
-    [theme.colors.background.primary],
-  );
-
   const handleAddItem = useCallback(() => {
     hapticImpact('medium');
     navigation.navigate('AddItemTab', {
       screen: 'AddItem',
     });
   }, [navigation]);
-
-  const handleClearFilters = useCallback(() => {
-    hapticImpact('medium');
-    clearSearch();
-    clearAllFilters();
-  }, [clearSearch, clearAllFilters]);
 
   if (isLoading && inventory.length === 0) {
     return (
@@ -469,34 +441,6 @@ const InventoryScreen: React.FC = () => {
     );
   }
 
-  const hasSearchOrFilters =
-    debouncedQuery.trim() !== '' || activeFilterCount > 0;
-
-  if (!isLoading && inventory.length === 0) {
-    return <EmptyState variant="empty-inventory" onAction={handleAddItem} />;
-  }
-
-  if (!isLoading && filteredInventory.length === 0 && hasSearchOrFilters) {
-    return (
-      <View style={emptyStateStyle}>
-        <CacheStatus info={cacheInfo} />
-        {error ? <ErrorState error={error} onRetry={loadInventory} /> : null}
-        <SearchBar
-          query={searchQuery}
-          onChangeQuery={setSearchQuery}
-          onClear={clearSearch}
-          resultCount={filteredInventory.length}
-          totalCount={inventory.length}
-        />
-        <EmptyState
-          variant="no-results"
-          actionLabel={activeFilterCount > 0 ? 'Clear Filters' : undefined}
-          onAction={activeFilterCount > 0 ? handleClearFilters : undefined}
-        />
-      </View>
-    );
-  }
-
   return (
     <View
       style={[
@@ -510,9 +454,46 @@ const InventoryScreen: React.FC = () => {
         onChangeQuery={setSearchQuery}
         onClear={clearSearch}
         resultCount={filteredInventory.length}
-        totalCount={inventory.length}
+        totalCount={total}
       />
       <FlatList
+        ListHeaderComponent={
+          <Text style={{color: theme.colors.text.secondary}}>
+            Showing {filteredInventory.length} matches from {inventory.length}{' '}
+            loaded of {total}. Filters and sorting apply to loaded items.
+          </Text>
+        }
+        ListFooterComponent={
+          hasMore ? (
+            <View>
+              <Button
+                title="Load more items"
+                onPress={loadMore}
+                disabled={isLoading}
+              />
+              <Button
+                title="Load all results and cache inventory"
+                onPress={loadAll}
+                disabled={isLoading}
+              />
+              {isLoading ? (
+                <Button title="Stop loading" onPress={cancelLoading} />
+              ) : null}
+            </View>
+          ) : undefined
+        }
+        ListEmptyComponent={
+          <EmptyState
+            variant={
+              debouncedQuery || activeFilterCount
+                ? 'no-results'
+                : 'empty-inventory'
+            }
+            onAction={handleAddItem}
+          />
+        }
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.5}
         data={filteredInventory}
         renderItem={renderItem}
         keyExtractor={item => item.id}
@@ -536,8 +517,6 @@ const InventoryScreen: React.FC = () => {
         maxToRenderPerBatch={5}
         windowSize={5}
         removeClippedSubviews={true}
-        {...(viewMode === 'list' &&
-          listZoom in ITEM_HEIGHTS && {getItemLayout})}
       />
 
       <BatchActionBar
