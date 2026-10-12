@@ -21,7 +21,8 @@ export type InventoryStackParamList = {
 };
 
 export type AddItemStackParamList = {
-  AddItem: {barcode?: string; itemId?: string} | undefined;
+  AddItem:
+    {barcode?: string; itemId?: string; duplicateItemId?: string} | undefined;
 };
 
 export type RootTabParamList = {

@@ -23,6 +23,7 @@ import {CacheStatus, CacheInfo} from '../components/common/CacheStatus';
 import {useTheme} from '../theme/ThemeContext';
 import {useAsyncState} from '../hooks/useAsyncState';
 import {getImageSource, formatDateTime} from '../utils/imageUtils';
+import {Button} from '../components/common/Button';
 import {LoadingState} from '../components/common/LoadingState';
 import {ErrorState} from '../components/common/ErrorState';
 import {Breadcrumb, BreadcrumbItem} from '../components/common/Breadcrumb';
@@ -550,6 +551,28 @@ const ItemDetailScreen: React.FC = () => {
         contentContainerStyle={scrollContentStyle}
         showsVerticalScrollIndicator={false}>
         <CacheStatus info={cacheInfo} />
+        <Button
+          title="Edit item"
+          variant="secondary"
+          disabled={Boolean(cacheInfo.fromCache)}
+          onPress={() =>
+            navigation.navigate('AddItemTab', {
+              screen: 'AddItem',
+              params: {itemId: item.id, duplicateItemId: undefined},
+            })
+          }
+        />
+        <Button
+          title="Duplicate item"
+          variant="secondary"
+          disabled={Boolean(cacheInfo.fromCache)}
+          onPress={() =>
+            navigation.navigate('AddItemTab', {
+              screen: 'AddItem',
+              params: {itemId: undefined, duplicateItemId: item.id},
+            })
+          }
+        />
         <View style={heroCardStyle}>
           <View style={accentStripeStyle} />
           <View style={heroContentStyle}>

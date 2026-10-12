@@ -21,6 +21,7 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useAddItemMetadata} from '../hooks/useAddItemMetadata';
 import {useBarcodeAutofill} from '../hooks/useBarcodeAutofill';
 import {useEditableItemLoader} from '../hooks/useEditableItemLoader';
+import {duplicateItemTemplate} from '../utils/duplicateItem';
 import {useItemDraft} from '../hooks/useItemDraft';
 import {useImageHandler} from '../hooks/useImageHandler';
 import {useAddItemForm} from '../hooks/useAddItemForm';
@@ -82,8 +83,12 @@ const AddItemScreen: React.FC = () => {
     formatFileSize,
   } = useImageHandler();
 
-  const {locations, labels, enabledFields, loadMetadata} =
-    useAddItemMetadata(loadImageQuality);
+  const {
+    locations,
+    labels,
+    enabledFields: configuredFields,
+    loadMetadata,
+  } = useAddItemMetadata(loadImageQuality);
 
   const {
     formData,
@@ -103,12 +108,27 @@ const AddItemScreen: React.FC = () => {
   } = useAddItemForm();
 
   const itemId = route.params?.itemId;
+  const duplicateItemId = route.params?.duplicateItemId;
+  const sourceItemId = itemId || duplicateItemId;
+  const enabledFields = duplicateItemId
+    ? {description: true, purchasePrice: true, insured: true, labels: true}
+    : configuredFields;
+  const draftIdentity =
+    itemId || (duplicateItemId ? `duplicate:${duplicateItemId}` : undefined);
+  const populateLoadedItem = useCallback(
+    (item: Parameters<typeof populateForm>[0]) => {
+      populateForm(
+        duplicateItemId && !itemId ? duplicateItemTemplate(item) : item,
+      );
+    },
+    [duplicateItemId, itemId, populateForm],
+  );
   const isEditing = Boolean(itemId);
   const [quickEntry, setQuickEntry] = useState(true);
   const [lastSaved, setLastSaved] = useState('');
   const [savedCount, setSavedCount] = useState(0);
   const submitting = useRef(false);
-  const isQuickEntry = quickEntry && !isEditing;
+  const isQuickEntry = quickEntry && !isEditing && !duplicateItemId;
   const handleSaveSuccess = usePostSaveNavigation(
     navigation,
     resetForm,
@@ -133,8 +153,8 @@ const AddItemScreen: React.FC = () => {
   }, [navigation]);
 
   const {isPreparingItem, preparedItemId} = useEditableItemLoader(
-    itemId,
-    populateForm,
+    sourceItemId,
+    populateLoadedItem,
     handleMissingItem,
   );
 
@@ -148,8 +168,8 @@ const AddItemScreen: React.FC = () => {
     [formData, selectedLocation, selectedLabels, selectedImage],
   );
   const {draftStatus, discardDraft, draftReady} = useItemDraft(
-    itemId,
-    !itemId || preparedItemId === itemId,
+    draftIdentity,
+    !sourceItemId || preparedItemId === sourceItemId,
     draftSnapshot,
     draft => {
       setFormData(draft.formData);
@@ -215,13 +235,17 @@ const AddItemScreen: React.FC = () => {
 
   useEffect(() => {
     navigation.setOptions({
-      title: isEditing ? 'Edit Item' : 'Add Item',
+      title: isEditing
+        ? 'Edit Item'
+        : duplicateItemId
+          ? 'Duplicate Item'
+          : 'Add Item',
       headerStyle: {
         backgroundColor: theme.colors.background.primary,
       },
       headerTintColor: theme.colors.text.primary,
     });
-  }, [isEditing, navigation, theme]);
+  }, [duplicateItemId, isEditing, navigation, theme]);
 
   const handleSubmit = async () => {
     if (submitting.current) {
@@ -240,7 +264,10 @@ const AddItemScreen: React.FC = () => {
             resetForm();
             setSelectedLocation(selectedLocation);
             clearImage();
-            navigation.setParams({barcode: undefined});
+            navigation.setParams({
+              barcode: undefined,
+              duplicateItemId: undefined,
+            });
             setLastSaved(item.name);
             setSavedCount(count => count + 1);
           } else {
@@ -307,6 +334,12 @@ const AddItemScreen: React.FC = () => {
         style={styles.scrollView}
         contentContainerStyle={contentStyle}
         showsVerticalScrollIndicator={false}>
+        {duplicateItemId && (
+          <Text style={{color: theme.colors.text.secondary}}>
+            Review this copy before saving. It will receive a fresh asset ID;
+            photos and attachments stay with the original item.
+          </Text>
+        )}
         {draftStatus ? (
           <View>
             <Text

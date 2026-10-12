@@ -13,7 +13,11 @@ export const usePostSaveNavigation = (
     (item: Item) => {
       resetForm();
       clearImage();
-      navigation.setParams({barcode: undefined, itemId: undefined});
+      navigation.setParams({
+        barcode: undefined,
+        itemId: undefined,
+        duplicateItemId: undefined,
+      });
       navigation
         .getParent<NavigationProp<RootTabParamList>>()
         ?.navigate('InventoryTab', {
