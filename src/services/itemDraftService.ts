@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'react-native-fs';
+import {LocalAttachment} from './attachmentService';
 import {ItemFormData} from '../hooks/useItemFormState';
 import {Label, Location} from '../types';
 
@@ -8,6 +9,7 @@ export interface ItemDraft {
   selectedLocation: Location | null;
   selectedLabels: Label[];
   imageUri: string | null;
+  attachments?: LocalAttachment[];
   updatedAt: string;
 }
 
@@ -38,6 +40,16 @@ export const itemDraftService = {
     ) {
       draft.imageUri = null;
     }
+    if (draft.attachments) {
+      draft.attachments = await Promise.all(
+        draft.attachments.map(async attachment => ({
+          ...attachment,
+          missing: !(await FileSystem.exists(
+            attachment.uri.replace('file://', ''),
+          )),
+        })),
+      );
+    }
     return draft;
   },
   save(key: string, draft: ItemDraft): Promise<void> {
@@ -51,7 +63,8 @@ export const itemDraftService = {
             value !== false,
         ) ||
         draft.selectedLabels.length > 0 ||
-        Boolean(draft.imageUri);
+        Boolean(draft.imageUri) ||
+        Boolean(draft.attachments?.length);
       const photoPath = `${FileSystem.DocumentDirectoryPath}/item-drafts/${encodeURIComponent(key)}.jpg`;
       if (!meaningful) {
         await AsyncStorage.removeItem(key);
@@ -70,7 +83,34 @@ export const itemDraftService = {
         }
         imageUri = `file://${path}`;
       }
-      await AsyncStorage.setItem(key, JSON.stringify({...draft, imageUri}));
+      const attachments = draft.attachments
+        ? ([] as LocalAttachment[])
+        : undefined;
+      if (draft.attachments?.length) {
+        const directory = `${FileSystem.DocumentDirectoryPath}/item-drafts/${encodeURIComponent(key)}-attachments`;
+        await FileSystem.mkdir(directory);
+        for (const attachment of draft.attachments) {
+          const path = `${directory}/${attachment.id}-${attachment.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+          if (
+            !attachment.missing &&
+            attachment.uri.replace('file://', '') !== path
+          ) {
+            await FileSystem.copyFile(
+              attachment.uri.replace('file://', ''),
+              path,
+            );
+          }
+          attachments?.push({...attachment, uri: `file://${path}`});
+        }
+      }
+      await AsyncStorage.setItem(
+        key,
+        JSON.stringify({
+          ...draft,
+          imageUri,
+          ...(attachments ? {attachments} : {}),
+        }),
+      );
       if (!imageUri && (await FileSystem.exists(photoPath))) {
         await FileSystem.unlink(photoPath);
       }
@@ -79,6 +119,10 @@ export const itemDraftService = {
   clear(key: string): Promise<void> {
     return serialize(async () => {
       await AsyncStorage.removeItem(key);
+      const folder = `${FileSystem.DocumentDirectoryPath}/item-drafts/${encodeURIComponent(key)}-attachments`;
+      if (await FileSystem.exists(folder)) {
+        await FileSystem.unlink(folder);
+      }
       const path = `${FileSystem.DocumentDirectoryPath}/item-drafts/${encodeURIComponent(key)}.jpg`;
       if (await FileSystem.exists(path)) {
         await FileSystem.unlink(path);

@@ -12,7 +12,8 @@ Scope accepted on 12 October 2026. Each feature gets its own verified commit.
   - Parent location selection and inline creation; entity-type/tag API contract tests (157 tests total).
 - [x] Duplicate items with fresh asset IDs
   - Detail action opens an isolated duplicate draft; common fields copied; unique identity/photos excluded; original remains unchanged (158 tests total).
-- [ ] Multiple photos, receipts/manuals, and attachment management
+- [x] Multiple photos, receipts/manuals, and attachment management
+  - Durable multi-file drafts/recovery; gallery with pinch/accessible zoom; native document viewer; rename/primary/delete. 162 tests and both native builds passed.
 - [ ] Paginated inventory and server search
 - [ ] Saved searches and data-quality review lists
 - [ ] Automated login/create/photo/edit/reload end-to-end coverage

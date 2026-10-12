@@ -8,6 +8,7 @@ import {
   CreateItemRequest,
   UpdateItemRequest,
   Item,
+  ItemAttachment,
 } from '../types';
 import {
   applyAuthorizationHeader,
@@ -32,6 +33,10 @@ import {
   getLocationTree,
 } from './server/serverApi/locationsApi';
 import {createLocation, createLabel} from './server/serverApi/metadataApi';
+import {
+  updateAttachment,
+  deleteAttachment,
+} from './server/serverApi/attachmentsApi';
 import {getLabels} from './server/serverApi/labelsApi';
 import {
   createItem,
@@ -53,6 +58,20 @@ class ServerService {
       () => getItemById(this.axiosInstance, this.token, id),
     );
     if (response.success) {
+      if (config && response.data && !response.fromCache) {
+        const photos =
+          response.data.attachments
+            ?.filter(file => file.type === 'photo')
+            .map(file => ({...response.data!, imageId: file.id})) || [];
+        offlineCacheService
+          .cacheImages(
+            config.id,
+            photos,
+            this.getBaseUrl(),
+            this.getAuthHeaders(),
+          )
+          .catch(() => undefined);
+      }
       return response;
     }
     if (config) {
@@ -434,6 +453,58 @@ class ServerService {
       await offlineCacheService
         .recordItem(serverId, result.data)
         .catch(() => undefined);
+    }
+    return result;
+  }
+
+  async updateAttachment(
+    itemId: string,
+    attachmentId: string,
+    data: Pick<ItemAttachment, 'title' | 'primary' | 'type'>,
+  ) {
+    const serverId = this.currentConfig?.id;
+    const result = await updateAttachment(
+      this.axiosInstance,
+      itemId,
+      attachmentId,
+      data,
+    );
+    if (serverId && result.success && result.data) {
+      await offlineCacheService
+        .recordItem(serverId, result.data)
+        .catch(() => undefined);
+    }
+    return result;
+  }
+
+  async deleteAttachment(itemId: string, attachmentId: string) {
+    const serverId = this.currentConfig?.id;
+    const result = await deleteAttachment(
+      this.axiosInstance,
+      itemId,
+      attachmentId,
+    );
+    if (serverId && result.success) {
+      const cached = await offlineCacheService.get<Item>(
+        serverId,
+        `item:${itemId}`,
+      );
+      if (cached?.data) {
+        const attachments = cached.data.attachments?.filter(
+          a => a.id !== attachmentId,
+        );
+        const item = {
+          ...cached.data,
+          attachments,
+          imageId:
+            cached.data.imageId === attachmentId
+              ? attachments?.find(a => a.type === 'photo')?.id || null
+              : cached.data.imageId,
+        };
+        await offlineCacheService
+          .recordItem(serverId, item)
+          .catch(() => undefined);
+      }
     }
     return result;
   }

@@ -32,6 +32,8 @@ import {
   LabelSelector,
   ItemFormFields,
 } from '../components/AddItem';
+import {AttachmentQueue} from '../components/AddItem/AttachmentQueue';
+import {LocalAttachment} from '../services/attachmentService';
 import {CreateMetadataButton} from '../components/AddItem/CreateMetadataButton';
 import {SectionHeader} from '../components/SectionHeader';
 import {BarcodeScannerModal} from '../components/BarcodeScanner';
@@ -107,6 +109,7 @@ const AddItemScreen: React.FC = () => {
     submitItem,
   } = useAddItemForm();
 
+  const [attachments, setAttachments] = useState<LocalAttachment[]>([]);
   const itemId = route.params?.itemId;
   const duplicateItemId = route.params?.duplicateItemId;
   const sourceItemId = itemId || duplicateItemId;
@@ -164,8 +167,9 @@ const AddItemScreen: React.FC = () => {
       selectedLocation,
       selectedLabels,
       imageUri: selectedImage,
+      attachments,
     }),
-    [formData, selectedLocation, selectedLabels, selectedImage],
+    [formData, selectedLocation, selectedLabels, selectedImage, attachments],
   );
   const {draftStatus, discardDraft, draftReady} = useItemDraft(
     draftIdentity,
@@ -176,10 +180,12 @@ const AddItemScreen: React.FC = () => {
       setSelectedLocation(draft.selectedLocation);
       setSelectedLabels(draft.selectedLabels);
       setSelectedImage(draft.imageUri);
+      setAttachments(draft.attachments || []);
     },
     () => {
       resetForm();
       clearImage();
+      setAttachments([]);
     },
   );
 
@@ -275,6 +281,7 @@ const AddItemScreen: React.FC = () => {
           }
         },
         !isQuickEntry,
+        attachments,
       );
     } finally {
       submitting.current = false;
@@ -449,6 +456,14 @@ const AddItemScreen: React.FC = () => {
             formatFileSize={formatFileSize}
           />
         </View>
+
+        <AttachmentQueue
+          attachments={attachments}
+          onChange={setAttachments}
+          imageUri={selectedImage}
+          clearImage={clearImage}
+          disabled={isLoading}
+        />
 
         {!isQuickEntry && enabledFields.labels && (
           <>

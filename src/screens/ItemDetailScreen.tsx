@@ -23,6 +23,7 @@ import {CacheStatus, CacheInfo} from '../components/common/CacheStatus';
 import {useTheme} from '../theme/ThemeContext';
 import {useAsyncState} from '../hooks/useAsyncState';
 import {getImageSource, formatDateTime} from '../utils/imageUtils';
+import {AttachmentList} from '../components/ItemDetail/AttachmentList';
 import {Button} from '../components/common/Button';
 import {LoadingState} from '../components/common/LoadingState';
 import {ErrorState} from '../components/common/ErrorState';
@@ -675,6 +676,13 @@ const ItemDetailScreen: React.FC = () => {
           />
         </View>
 
+        <AttachmentList
+          item={item}
+          offline={Boolean(cacheInfo.fromCache)}
+          onChanged={() => {
+            execute(fetchItem);
+          }}
+        />
         <View style={detailCardStyle}>
           <View style={styles.detailHeader}>
             <MaterialIcons

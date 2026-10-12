@@ -183,6 +183,10 @@ export const offlineCacheService = {
     );
     await AsyncStorage.removeMany(keys);
     images.delete(server);
+    const attachmentsDirectory = `${FS.CachesDirectoryPath}/attachments-${encodeURIComponent(server)}`;
+    if (await FS.exists(attachmentsDirectory)) {
+      await FS.unlink(attachmentsDirectory);
+    }
     const directory = `${FS.CachesDirectoryPath}/inventory-${encodeURIComponent(server)}`;
     if (await FS.exists(directory)) {
       await FS.unlink(directory);

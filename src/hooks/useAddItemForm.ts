@@ -1,5 +1,6 @@
 import {useCallback} from 'react';
 import {Alert} from 'react-native';
+import {LocalAttachment} from '../services/attachmentService';
 import {EnabledFields, Item} from '../types';
 import {useItemFormState} from './useItemFormState';
 import {useSaveItem} from './useSaveItem';
@@ -15,9 +16,11 @@ export const useAddItemForm = () => {
       enabledFields: EnabledFields,
       onSuccess: (item: Item) => void,
       confirmSuccess = true,
+      attachments: LocalAttachment[] = [],
     ): Promise<boolean> => {
       const result = await saveItem({
         itemId,
+        attachments,
         imageUri,
         enabledFields,
         formData: formState.formData,

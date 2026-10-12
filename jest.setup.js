@@ -87,3 +87,10 @@ jest.mock('react-native-keychain', () => ({
   setGenericPassword: jest.fn(() => Promise.resolve(true)),
   resetGenericPassword: jest.fn(() => Promise.resolve(true)),
 }));
+
+// Native document dialogs are driven explicitly by attachment tests.
+jest.mock('@react-native-documents/picker', () => ({
+  pick: jest.fn(), keepLocalCopy: jest.fn(), types: {pdf: 'application/pdf', images: 'image/*', plainText: 'text/plain'},
+  isErrorWithCode: jest.fn(() => false), errorCodes: {OPERATION_CANCELED: 'OPERATION_CANCELED'},
+}));
+jest.mock('@react-native-documents/viewer', () => ({viewDocument: jest.fn()}));

@@ -1,3 +1,4 @@
+import {LocalAttachment} from './attachmentService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FS from 'react-native-fs';
 import {
@@ -28,6 +29,7 @@ export interface PendingSave {
   data: CreateItemRequest;
   itemId?: string;
   imageUri: string | null;
+  attachments?: LocalAttachment[];
   fieldsPending: boolean;
   uncertain: boolean;
   error?: string;
@@ -66,6 +68,7 @@ export const saveRecoveryService = {
     data: CreateItemRequest,
     imageUri: string | null,
     itemId?: string,
+    attachments: LocalAttachment[] = [],
   ) {
     const serverId = gateway.getCurrentConfig()?.id;
     if (!serverId) {
@@ -96,11 +99,28 @@ export const saveRecoveryService = {
       await FS.copyFile(imageUri.replace('file://', ''), path);
       job.imageUri = `file://${path}`;
     }
+    if (attachments.length) {
+      const directory = `${FS.DocumentDirectoryPath}/pending-saves/${job.id}`;
+      await FS.mkdir(directory);
+      job.attachments = [];
+      for (const attachment of attachments) {
+        if (attachment.missing) {
+          throw new Error('Reselect unavailable attachments before saving.');
+        }
+        const path = `${directory}/${attachment.id}-${attachment.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+        await FS.copyFile(attachment.uri.replace('file://', ''), path);
+        job.attachments.push({...attachment, uri: `file://${path}`});
+      }
+    }
     await put(job);
     return this.resume(gateway, job);
   },
   async remove(job: PendingSave) {
     await change(jobs => jobs.filter(j => j.id !== job.id));
+    const folder = `${FS.DocumentDirectoryPath}/pending-saves/${job.id}`;
+    if (await FS.exists(folder)) {
+      await FS.unlink(folder);
+    }
     const photo = `${FS.DocumentDirectoryPath}/pending-saves/${job.id}.jpg`;
     if (await FS.exists(photo)) {
       await FS.unlink(photo);
@@ -243,6 +263,55 @@ export const saveRecoveryService = {
           if (await FS.exists(previousImage.replace('file://', ''))) {
             await FS.unlink(previousImage.replace('file://', ''));
           }
+        }
+      }
+      if (job.itemId && job.attachments?.length) {
+        const savedItemId = job.itemId;
+        for (const attachment of [...job.attachments]) {
+          assertServer(gateway, job);
+          const marker = `homebox-mobile-${job.id}-${attachment.id}-${attachment.name}`;
+          if (original.itemId) {
+            const current = await gateway.getItemById(savedItemId);
+            if (!current.success || !current.data || current.fromCache) {
+              throw new Error(
+                'Reconnect to check previous attachment uploads.',
+              );
+            }
+            saved = current.data;
+            if (
+              current.data.attachments?.some(entry => entry.title === marker)
+            ) {
+              job.attachments = job.attachments.filter(
+                entry => entry.id !== attachment.id,
+              );
+              await put(job);
+              continue;
+            }
+          }
+          const form = new FormData();
+          form.append('file', {
+            uri: attachment.uri,
+            type: attachment.mimeType,
+            name: marker,
+          } as unknown as Blob);
+          form.append('name', marker);
+          form.append('type', attachment.type);
+          form.append(
+            'primary',
+            String(attachment.type === 'photo' && attachment.primary === true),
+          );
+          const result = await gateway.uploadItemImage(savedItemId, form);
+          if (!result.success) {
+            job.error =
+              'Item saved but an attachment upload failed. Retry from Pending saves in Settings.';
+            await put(job);
+            return {success: true, data: saved, warning: job.error};
+          }
+          saved = result.data || saved;
+          job.attachments = job.attachments.filter(
+            entry => entry.id !== attachment.id,
+          );
+          await put(job);
         }
       }
       if (job.fieldsPending) {

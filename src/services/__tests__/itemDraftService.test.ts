@@ -70,3 +70,36 @@ test('a failed photo copy keeps the previous recoverable draft', async () => {
   await expect(itemDraftService.save(key, draft)).rejects.toThrow('Disk full');
   expect(await itemDraftService.load(key)).toEqual({...draft, imageUri: null});
 });
+
+test('restores durable document attachments with their types', async () => {
+  const key = draftKey('documents');
+  await itemDraftService.save(key, {
+    ...draft,
+    imageUri: null,
+    attachments: [
+      {
+        id: 'receipt',
+        uri: 'file:///cache/receipt.pdf',
+        name: 'receipt.pdf',
+        type: 'receipt',
+        mimeType: 'application/pdf',
+      },
+      {
+        id: 'manual',
+        uri: 'file:///cache/manual.pdf',
+        name: 'manual.pdf',
+        type: 'manual',
+        mimeType: 'application/pdf',
+      },
+    ],
+  });
+  const saved = await itemDraftService.load(key);
+  expect(saved?.attachments).toEqual([
+    expect.objectContaining({
+      type: 'receipt',
+      name: 'receipt.pdf',
+      uri: expect.stringContaining('/documents/item-drafts/'),
+    }),
+    expect.objectContaining({type: 'manual', name: 'manual.pdf'}),
+  ]);
+});

@@ -2,11 +2,13 @@ import {useCallback, useState} from 'react';
 import ServerService from '../services/serverService';
 import {EnabledFields, Item, Label, Location} from '../types';
 import {logger} from '../utils/logger';
+import {LocalAttachment} from '../services/attachmentService';
 import {saveRecoveryService} from '../services/saveRecoveryService';
 import {ItemFormData} from './useItemFormState';
 
 interface SaveItemParams {
   itemId?: string;
+  attachments?: LocalAttachment[];
   imageUri: string | null;
   enabledFields: EnabledFields;
   formData: ItemFormData;
@@ -28,6 +30,7 @@ export const useSaveItem = () => {
   const saveItem = useCallback(
     async ({
       itemId,
+      attachments,
       imageUri,
       enabledFields,
       formData,
@@ -92,6 +95,7 @@ export const useSaveItem = () => {
           itemData,
           imageUri,
           itemId,
+          attachments,
         );
         if (!itemResponse.success || !itemResponse.data) {
           return {

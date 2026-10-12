@@ -132,3 +132,31 @@ test('does not keep a recovery record for a definitive rejection', async () => {
   await saveRecoveryService.begin(gateway, data, null);
   expect(await saveRecoveryService.list('server-a')).toEqual([]);
 });
+
+test('keeps only unfinished attachments and retries them on the original item', async () => {
+  gateway.uploadItemImage
+    .mockResolvedValueOnce({success: true, data: item})
+    .mockResolvedValueOnce({success: false});
+  await saveRecoveryService.begin(gateway, data, null, undefined, [
+    {
+      id: 'receipt',
+      uri: 'file:///cache/receipt.pdf',
+      name: 'receipt.pdf',
+      type: 'receipt',
+      mimeType: 'application/pdf',
+    },
+    {
+      id: 'manual',
+      uri: 'file:///cache/manual.pdf',
+      name: 'manual.pdf',
+      type: 'manual',
+      mimeType: 'application/pdf',
+    },
+  ]);
+  const [job] = await saveRecoveryService.list('server-a');
+  expect(job.attachments?.map(file => file.id)).toEqual(['manual']);
+  await saveRecoveryService.resume(gateway, job);
+  expect(gateway.createItem).toHaveBeenCalledTimes(1);
+  expect(gateway.uploadItemImage).toHaveBeenCalledTimes(3);
+  expect(await saveRecoveryService.list('server-a')).toEqual([]);
+});
