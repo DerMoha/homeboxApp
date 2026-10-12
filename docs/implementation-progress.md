@@ -22,8 +22,21 @@ Scope accepted on 12 October 2026. Each feature gets its own verified commit.
   - Android native instrumentation + local Homebox fixture; actual multipart photo, edit of the same ID, process restart, and rendered-photo pixel assertion. Passed at normal and 200% text size.
 - [x] Accessibility: screen reader semantics, large text, and checks
   - Labeled/stateful controls, required-input/error announcements, growing buttons, measured rows, scrollable inventory controls, and reduced-motion press effects; native flow also passed at 200% font scale.
-- [ ] Refresh the UI roadmap against implemented behavior
+- [x] Refresh the UI roadmap against implemented behavior
+  - Replaced stale feature claims with current behavior, practical limits, verification instructions, and explicitly separate future proposals.
 
 Verification includes targeted regression tests, full lint/typecheck/unit tests,
 production JavaScript bundling, native builds, and end-to-end checks where supported.
 Existing untracked plan.md is outside this work.
+
+## Final verification
+
+- `npm run validate`: lint, TypeScript, and 174 tests in 24 suites passed.
+- Android arm64 fieldTest build (bundled production JavaScript) and native test APK passed.
+- iOS generic simulator Debug build passed with signing disabled.
+- Android 37 arm64 native login/create/photo/edit/reload passed at 100% and 200%
+  font scale, including a rendered-photo pixel assertion after process restart.
+- Python native-flow harness passed Ruff and bytecode compilation checks.
+- Native end-to-end coverage uses a local Homebox v0.26 contract fixture; manual
+  physical-device VoiceOver/TalkBack testing and iOS native automation remain
+  separate future verification work, described in the refreshed roadmap.

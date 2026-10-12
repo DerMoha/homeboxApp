@@ -7,7 +7,7 @@ fixture binds to 127.0.0.1:18080, accepts test/test-password, and stores everyth
 in memory. `adb reverse` exposes it to the emulator.
 
 Prerequisites: Node/package install, Python 3, JDK 17, Android SDK, `adb` on PATH,
-and one booted emulator. Set `JAVA_HOME` and `ANDROID_HOME` for your installation.
+and one booted emulator (verified on Android 37 arm64). Set `JAVA_HOME` and `ANDROID_HOME` for your installation.
 
 ```sh
 npm ci
@@ -26,7 +26,7 @@ adds no test SDK to the shipped app.
 
 Assertions cover settings/login, typed creation, native photo selection and
 nonempty multipart upload, editing the same entity, process restart, automatic
-login, and the restored photo gallery. The fixture asserts exactly one item and
+login, and the restored photo gallery, including a pixel check that the fixture photo renders. The fixture asserts exactly one item and
 one attachment, with the edited name. Result JSON, screenshots, and native
 failure output go to ignored `e2e/artifacts/`.
 
