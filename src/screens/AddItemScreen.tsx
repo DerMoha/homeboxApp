@@ -1,10 +1,11 @@
-import React, {useCallback, useEffect, useMemo} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
+  Keyboard,
 } from 'react-native';
 import {useTheme} from '../theme/ThemeContext';
 import {
@@ -97,6 +98,11 @@ const AddItemScreen: React.FC = () => {
 
   const itemId = route.params?.itemId;
   const isEditing = Boolean(itemId);
+  const [quickEntry, setQuickEntry] = useState(true);
+  const [lastSaved, setLastSaved] = useState('');
+  const [savedCount, setSavedCount] = useState(0);
+  const submitting = useRef(false);
+  const isQuickEntry = quickEntry && !isEditing;
   const handleSaveSuccess = usePostSaveNavigation(
     navigation,
     resetForm,
@@ -187,7 +193,33 @@ const AddItemScreen: React.FC = () => {
   }, [isEditing, navigation, theme]);
 
   const handleSubmit = async () => {
-    await submitItem(itemId, selectedImage, enabledFields, handleSaveSuccess);
+    if (submitting.current) {
+      return;
+    }
+    submitting.current = true;
+    Keyboard.dismiss();
+    try {
+      await submitItem(
+        itemId,
+        selectedImage,
+        enabledFields,
+        item => {
+          if (isQuickEntry) {
+            resetForm();
+            setSelectedLocation(selectedLocation);
+            clearImage();
+            navigation.setParams({barcode: undefined});
+            setLastSaved(item.name);
+            setSavedCount(count => count + 1);
+          } else {
+            handleSaveSuccess(item);
+          }
+        },
+        !isQuickEntry,
+      );
+    } finally {
+      submitting.current = false;
+    }
   };
 
   const handleQuantityFocus = () => {
@@ -239,13 +271,37 @@ const AddItemScreen: React.FC = () => {
   return (
     <View style={screenStyle}>
       <KeyboardFormScrollView
+        resetScrollKey={savedCount}
         style={styles.scrollView}
         contentContainerStyle={contentStyle}
         showsVerticalScrollIndicator={false}>
+        {!isEditing && (
+          <TouchableOpacity
+            disabled={isLoading}
+            onPress={() => setQuickEntry(value => !value)}
+            accessibilityRole="button"
+            style={styles.modeButton}>
+            <Text style={{color: theme.colors.accent.primary}}>
+              {quickEntry
+                ? 'Quick entry · Show all fields'
+                : 'All fields · Switch to quick entry'}
+            </Text>
+          </TouchableOpacity>
+        )}
+        {isQuickEntry && (
+          <Text
+            accessibilityLiveRegion="polite"
+            style={[styles.entryHint, {color: theme.colors.text.secondary}]}>
+            {lastSaved
+              ? `Saved “${lastSaved}” · ${savedCount} this session. Ready for the next item.`
+              : 'Name, photo, location, save. The location stays selected for your next item.'}
+          </Text>
+        )}
         <SectionHeader title="Item Details" icon="info" variant="withIcon" />
 
         <View style={formCardStyle}>
           <ItemFormFields
+            quickEntry={isQuickEntry}
             formData={formData}
             enabledFields={enabledFields}
             isQuantityFocused={isQuantityFocused}
@@ -260,6 +316,7 @@ const AddItemScreen: React.FC = () => {
 
         <View style={formCardStyle}>
           <LocationSelector
+            compact={isQuickEntry}
             locations={locations}
             selectedLocation={selectedLocation}
             onSelectLocation={setSelectedLocation}
@@ -270,6 +327,7 @@ const AddItemScreen: React.FC = () => {
 
         <View style={formCardStyle}>
           <ImagePickerSection
+            compact={isQuickEntry}
             selectedImage={selectedImage}
             imageRotation={imageRotation}
             imageFlip={imageFlip}
@@ -285,7 +343,7 @@ const AddItemScreen: React.FC = () => {
           />
         </View>
 
-        {enabledFields.labels && (
+        {!isQuickEntry && enabledFields.labels && (
           <>
             <SectionHeader title="Labels" icon="label" variant="withIcon" />
 
@@ -317,7 +375,11 @@ const AddItemScreen: React.FC = () => {
                 />
               </View>
               <Text style={submitButtonTextStyle}>
-                {isEditing ? 'Save Changes' : 'Add Item'}
+                {isEditing
+                  ? 'Save Changes'
+                  : isQuickEntry
+                  ? 'Save & next'
+                  : 'Add Item'}
               </Text>
             </>
           )}
@@ -336,6 +398,8 @@ const AddItemScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  modeButton: {paddingVertical: 12},
+  entryHint: {marginBottom: 8},
   container: {
     flex: 1,
   },

@@ -132,6 +132,90 @@ describe('useAddItemForm', () => {
   });
 
   describe('submitItem', () => {
+    it.each([false, true])(
+      'quick entry handles photo warning=%s without silently losing it',
+      async warning => {
+        const item = {id: 'item-1', name: 'Basement item'};
+        mockServiceInstance.createItem.mockResolvedValueOnce({
+          success: true,
+          data: item,
+        });
+        mockServiceInstance.uploadItemImage.mockResolvedValueOnce({
+          success: !warning,
+          data: warning ? undefined : item,
+        });
+        const onSuccess = jest.fn();
+        const {result} = renderHook(() => useAddItemForm());
+        act(() => {
+          result.current.updateFormField('name', item.name);
+          result.current.setSelectedLocation({
+            id: 'loc-1',
+            name: 'Basement',
+            description: '',
+          });
+        });
+        await act(async () => {
+          await result.current.submitItem(
+            undefined,
+            'file:///photo.jpg',
+            {
+              description: false,
+              purchasePrice: false,
+              insured: false,
+              labels: false,
+            },
+            onSuccess,
+            false,
+          );
+        });
+        if (warning) {
+          expect(onSuccess).not.toHaveBeenCalled();
+          expect(mockAlert).toHaveBeenCalledWith(
+            'Item saved with a warning',
+            expect.stringContaining('image upload failed'),
+            expect.any(Array),
+          );
+          act(() => mockAlert.mock.calls[0][2][0].onPress());
+        } else {
+          expect(mockAlert).not.toHaveBeenCalled();
+        }
+        expect(onSuccess).toHaveBeenCalledTimes(1);
+        expect(onSuccess).toHaveBeenCalledWith(item);
+      },
+    );
+
+    it('keeps the draft when quick entry cannot save', async () => {
+      mockServiceInstance.createItem.mockResolvedValueOnce({success: false});
+      const onSuccess = jest.fn();
+      const {result} = renderHook(() => useAddItemForm());
+      act(() => {
+        result.current.updateFormField('name', 'Keep this draft');
+        result.current.setSelectedLocation({
+          id: 'loc-1',
+          name: 'Basement',
+          description: '',
+        });
+      });
+      await act(async () => {
+        await result.current.submitItem(
+          undefined,
+          null,
+          {
+            description: false,
+            purchasePrice: false,
+            insured: false,
+            labels: false,
+          },
+          onSuccess,
+          false,
+        );
+      });
+      expect(onSuccess).not.toHaveBeenCalled();
+      expect(result.current.formData.name).toBe('Keep this draft');
+      expect(result.current.selectedLocation?.id).toBe('loc-1');
+      expect(mockAlert).toHaveBeenCalledWith('Error', expect.any(String));
+    });
+
     it('should include barcode when creating an item', async () => {
       mockServiceInstance.createItem.mockResolvedValueOnce({
         success: true,

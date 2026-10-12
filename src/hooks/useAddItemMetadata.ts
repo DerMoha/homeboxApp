@@ -4,14 +4,16 @@ import {useItemData} from './useItemData';
 export const useAddItemMetadata = (loadImageQuality: () => Promise<void>) => {
   const itemData = useItemData();
 
+  const {loadEnabledFields, loadLocations, loadLabels} = itemData;
+
   const loadMetadata = useCallback(async () => {
     await Promise.all([
-      itemData.loadEnabledFields(),
+      loadEnabledFields(),
       loadImageQuality(),
-      itemData.loadLocations(),
-      itemData.loadLabels(),
+      loadLocations(),
+      loadLabels(),
     ]);
-  }, [itemData, loadImageQuality]);
+  }, [loadEnabledFields, loadImageQuality, loadLocations, loadLabels]);
 
   return {
     ...itemData,

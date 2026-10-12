@@ -12,6 +12,7 @@ import type {EnabledFields} from '../../types';
 import {useFormInputFocus} from '../common/KeyboardFormScrollView';
 
 interface ItemFormFieldsProps {
+  quickEntry?: boolean;
   formData: Record<string, string | number | boolean | undefined>;
   enabledFields: EnabledFields;
   isQuantityFocused: boolean;
@@ -70,6 +71,7 @@ const FieldTag: React.FC<FieldTagProps> = ({label, theme}) => {
 
 export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
   formData,
+  quickEntry = false,
   enabledFields,
   isQuantityFocused,
   onUpdateField,
@@ -138,60 +140,68 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
         />
       </View>
 
-      {/* Quantity */}
-      <View style={sectionSpacingStyle}>
-        <View style={styles.labelRow}>
-          <Text style={labelStyle}>Quantity</Text>
-        </View>
-        <TextInput
-          style={inputStyle}
-          placeholder="1"
-          placeholderTextColor={theme.colors.text.secondary}
-          keyboardType="number-pad"
-          value={String(
-            isQuantityFocused ? formData.quantity : formData.quantity || '1',
-          )}
-          onChangeText={text => {
-            const numericValue = text.replace(/[^0-9]/g, '');
-            onUpdateField('quantity', numericValue);
-          }}
-          onFocus={() => {
-            onQuantityFocus();
-            revealInput();
-          }}
-          onBlur={onQuantityBlur}
-        />
-      </View>
+      {!quickEntry && (
+        <>
+          {/* Quantity */}
+          <View style={sectionSpacingStyle}>
+            <View style={styles.labelRow}>
+              <Text style={labelStyle}>Quantity</Text>
+            </View>
+            <TextInput
+              style={inputStyle}
+              placeholder="1"
+              placeholderTextColor={theme.colors.text.secondary}
+              keyboardType="number-pad"
+              value={String(
+                isQuantityFocused
+                  ? formData.quantity
+                  : formData.quantity || '1',
+              )}
+              onChangeText={text => {
+                const numericValue = text.replace(/[^0-9]/g, '');
+                onUpdateField('quantity', numericValue);
+              }}
+              onFocus={() => {
+                onQuantityFocus();
+                revealInput();
+              }}
+              onBlur={onQuantityBlur}
+            />
+          </View>
 
-      {/* Barcode */}
-      <View style={sectionSpacingStyle}>
-        <View style={styles.labelRow}>
-          <Text style={labelStyle}>Asset ID / barcode</Text>
-          <FieldTag label="Optional" theme={theme} />
-        </View>
-        <View style={styles.barcodeRow}>
-          <TextInput
-            style={[inputStyle, styles.barcodeInput]}
-            placeholder="Scan or enter a numeric ID"
-            placeholderTextColor={theme.colors.text.secondary}
-            value={String(formData.barcode || '')}
-            onChangeText={text => onUpdateField('barcode', text)}
-            onFocus={revealInput}
-          />
-          {onScanBarcode && (
-            <TouchableOpacity style={scanButtonStyle} onPress={onScanBarcode}>
-              <MaterialIcons
-                name="qr-code-scanner"
-                size={20}
-                color={theme.colors.accent.primary}
+          {/* Barcode */}
+          <View style={sectionSpacingStyle}>
+            <View style={styles.labelRow}>
+              <Text style={labelStyle}>Asset ID / barcode</Text>
+              <FieldTag label="Optional" theme={theme} />
+            </View>
+            <View style={styles.barcodeRow}>
+              <TextInput
+                style={[inputStyle, styles.barcodeInput]}
+                placeholder="Scan or enter a numeric ID"
+                placeholderTextColor={theme.colors.text.secondary}
+                value={String(formData.barcode || '')}
+                onChangeText={text => onUpdateField('barcode', text)}
+                onFocus={revealInput}
               />
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
+              {onScanBarcode && (
+                <TouchableOpacity
+                  style={scanButtonStyle}
+                  onPress={onScanBarcode}>
+                  <MaterialIcons
+                    name="qr-code-scanner"
+                    size={20}
+                    color={theme.colors.accent.primary}
+                  />
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        </>
+      )}
 
       {/* Description (if enabled) */}
-      {enabledFields.description && (
+      {!quickEntry && enabledFields.description && (
         <View style={sectionSpacingStyle}>
           <View style={styles.labelRow}>
             <Text style={labelStyle}>Description</Text>
@@ -212,7 +222,7 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
       )}
 
       {/* Purchase Price (if enabled) */}
-      {enabledFields.purchasePrice && (
+      {!quickEntry && enabledFields.purchasePrice && (
         <View>
           <View style={styles.labelRow}>
             <Text style={labelStyle}>Purchase price</Text>

@@ -1,10 +1,26 @@
-# Android inventory field test — 10 October 2026
+# Android inventory field test — updated 12 October 2026
 
 The client API contract matches Homebox v0.26.2. A standalone personal-test
 APK was built and installed on the connected ARM64 Android phone. Authenticated login and reads now work on the phone: 0 items, 8 locations,
 including Basement. Places renders all eight locations, and the item form
 loads location and label options. An authenticated item/photo save-and-reload
 check is still required before a large inventory session.
+
+## Quick entry — 12 October
+
+- New items default to a compact name, location and photo form. “Show all
+  fields” restores quantity, asset ID and configured optional fields; editing
+  always uses the full form.
+- “Save & next” stays on the form, clears the item draft and photo, retains
+  the chosen location, scrolls to the top and shows a session save count.
+- Successful saves require no confirmation. Partial saves still display a
+  warning; failed saves keep the draft. Photos remain optional.
+- Fixed unstable metadata callback dependencies that repeatedly loaded
+  locations/labels while the form was focused.
+- Validation and standalone ARM64 APK build passed. APK signature verified.
+  No Android device was connected during this update, so this APK has not
+  been installed or visually checked on the phone yet. The latest installed
+  build remains the 10 October build. Live item/photo writes remain unverified.
 
 ## Evidence
 
@@ -18,7 +34,7 @@ check is still required before a large inventory session.
   location trees use `/api/v1/entities/tree`; photo uploads use
   `/api/v1/entities/{id}/attachments` with `file`, `type`, `primary`, `name`.
 - Live unauthenticated entity/tag requests returned 401, as expected.
-- `npm run validate`: ESLint, TypeScript and 134 tests across 14 suites passed.
+- `npm run validate`: ESLint, TypeScript and 137 tests across 14 suites passed.
 - `assembleFieldTest -PreactNativeArchitectures=arm64-v8a` passed, including
   fatal release lint, minification and resource shrinking.
 - APK signature verified. The APK includes Hermes and `index.android.bundle`;
@@ -87,4 +103,4 @@ check is still required before a large inventory session.
 
 APK: `android/app/build/outputs/apk/fieldTest/app-fieldTest.apk`
 
-SHA-256: `c75c77fdf93297821c75cd98b47079a67a3119a51fcd869af9912160bfcd6622`
+SHA-256: `761b6d9b1e928dc34d4ba217f477360cd50f1a5cfd06f44ec5b11e4d24bbfb50`

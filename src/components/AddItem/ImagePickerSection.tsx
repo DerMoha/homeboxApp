@@ -12,6 +12,7 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useTheme} from '../../theme/ThemeContext';
 
 interface ImagePickerSectionProps {
+  compact?: boolean;
   selectedImage: string | null;
   imageRotation: number;
   imageFlip: boolean;
@@ -81,6 +82,7 @@ const ActionButton: React.FC<ActionButtonProps> = ({
 
 export const ImagePickerSection: React.FC<ImagePickerSectionProps> = ({
   selectedImage,
+  compact = false,
   imageRotation,
   imageFlip,
   originalSize,
@@ -280,7 +282,10 @@ export const ImagePickerSection: React.FC<ImagePickerSectionProps> = ({
           <TouchableOpacity
             onPress={onTogglePreview}
             activeOpacity={0.9}
-            style={imagePreviewContainerStyle}>
+            style={[
+              imagePreviewContainerStyle,
+              compact && styles.compactPreview,
+            ]}>
             <Image
               source={{uri: selectedImage}}
               style={previewImageStyle}
@@ -296,7 +301,7 @@ export const ImagePickerSection: React.FC<ImagePickerSectionProps> = ({
             </View>
           </TouchableOpacity>
 
-          {originalSize && compressedSize && (
+          {!compact && originalSize && compressedSize && (
             <View style={imageSizeInfoStyle}>
               <View style={styles.imageSizeRow}>
                 <Text style={imageSizeLabelStyle}>Original</Text>
@@ -335,17 +340,21 @@ export const ImagePickerSection: React.FC<ImagePickerSectionProps> = ({
         </View>
       ) : (
         <View style={emptyStateStyle}>
-          <View style={emptyIconStyle}>
-            <MaterialIcons
-              name="photo-camera"
-              size={20}
-              color={theme.colors.accent.primary}
-            />
-          </View>
-          <Text style={emptyTitleStyle}>Add a photo</Text>
-          <Text style={emptySubtitleStyle}>
-            Capture a new photo or choose one from your library.
-          </Text>
+          {!compact && (
+            <>
+              <View style={emptyIconStyle}>
+                <MaterialIcons
+                  name="photo-camera"
+                  size={20}
+                  color={theme.colors.accent.primary}
+                />
+              </View>
+              <Text style={emptyTitleStyle}>Add a photo</Text>
+              <Text style={emptySubtitleStyle}>
+                Capture a new photo or choose one from your library.
+              </Text>
+            </>
+          )}
           <View style={imagePickerButtonsStyle}>
             <ActionButton
               icon="camera-alt"
@@ -388,6 +397,7 @@ export const ImagePickerSection: React.FC<ImagePickerSectionProps> = ({
 };
 
 const styles = StyleSheet.create({
+  compactPreview: {height: 120},
   section: {
     marginBottom: 8,
   },

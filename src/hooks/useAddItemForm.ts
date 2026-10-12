@@ -14,6 +14,7 @@ export const useAddItemForm = () => {
       imageUri: string | null,
       enabledFields: EnabledFields,
       onSuccess: (item: Item) => void,
+      confirmSuccess = true,
     ): Promise<boolean> => {
       const result = await saveItem({
         itemId,
@@ -38,6 +39,11 @@ export const useAddItemForm = () => {
               : 'Failed to create item. Please try again.'),
         );
         return false;
+      }
+
+      if (!confirmSuccess && !result.warning) {
+        onSuccess(result.item);
+        return true;
       }
 
       Alert.alert(

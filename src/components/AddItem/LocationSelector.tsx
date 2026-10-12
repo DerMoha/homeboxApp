@@ -10,8 +10,10 @@ import {
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useTheme} from '../../theme/ThemeContext';
 import {Location} from '../../types';
+import {useFormInputFocus} from '../common/KeyboardFormScrollView';
 
 interface LocationSelectorProps {
+  compact?: boolean;
   locations: Location[];
   selectedLocation: Location | null;
   onSelectLocation: (location: Location) => void;
@@ -19,10 +21,13 @@ interface LocationSelectorProps {
 
 export const LocationSelector: React.FC<LocationSelectorProps> = ({
   locations,
+  compact = false,
   selectedLocation,
   onSelectLocation,
 }) => {
   const {theme} = useTheme();
+  const revealInput = useFormInputFocus();
+  const [expanded, setExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredLocations = useMemo(() => {
@@ -92,52 +97,72 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
     <View style={styles.section}>
       <Text style={sectionTitleStyle}>Location *</Text>
 
-      <TextInput
-        style={searchInputStyle}
-        placeholder="Search locations..."
-        placeholderTextColor={theme.colors.text.secondary}
-        value={searchQuery}
-        onChangeText={setSearchQuery}
-      />
+      {compact && selectedLocation && !expanded ? (
+        <TouchableOpacity
+          onPress={() => setExpanded(true)}
+          accessibilityRole="button">
+          <Text style={locationNameStyle}>
+            {selectedLocation.name} · Change
+          </Text>
+        </TouchableOpacity>
+      ) : (
+        <>
+          <TextInput
+            onFocus={revealInput}
+            style={searchInputStyle}
+            placeholder="Search locations..."
+            placeholderTextColor={theme.colors.text.secondary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
 
-      <ScrollView style={locationListStyle} nestedScrollEnabled>
-        {filteredLocations.map(location =>
-          (() => {
-            const isSelected = selectedLocation?.id === location.id;
-            const locationItemStyle = isSelected
-              ? [styles.locationItem, locationItemSelectedStyle]
-              : styles.locationItem;
-            const locationTextStyle = isSelected
-              ? locationNameSelectedStyle
-              : locationNameStyle;
-            const descriptionStyle = isSelected
-              ? locationDescriptionSelectedStyle
-              : locationDescriptionStyle;
-            return (
-              <TouchableOpacity
-                key={location.id}
-                style={locationItemStyle}
-                onPress={() => onSelectLocation(location)}>
-                <View style={styles.locationInfo}>
-                  <Text style={locationTextStyle}>{location.name}</Text>
-                  {location.description && (
-                    <Text style={descriptionStyle} numberOfLines={1}>
-                      {location.description}
-                    </Text>
-                  )}
-                </View>
-                {isSelected && (
-                  <MaterialIcons
-                    name="check"
-                    size={20}
-                    color={theme.colors.text.inverse}
-                  />
-                )}
-              </TouchableOpacity>
-            );
-          })(),
-        )}
-      </ScrollView>
+          <ScrollView
+            style={locationListStyle}
+            nestedScrollEnabled
+            keyboardShouldPersistTaps="handled">
+            {filteredLocations.map(location =>
+              (() => {
+                const isSelected = selectedLocation?.id === location.id;
+                const locationItemStyle = isSelected
+                  ? [styles.locationItem, locationItemSelectedStyle]
+                  : styles.locationItem;
+                const locationTextStyle = isSelected
+                  ? locationNameSelectedStyle
+                  : locationNameStyle;
+                const descriptionStyle = isSelected
+                  ? locationDescriptionSelectedStyle
+                  : locationDescriptionStyle;
+                return (
+                  <TouchableOpacity
+                    key={location.id}
+                    style={locationItemStyle}
+                    onPress={() => {
+                      onSelectLocation(location);
+                      setExpanded(false);
+                      setSearchQuery('');
+                    }}>
+                    <View style={styles.locationInfo}>
+                      <Text style={locationTextStyle}>{location.name}</Text>
+                      {location.description && (
+                        <Text style={descriptionStyle} numberOfLines={1}>
+                          {location.description}
+                        </Text>
+                      )}
+                    </View>
+                    {isSelected && (
+                      <MaterialIcons
+                        name="check"
+                        size={20}
+                        color={theme.colors.text.inverse}
+                      />
+                    )}
+                  </TouchableOpacity>
+                );
+              })(),
+            )}
+          </ScrollView>
+        </>
+      )}
     </View>
   );
 };

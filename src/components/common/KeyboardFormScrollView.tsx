@@ -21,8 +21,15 @@ const FormInputFocusContext = createContext<() => void>(() => {});
 export const useFormInputFocus = () => useContext(FormInputFocusContext);
 
 /** Keep form fields and actions reachable above the software keyboard. */
-export const KeyboardFormScrollView: React.FC<ScrollViewProps> = props => {
+export const KeyboardFormScrollView: React.FC<
+  ScrollViewProps & {resetScrollKey?: number}
+> = ({resetScrollKey, ...props}) => {
   const scrollRef = useRef<ScrollView>(null);
+  useEffect(() => {
+    if (resetScrollKey !== undefined) {
+      scrollRef.current?.scrollTo({y: 0, animated: false});
+    }
+  }, [resetScrollKey]);
   const headerHeight = useHeaderHeight();
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const revealFocusedInput = useCallback(() => {
