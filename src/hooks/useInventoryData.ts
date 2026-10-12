@@ -101,6 +101,10 @@ export const useInventoryData = (query = '') => {
         ) {
           return;
         }
+        if (!response.success || !response.data) {
+          setError(response.error || 'Failed to load inventory');
+          return;
+        }
         sourceRef.current = {
           fromCache: sourceRef.current.fromCache || Boolean(response.fromCache),
           cachedAt:
@@ -111,10 +115,6 @@ export const useInventoryData = (query = '') => {
               : response.cachedAt,
         };
         setCacheInfo({...response, ...sourceRef.current});
-        if (!response.success || !response.data) {
-          setError(response.error || 'Failed to load inventory');
-          return;
-        }
         const data = response.data;
         pageRef.current = page;
         setTotal(data.total);
