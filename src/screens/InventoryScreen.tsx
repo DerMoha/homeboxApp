@@ -1,5 +1,6 @@
 import React, {useEffect, useCallback, useMemo} from 'react';
 import {View, StyleSheet, FlatList, RefreshControl, Alert} from 'react-native';
+import {CacheStatus} from '../components/common/CacheStatus';
 import {useTheme} from '../theme/ThemeContext';
 import {
   CompositeNavigationProp,
@@ -25,6 +26,7 @@ import {
   FilterModal,
   SwipeableItem,
 } from '../components/Inventory';
+import {ErrorState} from '../components/common/ErrorState';
 import {EmptyState} from '../components/common/EmptyState';
 import {InventorySkeletonList} from '../components/common/Skeleton';
 import {InventoryItem} from '../types';
@@ -49,6 +51,8 @@ const InventoryScreen: React.FC = () => {
 
   const {
     inventory,
+    cacheInfo,
+    error,
     sortOption,
     isLoading,
     refreshing,
@@ -212,7 +216,7 @@ const InventoryScreen: React.FC = () => {
                 } else {
                   Alert.alert('Error', result.error || 'Failed to delete item');
                 }
-              } catch (error) {
+              } catch {
                 Alert.alert('Error', 'Failed to delete item');
               }
             },
@@ -475,6 +479,8 @@ const InventoryScreen: React.FC = () => {
   if (!isLoading && filteredInventory.length === 0 && hasSearchOrFilters) {
     return (
       <View style={emptyStateStyle}>
+        <CacheStatus info={cacheInfo} />
+        {error ? <ErrorState error={error} onRetry={loadInventory} /> : null}
         <SearchBar
           query={searchQuery}
           onChangeQuery={setSearchQuery}
@@ -497,6 +503,8 @@ const InventoryScreen: React.FC = () => {
         styles.container,
         {backgroundColor: theme.colors.background.primary},
       ]}>
+      <CacheStatus info={cacheInfo} />
+      {error ? <ErrorState error={error} onRetry={loadInventory} /> : null}
       <SearchBar
         query={searchQuery}
         onChangeQuery={setSearchQuery}

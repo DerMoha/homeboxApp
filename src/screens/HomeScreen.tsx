@@ -14,6 +14,7 @@ import {
   useNavigation,
 } from '@react-navigation/native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import {CacheStatus, CacheInfo} from '../components/common/CacheStatus';
 import {useTheme} from '../theme/ThemeContext';
 import ServerService from '../services/serverService';
 import {InventoryItem} from '../types';
@@ -298,6 +299,7 @@ const QuickAction: React.FC<QuickActionProps> = ({
 };
 
 const HomeScreen: React.FC = () => {
+  const [cacheInfo, setCacheInfo] = useState<CacheInfo>({});
   const {theme} = useTheme();
   const navigation = useNavigation<NavigationProp<RootTabParamList>>();
   const [itemCount, setItemCount] = useState<number | null>(null);
@@ -317,6 +319,7 @@ const HomeScreen: React.FC = () => {
         service.getLocations(),
       ]);
 
+      setCacheInfo(itemsResponse);
       if (itemsResponse.success && itemsResponse.data?.items) {
         const items = itemsResponse.data.items as InventoryItem[];
         const sorted = [...items].sort(
@@ -424,6 +427,7 @@ const HomeScreen: React.FC = () => {
       ]}
       contentContainerStyle={styles.contentContainer}
       showsVerticalScrollIndicator={false}>
+      <CacheStatus info={cacheInfo} />
       <View style={styles.brandingArea}>
         <View
           style={[

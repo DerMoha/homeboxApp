@@ -1,9 +1,12 @@
-import {useState, useCallback} from 'react';
+import {useState, useCallback, useRef} from 'react';
 import ServerService from '../services/serverService';
 import {logger} from '../utils/logger';
-import {InventoryItem, SortOption} from '../types';
+import {ApiResponse, InventoryItem, SortOption} from '../types';
 
 export const useInventoryData = () => {
+  const activeServer = useRef<string | undefined>(undefined);
+  const requestNumber = useRef(0);
+  const [cacheInfo, setCacheInfo] = useState<ApiResponse>({success: false});
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [sortOption, setSortOption] = useState<SortOption>('name');
   const [isLoading, setIsLoading] = useState(false);
@@ -68,9 +71,19 @@ export const useInventoryData = () => {
       setIsLoading(true);
       setError(null);
       const service = ServerService.getInstance();
+      const serverId = service.getBrowsingConfig()?.id;
+      if (activeServer.current !== serverId) {
+        activeServer.current = serverId;
+        setInventory([]);
+        setCacheInfo({success: false});
+      }
+      const request = ++requestNumber.current;
       const response = await service.getInventory(-1, -1);
 
-      logger.log('API Response:', response);
+      if (request !== requestNumber.current) {
+        return;
+      }
+      setCacheInfo(response);
 
       if (response.success && response.data) {
         const items = (response.data as {items?: InventoryItem[]}).items || [];
@@ -103,6 +116,7 @@ export const useInventoryData = () => {
   );
 
   return {
+    cacheInfo,
     inventory,
     sortOption,
     isLoading,

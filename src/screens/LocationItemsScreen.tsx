@@ -1,6 +1,7 @@
-import React, {useEffect, useCallback} from 'react';
+import React, {useEffect, useCallback, useState} from 'react';
 import {FlatList, StyleSheet} from 'react-native';
 import {RefreshControl} from 'react-native';
+import {CacheStatus, CacheInfo} from '../components/common/CacheStatus';
 import {useTheme} from '../theme/ThemeContext';
 import {
   useNavigation,
@@ -25,6 +26,7 @@ type LocationItemsRouteProp = RouteProp<
 >;
 
 const LocationItemsScreen: React.FC = () => {
+  const [cacheInfo, setCacheInfo] = useState<CacheInfo>({});
   const {theme} = useTheme();
   const navigation = useNavigation<NavigationProp<RootTabParamList>>();
   const route = useRoute<LocationItemsRouteProp>();
@@ -42,6 +44,7 @@ const LocationItemsScreen: React.FC = () => {
     try {
       const serverService = ServerService.getInstance();
       const response = await serverService.getLocationItems(locationId);
+      setCacheInfo(response);
       if (response.success && response.data) {
         return response.data.items;
       } else {
@@ -101,6 +104,7 @@ const LocationItemsScreen: React.FC = () => {
 
   return (
     <FlatList
+      ListHeaderComponent={<CacheStatus info={cacheInfo} />}
       data={items ?? []}
       renderItem={renderItem}
       keyExtractor={item => item.id}

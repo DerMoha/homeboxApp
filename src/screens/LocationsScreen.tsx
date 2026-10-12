@@ -8,6 +8,7 @@ import {
   ScrollView,
   Animated,
 } from 'react-native';
+import {CacheStatus, CacheInfo} from '../components/common/CacheStatus';
 import {useTheme} from '../theme/ThemeContext';
 import type {Theme} from '../theme/theme';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
@@ -247,6 +248,7 @@ const LocationTreeItemComponent: React.FC<LocationTreeItemProps> = ({
 const LocationTreeItem = React.memo(LocationTreeItemComponent);
 
 const LocationsScreen: React.FC = () => {
+  const [cacheInfo, setCacheInfo] = useState<CacheInfo>({});
   const {theme} = useTheme();
   const navigation =
     useNavigation<NativeStackNavigationProp<LocationsStackParamList>>();
@@ -261,6 +263,7 @@ const LocationsScreen: React.FC = () => {
   const fetchLocations = useCallback(async (): Promise<LocationNode[]> => {
     const service = ServerService.getInstance();
     const response = await service.getLocationTree();
+    setCacheInfo(response);
     if (!response.success || !response.data) {
       throw new Error(
         response.error ||
@@ -363,6 +366,7 @@ const LocationsScreen: React.FC = () => {
 
   return (
     <View style={containerStyle}>
+      <CacheStatus info={cacheInfo} />
       <ScrollView
         contentContainerStyle={listContentStyle}
         refreshControl={

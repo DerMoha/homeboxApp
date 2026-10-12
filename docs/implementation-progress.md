@@ -6,7 +6,8 @@ Scope accepted on 12 October 2026. Each feature gets its own verified commit.
   - Verified durable restore, isolation, missing photos, queued clear, and failed copy (142 tests total).
 - [x] Recoverable saves: retry photos/optional fields and reconcile uncertain creates
   - Persistent server-scoped Pending saves screen; durable photo copies; stable upload names; seven recovery regressions (149 tests total).
-- [ ] Offline inventory browsing with server isolation and freshness indicators
+- [x] Offline inventory browsing with server isolation and freshness indicators
+  - Cached text/details/locations/labels and best-effort thumbnails; offline startup/server selection; mutation-aware cache; explicit cache clearing.
 - [ ] Create locations and labels within the app
 - [ ] Duplicate items with fresh asset IDs
 - [ ] Multiple photos, receipts/manuals, and attachment management

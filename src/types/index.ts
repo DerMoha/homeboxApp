@@ -55,6 +55,9 @@ export type InventoryItem = Item;
 
 // API response types
 export interface ApiResponse<T = unknown> {
+  fromCache?: boolean;
+  cachedAt?: string;
+  summaryOnly?: boolean;
   uncertain?: boolean;
   success: boolean;
   data?: T;

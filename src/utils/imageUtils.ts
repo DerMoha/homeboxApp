@@ -1,3 +1,4 @@
+import {offlineCacheService} from '../services/offlineCacheService';
 import ServerService from '../services/serverService';
 import {HOMEBOX_ENDPOINTS} from '../services/server/homeboxAdapter';
 
@@ -68,8 +69,10 @@ export const getImageSource = (
   itemId: string,
   imageId: string,
 ): {uri: string; headers: Record<string, string>} => {
+  const server = ServerService.getInstance().getBrowsingConfig()?.id;
+  const cached = server ? offlineCacheService.localImage(server, itemId, imageId) : null;
   return {
-    uri: getImageUrl(itemId, imageId),
+    uri: cached || getImageUrl(itemId, imageId),
     headers: getAuthHeaders(),
   };
 };

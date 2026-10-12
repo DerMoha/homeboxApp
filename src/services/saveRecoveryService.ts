@@ -109,7 +109,7 @@ export const saveRecoveryService = {
   async candidates(gateway: SaveGateway, job: PendingSave) {
     assertServer(gateway, job);
     const result = await gateway.getInventory(-1, -1);
-    if (!result.success || !result.data) {
+    if (!result.success || !result.data || result.fromCache) {
       throw new Error(result.error || 'Could not check the server.');
     }
     return result.data.items.filter(
@@ -208,7 +208,7 @@ export const saveRecoveryService = {
         // A timed-out upload may already exist. Check its stable name before retrying.
         if (original.itemId) {
           const current = await gateway.getItemById(job.itemId);
-          if (!current.success || !current.data) {
+          if (!current.success || !current.data || current.fromCache) {
             throw new Error(
               'Could not check the previous photo upload. Try recovery again when connected.',
             );

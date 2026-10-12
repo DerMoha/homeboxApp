@@ -8,12 +8,18 @@ import {
   Share,
   TouchableOpacity,
 } from 'react-native';
-import {RouteProp, useRoute, useNavigation} from '@react-navigation/native';
+import {
+  RouteProp,
+  useRoute,
+  useNavigation,
+  useFocusEffect,
+} from '@react-navigation/native';
 import {NavigationProp} from '@react-navigation/native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import ServerService from '../services/serverService';
 import {Item} from '../types';
 import {RootTabParamList} from '../types/navigation';
+import {CacheStatus, CacheInfo} from '../components/common/CacheStatus';
 import {useTheme} from '../theme/ThemeContext';
 import {useAsyncState} from '../hooks/useAsyncState';
 import {getImageSource, formatDateTime} from '../utils/imageUtils';
@@ -209,6 +215,7 @@ const MetaRow: React.FC<MetaRowProps> = ({icon, label, value, theme}) => {
 };
 
 const ItemDetailScreen: React.FC = () => {
+  const [cacheInfo, setCacheInfo] = useState<CacheInfo>({});
   const {theme} = useTheme();
   const route = useRoute<ItemDetailRouteProp>();
   const navigation = useNavigation<NavigationProp<RootTabParamList>>();
@@ -219,15 +226,18 @@ const ItemDetailScreen: React.FC = () => {
   const fetchItem = useCallback(async () => {
     const service = ServerService.getInstance();
     const result = await service.getItemById(itemId);
+    setCacheInfo(result);
     if (result.success && result.data) {
       return result.data as Item;
     }
     throw new Error(result.error || 'Failed to load item');
   }, [itemId]);
 
-  useEffect(() => {
-    execute(fetchItem);
-  }, [execute, fetchItem]);
+  useFocusEffect(
+    useCallback(() => {
+      execute(fetchItem);
+    }, [execute, fetchItem]),
+  );
 
   useEffect(() => {
     const fetchLocationPath = async () => {
@@ -251,16 +261,13 @@ const ItemDetailScreen: React.FC = () => {
   const handleBreadcrumbPress = useCallback(
     (breadcrumbItem: BreadcrumbItem, _index: number) => {
       hapticImpact('light');
-      navigation.navigate(
-        'Locations',
-        {
-          screen: 'LocationItems',
-          params: {
-            locationId: breadcrumbItem.id,
-            locationName: breadcrumbItem.name,
-          },
+      navigation.navigate('Locations', {
+        screen: 'LocationItems',
+        params: {
+          locationId: breadcrumbItem.id,
+          locationName: breadcrumbItem.name,
         },
-      );
+      });
     },
     [navigation],
   );
@@ -542,6 +549,7 @@ const ItemDetailScreen: React.FC = () => {
       <ScrollView
         contentContainerStyle={scrollContentStyle}
         showsVerticalScrollIndicator={false}>
+        <CacheStatus info={cacheInfo} />
         <View style={heroCardStyle}>
           <View style={accentStripeStyle} />
           <View style={heroContentStyle}>

@@ -22,6 +22,7 @@ import {
   saveServer,
   setLastUsedServer,
 } from './server/serverStorage';
+import {offlineCacheService} from './offlineCacheService';
 import {secureStorageService} from './secureStorageService';
 import {toBootstrapError} from './server/serverErrors';
 import {normalizeServerHost} from './server/serverHost';
@@ -44,13 +45,50 @@ import {CreateItemResponse, TreeNode} from './server/types';
 
 class ServerService {
   public async getItemById(id: string): Promise<ApiResponse<Item>> {
-    return getItemById(this.axiosInstance, this.token, id);
+    const config = this.getBrowsingConfig();
+    const response = await offlineCacheService.read(
+      config?.id || null,
+      `item:${id}`,
+      () => getItemById(this.axiosInstance, this.token, id),
+    );
+    if (response.success) {
+      return response;
+    }
+    if (config) {
+      const inventory = await offlineCacheService.get<InventoryResponse>(
+        config.id,
+        'inventory:-1:-1',
+      );
+      const item = inventory?.data.items.find(entry => entry.id === id);
+      if (item) {
+        return {
+          success: true,
+          data: item,
+          fromCache: true,
+          summaryOnly: true,
+          cachedAt: inventory?.updatedAt,
+        };
+      }
+    }
+    return response;
   }
 
   private static instance: ServerService;
   private axiosInstance: AxiosInstance | null = null;
   private currentConfig: Omit<ServerConfig, 'password'> | null = null;
   private token: string | null = null;
+  private browsingConfig: Omit<ServerConfig, 'password'> | null = null;
+
+  public async browseOffline(config: ServerConfig): Promise<void> {
+    await this.disconnect();
+    const {password: _password, ...safeConfig} = config;
+    this.browsingConfig = safeConfig;
+    await this.setLastUsedServer(config.id);
+  }
+
+  public getBrowsingConfig() {
+    return this.currentConfig || this.browsingConfig;
+  }
 
   private constructor() {}
 
@@ -63,6 +101,10 @@ class ServerService {
 
   public async initialize(config: ServerConfig): Promise<ApiResponse> {
     try {
+      if (!this.currentConfig) {
+        const {password: _password, ...safeConfig} = config;
+        this.browsingConfig = safeConfig;
+      }
       const normalizedHost = normalizeServerHost(config.host);
       const nextAxiosInstance = createAxiosClient(normalizedHost);
       const password =
@@ -155,6 +197,12 @@ class ServerService {
   public async deleteServer(serverId: string): Promise<boolean> {
     const isCurrentServer = this.currentConfig?.id === serverId;
     const result = await deleteServer(serverId);
+    if (result) {
+      await offlineCacheService.clear(serverId);
+      if (this.browsingConfig?.id === serverId) {
+        this.browsingConfig = null;
+      }
+    }
     if (result && isCurrentServer) {
       await this.disconnect();
     }
@@ -177,6 +225,7 @@ class ServerService {
   private clearAuthState(): void {
     this.token = null;
     this.currentConfig = null;
+    this.browsingConfig = null;
     if (this.axiosInstance) {
       delete this.axiosInstance.defaults.headers.common.Authorization;
       this.axiosInstance = null;
@@ -188,11 +237,11 @@ class ServerService {
   }
 
   public getBaseUrl(): string {
-    if (!this.currentConfig) {
+    const config = this.getBrowsingConfig();
+    if (!config) {
       throw new Error('No active server configuration');
     }
-
-    return normalizeServerHost(this.currentConfig.host);
+    return normalizeServerHost(config.host);
   }
 
   public getAuthHeaders(): Record<string, string> {
@@ -203,7 +252,44 @@ class ServerService {
     page: number = 1,
     pageSize: number = 50,
   ): Promise<ApiResponse<InventoryResponse>> {
-    return getInventory(this.axiosInstance, this.token, page, pageSize);
+    const config = this.getBrowsingConfig();
+    let response = await offlineCacheService.read(
+      config?.id || null,
+      `inventory:${page}:${pageSize}`,
+      () => getInventory(this.axiosInstance, this.token, page, pageSize),
+    );
+    if (config && !response.success) {
+      const full = await offlineCacheService.get<InventoryResponse>(
+        config.id,
+        'inventory:-1:-1',
+      );
+      if (full) {
+        const items =
+          pageSize > 0
+            ? full.data.items.slice(
+                Math.max(0, page - 1) * pageSize,
+                Math.max(0, page - 1) * pageSize + pageSize,
+              )
+            : full.data.items;
+        response = {
+          success: true,
+          data: {...full.data, items, page, pageSize},
+          fromCache: true,
+          cachedAt: full.updatedAt,
+        };
+      }
+    }
+    if (config && response.success && response.data && !response.fromCache) {
+      offlineCacheService
+        .cacheImages(
+          config.id,
+          response.data.items,
+          this.getBaseUrl(),
+          this.getAuthHeaders(),
+        )
+        .catch(() => undefined);
+    }
+    return response;
   }
 
   public async getLastUsedServer(): Promise<ServerConfig | null> {
@@ -231,21 +317,56 @@ class ServerService {
   }
 
   async getLocations(): Promise<ApiResponse<LocationResponse>> {
-    return getLocations(this.axiosInstance, this.token);
+    return offlineCacheService.read(
+      this.getBrowsingConfig()?.id || null,
+      'locations',
+      () => getLocations(this.axiosInstance, this.token),
+    );
   }
 
   async getLabels(): Promise<ApiResponse<Label[]>> {
-    return getLabels(this.axiosInstance, this.token);
+    return offlineCacheService.read(
+      this.getBrowsingConfig()?.id || null,
+      'labels',
+      () => getLabels(this.axiosInstance, this.token),
+    );
   }
 
   async getLocationItems(
     locationId: string,
   ): Promise<ApiResponse<InventoryResponse>> {
-    return getLocationItems(this.axiosInstance, locationId);
+    const config = this.getBrowsingConfig();
+    const result = await offlineCacheService.read(
+      config?.id || null,
+      `location:${locationId}`,
+      () => getLocationItems(this.axiosInstance, locationId),
+    );
+    if (!result.success && config) {
+      const full = await offlineCacheService.get<InventoryResponse>(
+        config.id,
+        'inventory:-1:-1',
+      );
+      if (full) {
+        const items = full.data.items.filter(
+          item => item.location?.id === locationId,
+        );
+        return {
+          success: true,
+          data: {items, total: items.length, page: 1, pageSize: items.length},
+          fromCache: true,
+          cachedAt: full.updatedAt,
+        };
+      }
+    }
+    return result;
   }
 
   async getLocationTree(): Promise<ApiResponse<TreeNode[]>> {
-    return getLocationTree(this.axiosInstance);
+    return offlineCacheService.read(
+      this.getBrowsingConfig()?.id || null,
+      'tree',
+      () => getLocationTree(this.axiosInstance),
+    );
   }
 
   buildLocationPath(
@@ -256,22 +377,50 @@ class ServerService {
   }
 
   async createItem(item: CreateItemRequest): Promise<CreateItemResponse> {
-    return createItem(this.axiosInstance, item);
+    const serverId = this.currentConfig?.id;
+    const result = await createItem(this.axiosInstance, item);
+    if (serverId && result.success && result.data) {
+      await offlineCacheService
+        .recordItem(serverId, result.data)
+        .catch(() => undefined);
+    }
+    return result;
   }
 
   async updateItem(item: UpdateItemRequest): Promise<CreateItemResponse> {
-    return updateItem(this.axiosInstance, item);
+    const serverId = this.currentConfig?.id;
+    const result = await updateItem(this.axiosInstance, item);
+    if (serverId && result.success && result.data) {
+      await offlineCacheService
+        .recordItem(serverId, result.data)
+        .catch(() => undefined);
+    }
+    return result;
   }
 
   async uploadItemImage(
     itemId: string,
     formData: FormData,
   ): Promise<ApiResponse<Item>> {
-    return uploadItemImage(this.axiosInstance, itemId, formData);
+    const serverId = this.currentConfig?.id;
+    const result = await uploadItemImage(this.axiosInstance, itemId, formData);
+    if (serverId && result.success && result.data) {
+      await offlineCacheService
+        .recordItem(serverId, result.data)
+        .catch(() => undefined);
+    }
+    return result;
   }
 
   async deleteItem(itemId: string): Promise<ApiResponse> {
-    return deleteItem(this.axiosInstance, itemId);
+    const serverId = this.currentConfig?.id;
+    const result = await deleteItem(this.axiosInstance, itemId);
+    if (serverId && result.success) {
+      await offlineCacheService
+        .recordItem(serverId, null, itemId)
+        .catch(() => undefined);
+    }
+    return result;
   }
 }
 

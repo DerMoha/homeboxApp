@@ -14,6 +14,7 @@ import ServerService from '../services/serverService';
 import {useTheme} from '../theme/ThemeContext';
 import {ServerWithStatus, SettingsStackParamList} from '../navigation/types';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import {offlineCacheService} from '../services/offlineCacheService';
 import {logger} from '../utils/logger';
 import {SectionHeader} from '../components/SectionHeader';
 import {ServerConfig} from '../types';
@@ -174,7 +175,24 @@ const SettingsScreen: React.FC = () => {
       const server = servers.find(s => s.id === serverId);
 
       if (server) {
-        await serverService.initialize(server);
+        const response = await serverService.initialize(server);
+        if (!response.success) {
+          Alert.alert(
+            'Connection unavailable',
+            response.error || 'Could not connect.',
+            [
+              {text: 'Cancel', style: 'cancel'},
+              {
+                text: 'Browse cached inventory',
+                onPress: async () => {
+                  await serverService.browseOffline(server);
+                  setSelectedServer(serverId);
+                },
+              },
+            ],
+          );
+          return;
+        }
         setSelectedServer(serverId);
       }
     } catch (error) {
@@ -281,6 +299,39 @@ const SettingsScreen: React.FC = () => {
         />
       </View>
 
+      <SettingsItem
+        icon="delete-sweep"
+        title="Clear offline inventory"
+        theme={theme}
+        onPress={() => {
+          const config = ServerService.getInstance().getBrowsingConfig();
+          if (!config) {
+            return;
+          }
+          Alert.alert(
+            'Clear offline inventory?',
+            `Remove downloaded inventory and photos for ${config.name || config.host}? Drafts and pending saves are kept.`,
+            [
+              {text: 'Cancel', style: 'cancel'},
+              {
+                text: 'Clear',
+                style: 'destructive',
+                onPress: async () => {
+                  try {
+                    await offlineCacheService.clear(config.id);
+                    Alert.alert('Offline inventory cleared');
+                  } catch {
+                    Alert.alert(
+                      'Error',
+                      'Offline inventory could not be cleared.',
+                    );
+                  }
+                },
+              },
+            ],
+          );
+        }}
+      />
       <SectionHeader title="Preferences" variant="withLine" />
 
       <View style={styles.settingsGroup}>
