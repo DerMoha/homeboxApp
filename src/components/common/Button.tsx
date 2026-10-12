@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useTheme} from '../../theme/ThemeContext';
+import {useReducedMotion} from '../../hooks/useReducedMotion';
 import {hapticImpact} from '../../utils/haptics';
 
 type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
@@ -38,10 +39,14 @@ export const Button: React.FC<ButtonProps> = ({
   style,
 }) => {
   const {theme} = useTheme();
+  const reducedMotion = useReducedMotion();
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
     hapticImpact(variant === 'danger' ? 'heavy' : 'medium');
+    if (reducedMotion) {
+      return;
+    }
     Animated.spring(scaleAnim, {
       toValue: 0.97,
       useNativeDriver: true,
@@ -51,6 +56,9 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   const handlePressOut = () => {
+    if (reducedMotion) {
+      return;
+    }
     Animated.spring(scaleAnim, {
       toValue: 1,
       useNativeDriver: true,
@@ -112,7 +120,7 @@ export const Button: React.FC<ButtonProps> = ({
   const buttonHeight = useMemo((): number => {
     switch (size) {
       case 'small':
-        return 40;
+        return 44;
       case 'medium':
         return 48;
       case 'large':
@@ -195,7 +203,8 @@ export const Button: React.FC<ButtonProps> = ({
   const baseButtonStyle = useMemo(
     () => ({
       backgroundColor,
-      height: buttonHeight,
+      minHeight: buttonHeight,
+      paddingVertical: 10,
       paddingHorizontal: buttonPaddingHorizontal,
       borderRadius: buttonBorderRadius,
       borderWidth: variant === 'ghost' || variant === 'secondary' ? 1 : 0,
@@ -251,6 +260,9 @@ export const Button: React.FC<ButtonProps> = ({
   return (
     <Animated.View style={animatedContainerStyle}>
       <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={title}
+        accessibilityState={{disabled: disabled || loading, busy: loading}}
         onPress={onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
@@ -300,6 +312,8 @@ const styles = StyleSheet.create({
     marginRight: 2,
   },
   text: {
+    flexShrink: 1,
+    textAlign: 'center',
     textTransform: 'none',
   },
 });

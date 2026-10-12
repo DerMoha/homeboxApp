@@ -1,6 +1,7 @@
 import React, {useCallback, useMemo, useRef} from 'react';
 import {View, Text, TouchableOpacity, StyleSheet, Animated} from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import {useReducedMotion} from '../../hooks/useReducedMotion';
 import {useTheme} from '../../theme/ThemeContext';
 
 export type ViewMode = 'list' | 'grid';
@@ -71,25 +72,32 @@ const AnimatedHeaderButton: React.FC<AnimatedButtonProps> = ({
   icon,
   theme,
 }) => {
+  const reducedMotion = useReducedMotion();
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = useCallback(() => {
+    if (reducedMotion) {
+      return;
+    }
     Animated.spring(scaleAnim, {
       toValue: 0.9,
       useNativeDriver: true,
       tension: 100,
       friction: 10,
     }).start();
-  }, [scaleAnim]);
+  }, [scaleAnim, reducedMotion]);
 
   const handlePressOut = useCallback(() => {
+    if (reducedMotion) {
+      return;
+    }
     Animated.spring(scaleAnim, {
       toValue: 1,
       useNativeDriver: true,
       tension: 100,
       friction: 10,
     }).start();
-  }, [scaleAnim]);
+  }, [scaleAnim, reducedMotion]);
 
   const animatedStyle = useMemo(
     () => ({transform: [{scale: scaleAnim}]}),
@@ -129,6 +137,23 @@ const AnimatedHeaderButton: React.FC<AnimatedButtonProps> = ({
   return (
     <Animated.View style={animatedStyle}>
       <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel={
+          (
+            {
+              sort: 'Sort items',
+              'zoom-in': 'Increase item detail',
+              'zoom-out': 'Decrease item detail',
+              'filter-list': 'Filter items',
+              'view-list': 'Switch to list',
+              'grid-view': 'Switch to grid',
+              add: 'Increase density or zoom',
+              remove: 'Decrease density or zoom',
+            } as Record<string, string>
+          )[icon] || icon
+        }
+        accessibilityState={{disabled, selected: isActive}}
+        hitSlop={8}
         style={buttonStyle}
         onPress={onPress}
         onPressIn={handlePressIn}
@@ -271,15 +296,15 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   headerButton: {
-    width: 36,
-    height: 36,
+    width: 44,
+    minHeight: 44,
     justifyContent: 'center',
     alignItems: 'center',
   },
   stateIndicatorContainer: {
     paddingHorizontal: 10,
     minWidth: 60,
-    height: 28,
+    minHeight: 28,
     justifyContent: 'center',
     alignItems: 'center',
   },

@@ -120,11 +120,13 @@ const AddItemScreen: React.FC = () => {
     itemId || (duplicateItemId ? `duplicate:${duplicateItemId}` : undefined);
   const populateLoadedItem = useCallback(
     (item: Parameters<typeof populateForm>[0]) => {
+      setSelectedImage(null);
+      setAttachments([]);
       populateForm(
         duplicateItemId && !itemId ? duplicateItemTemplate(item) : item,
       );
     },
-    [duplicateItemId, itemId, populateForm],
+    [duplicateItemId, itemId, populateForm, setSelectedImage],
   );
   const isEditing = Boolean(itemId);
   const [quickEntry, setQuickEntry] = useState(true);
@@ -491,6 +493,15 @@ const AddItemScreen: React.FC = () => {
           style={submitButtonStyle}
           onPress={handleSubmit}
           disabled={isLoading || isPreparingItem || !draftReady}
+          accessibilityRole="button"
+          accessibilityLabel={
+            isEditing
+              ? 'Save Changes'
+              : isQuickEntry
+                ? 'Save & next'
+                : 'Add Item'
+          }
+          accessibilityState={{disabled: isLoading, busy: isLoading}}
           activeOpacity={0.8}>
           {isLoading ? (
             <ActivityIndicator color={theme.colors.text.inverse} />

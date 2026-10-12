@@ -132,6 +132,7 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
         </View>
         <TextInput
           style={inputStyle}
+          accessibilityLabel="Item name, required"
           placeholder="Enter item name"
           placeholderTextColor={theme.colors.text.secondary}
           value={String(formData.name || '')}
@@ -149,6 +150,7 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
             </View>
             <TextInput
               style={inputStyle}
+              accessibilityLabel="Quantity"
               placeholder="1"
               placeholderTextColor={theme.colors.text.secondary}
               keyboardType="number-pad"
@@ -209,6 +211,7 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
           </View>
           <TextInput
             style={[inputStyle, styles.textArea]}
+            accessibilityLabel="Item description"
             placeholder="Enter description"
             placeholderTextColor={theme.colors.text.secondary}
             value={String(formData.description || '')}
@@ -230,6 +233,7 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
           </View>
           <TextInput
             style={inputStyle}
+            accessibilityLabel="Purchase price"
             placeholder="0.00"
             placeholderTextColor={theme.colors.text.secondary}
             keyboardType="decimal-pad"

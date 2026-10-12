@@ -91,6 +91,13 @@ const ItemCardBaseComponent: React.FC<ItemCardBaseProps> = ({
   if (onPress || onLongPress) {
     return (
       <TouchableOpacity
+        accessibilityRole={isSelectionMode ? 'checkbox' : 'button'}
+        accessibilityState={isSelectionMode ? {checked: isSelected} : {}}
+        accessibilityHint={
+          isSelectionMode
+            ? 'Toggle item selection'
+            : 'Open item details. Long press to select.'
+        }
         style={containerStyle}
         onPress={() => {
           hapticImpact('light');

@@ -112,6 +112,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           style={styles.searchIcon}
         />
         <TextInput
+          accessibilityLabel="Search inventory on server"
           style={inputStyle}
           placeholder="Search items..."
           placeholderTextColor={theme.colors.text.secondary}
@@ -122,7 +123,12 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           returnKeyType="search"
         />
         {query.length > 0 && (
-          <TouchableOpacity onPress={onClear} style={styles.clearButton}>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Clear search"
+            hitSlop={12}
+            onPress={onClear}
+            style={styles.clearButton}>
             <MaterialIcons
               name="clear"
               size={20}

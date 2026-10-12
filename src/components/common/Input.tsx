@@ -37,6 +37,10 @@ export const Input: React.FC<InputProps> = ({
         </Text>
       )}
       <TextInput
+        accessibilityLabel={
+          label ? `${label}${required ? ', required' : ''}` : props.placeholder
+        }
+        accessibilityHint={error}
         style={[
           styles.input,
           {
@@ -57,6 +61,8 @@ export const Input: React.FC<InputProps> = ({
       />
       {error && (
         <Text
+          accessibilityRole="alert"
+          accessibilityLiveRegion="polite"
           style={[
             styles.error,
             {
@@ -80,6 +86,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   input: {
+    minHeight: 48,
     paddingVertical: 12,
     paddingHorizontal: 14,
     borderRadius: 14,

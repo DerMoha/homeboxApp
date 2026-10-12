@@ -19,7 +19,8 @@ Scope accepted on 12 October 2026. Each feature gets its own verified commit.
 - [x] Saved searches and data-quality review lists
   - Server-scoped saved query/filter/sort/review presets and four review lists; safe persistence errors. 167 tests passed.
 - [ ] Automated login/create/photo/edit/reload end-to-end coverage
-- [ ] Accessibility: screen reader semantics, large text, and checks
+- [x] Accessibility: screen reader semantics, large text, and checks
+  - Labeled/stateful controls, required-input/error announcements, growing buttons, measured rows, scrollable inventory controls, and reduced-motion press effects; native flow also passed at 200% font scale.
 - [ ] Refresh the UI roadmap against implemented behavior
 
 Verification includes targeted regression tests, full lint/typecheck/unit tests,

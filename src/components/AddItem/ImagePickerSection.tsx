@@ -73,7 +73,12 @@ const ActionButton: React.FC<ActionButtonProps> = ({
   );
 
   return (
-    <TouchableOpacity style={buttonStyle} onPress={onPress} activeOpacity={0.8}>
+    <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={buttonStyle}
+      onPress={onPress}
+      activeOpacity={0.8}>
       <MaterialIcons name={icon} size={18} color={foreground} />
       <Text style={buttonTextStyle}>{label}</Text>
     </TouchableOpacity>

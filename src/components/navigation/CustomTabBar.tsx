@@ -159,7 +159,9 @@ const TabItem: React.FC<TabItemProps> = ({
         key={routeKey}
         accessibilityRole="button"
         accessibilityState={isFocused ? {selected: true} : {}}
-        accessibilityLabel={accessibilityLabel}
+        accessibilityLabel={
+          accessibilityLabel || (config.isSpecial ? 'Add item' : config.label)
+        }
         onPress={() => {
           hapticImpact('medium');
           onPress();
@@ -177,7 +179,9 @@ const TabItem: React.FC<TabItemProps> = ({
       key={routeKey}
       accessibilityRole="button"
       accessibilityState={isFocused ? {selected: true} : {}}
-      accessibilityLabel={accessibilityLabel}
+      accessibilityLabel={
+        accessibilityLabel || (config.isSpecial ? 'Add item' : config.label)
+      }
       onPress={() => {
         hapticSelection();
         onPress();

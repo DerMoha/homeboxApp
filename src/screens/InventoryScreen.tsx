@@ -1,5 +1,12 @@
-import React, {useEffect, useCallback, useMemo, useState} from 'react';
-import {View, StyleSheet, FlatList, RefreshControl, Alert} from 'react-native';
+import React, {useCallback, useMemo, useState} from 'react';
+import {
+  View,
+  StyleSheet,
+  FlatList,
+  RefreshControl,
+  Alert,
+  ScrollView,
+} from 'react-native';
 import {Text} from 'react-native';
 import {Button} from '../components/common/Button';
 import {SavedSearches} from '../components/Inventory/SavedSearches';
@@ -174,12 +181,6 @@ const InventoryScreen: React.FC = () => {
       activeFilterCount,
     ],
   );
-
-  useEffect(() => {
-    navigation.setOptions({
-      headerRight: renderHeaderRight,
-    });
-  }, [navigation, renderHeaderRight]);
 
   const handleItemPress = useCallback(
     (itemId: string) => {
@@ -454,6 +455,9 @@ const InventoryScreen: React.FC = () => {
         styles.container,
         {backgroundColor: theme.colors.background.primary},
       ]}>
+      <ScrollView horizontal style={styles.controlsScroller}>
+        {renderHeaderRight()}
+      </ScrollView>
       <CacheStatus info={cacheInfo} />
       {error ? <ErrorState error={error} onRetry={loadInventory} /> : null}
       <SearchBar
@@ -599,6 +603,7 @@ const InventoryScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  controlsScroller: {flexGrow: 0},
   container: {
     flex: 1,
   },
