@@ -19,6 +19,7 @@ describe('useAddItemForm', () => {
     });
 
     mockServiceInstance = {
+      getCurrentConfig: () => ({id: 'test-server'}),
       createItem: jest.fn(),
       updateItem: jest.fn(),
       uploadItemImage: jest.fn(),

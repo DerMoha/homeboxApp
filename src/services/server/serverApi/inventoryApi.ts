@@ -96,7 +96,11 @@ export const createItem = async (
     );
 
     if (!response.data?.id) {
-      return {success: false, error: 'Invalid response format from server'};
+      return {
+        success: false,
+        uncertain: true,
+        error: 'Invalid response format from server',
+      };
     }
 
     let savedItem = mapHomeboxEntity(response.data);

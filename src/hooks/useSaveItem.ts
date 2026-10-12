@@ -1,7 +1,8 @@
 import {useCallback, useState} from 'react';
 import ServerService from '../services/serverService';
-import {EnabledFields, FormDataFile, Item, Label, Location} from '../types';
+import {EnabledFields, Item, Label, Location} from '../types';
 import {logger} from '../utils/logger';
+import {saveRecoveryService} from '../services/saveRecoveryService';
 import {ItemFormData} from './useItemFormState';
 
 interface SaveItemParams {
@@ -86,63 +87,33 @@ export const useSaveItem = () => {
           labels: selectedLabels.map(label => label.id),
         };
 
-        const itemResponse = itemId
-          ? await service.updateItem({...itemData, id: itemId})
-          : await service.createItem(itemData);
-
+        const itemResponse = await saveRecoveryService.begin(
+          service,
+          itemData,
+          imageUri,
+          itemId,
+        );
         if (!itemResponse.success || !itemResponse.data) {
           return {
             success: false,
-            error: itemId ? 'Failed to update item' : 'Failed to create item',
+            error:
+              itemResponse.error ||
+              'Save could not complete. Check Pending saves in Settings.',
           };
         }
-
-        let savedItem = itemResponse.data;
-        let warning = itemResponse.warning;
-
-        if (imageUri) {
-          logger.log('Starting image upload for item', {
-            itemId: itemResponse.data.id,
-          });
-
-          const imageFormData = new FormData();
-          const fileExtension =
-            imageUri.split(/[?#]/)[0].split('.').pop()?.toLowerCase() || 'jpg';
-          const file: FormDataFile = {
-            uri: imageUri,
-            type: `image/${fileExtension}`,
-            name: `image.${fileExtension}`,
-          };
-
-          imageFormData.append('file', file as unknown as Blob);
-          imageFormData.append('type', 'photo');
-          imageFormData.append('primary', 'true');
-          imageFormData.append('name', `item-image.${fileExtension}`);
-
-          const imageResponse = await service.uploadItemImage(
-            itemResponse.data.id,
-            imageFormData,
-          );
-
-          if (!imageResponse.success) {
-            const imageWarning = itemId
-              ? 'Item was updated but image upload failed'
-              : 'Item was created but image upload failed';
-            warning = [warning, imageWarning].filter(Boolean).join('. ');
-            logger.warn('Failed to upload image', {error: imageResponse.error});
-          } else if (imageResponse.data) {
-            savedItem = imageResponse.data;
-          }
-        }
-
-        return {success: true, item: savedItem, warning};
+        return {
+          success: true,
+          item: itemResponse.data,
+          warning: itemResponse.warning,
+        };
       } catch (error) {
         logger.error('Error saving item', {error, itemId});
         return {
           success: false,
-          error: itemId
-            ? 'Failed to update item. Please try again.'
-            : 'Failed to create item. Please try again.',
+          error:
+            error instanceof Error
+              ? error.message
+              : 'Save could not complete. Check Pending saves in Settings.',
         };
       } finally {
         setIsLoading(false);

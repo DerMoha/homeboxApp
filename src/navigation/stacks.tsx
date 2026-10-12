@@ -2,6 +2,7 @@ import React from 'react';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {useTheme} from '../theme/ThemeContext';
 
+import SaveRecoveryScreen from '../screens/SaveRecoveryScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import ServerConfigScreen from '../screens/ServerConfigScreen';
 import AppearanceScreen from '../screens/AppearanceScreen';
@@ -55,6 +56,11 @@ export const SettingsStackScreen: React.FC = () => {
         name="Settings"
         component={SettingsScreen}
         options={{headerLargeTitle: true}}
+      />
+      <SettingsStack.Screen
+        name="SaveRecovery"
+        component={SaveRecoveryScreen}
+        options={{title: 'Pending saves'}}
       />
       <SettingsStack.Screen
         name="ServerConfig"

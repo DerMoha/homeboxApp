@@ -23,8 +23,17 @@ export interface Label {
   updatedAt?: string;
 }
 
+export interface ItemAttachment {
+  id: string;
+  title?: string;
+  type?: string;
+  primary?: boolean;
+  mimeType?: string;
+}
+
 // Item types - unified definition
 export interface Item {
+  attachments?: ItemAttachment[];
   id: string;
   name: string;
   description: string;
@@ -46,6 +55,7 @@ export type InventoryItem = Item;
 
 // API response types
 export interface ApiResponse<T = unknown> {
+  uncertain?: boolean;
   success: boolean;
   data?: T;
   error?: string;
@@ -116,11 +126,7 @@ export interface DisplayPreference {
 
 // Sort options
 export type SortOption =
-  | 'name'
-  | 'quantity'
-  | 'createdAt'
-  | 'updatedAt'
-  | 'location';
+  'name' | 'quantity' | 'createdAt' | 'updatedAt' | 'location';
 
 // View modes
 export type ViewMode = 'list' | 'grid';

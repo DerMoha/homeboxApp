@@ -3,6 +3,7 @@ import {ServerConfig} from '../types';
 
 export type SettingsStackParamList = {
   Settings: undefined;
+  SaveRecovery: undefined;
   ServerConfig: {server?: ServerWithStatus};
   Appearance: undefined;
   InventorySettings: undefined;

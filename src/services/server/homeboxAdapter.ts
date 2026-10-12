@@ -59,6 +59,7 @@ export interface HomeboxAttachment {
   type?: string;
   primary?: boolean;
   title?: string;
+  mimeType?: string;
 }
 
 export interface HomeboxEntitySummary {
@@ -212,6 +213,7 @@ const getPrimaryImageId = (
 };
 
 export const mapHomeboxEntity = (entity: HomeboxEntity): Item => ({
+  ...(entity.attachments ? {attachments: entity.attachments} : {}),
   id: entity.id,
   name: entity.name,
   description: toStringValue(entity.description),
@@ -279,7 +281,9 @@ export const toHomeboxEntityUpdate = (
     name: item.name.trim(),
     description: item.description ?? current.description ?? '',
     quantity: Math.max(0, Number(item.quantity) || 0),
-    parentId: keepParent ? current.parent?.id ?? null : item.locationId ?? null,
+    parentId: keepParent
+      ? (current.parent?.id ?? null)
+      : (item.locationId ?? null),
     ...(keepParent && current.locationId !== undefined
       ? {locationId: current.locationId}
       : {}),

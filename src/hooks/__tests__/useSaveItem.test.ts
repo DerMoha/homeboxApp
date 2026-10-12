@@ -29,7 +29,10 @@ it('keeps the saved item and warning after optional fields fail', async () => {
     data: {id: 'saved'},
     warning: 'Optional fields failed',
   });
-  (ServerService.getInstance as jest.Mock).mockReturnValue({createItem});
+  (ServerService.getInstance as jest.Mock).mockReturnValue({
+    createItem,
+    getCurrentConfig: () => ({id: 'test-server'}),
+  });
   const {result} = await renderHook(() => useSaveItem());
   let saved;
   await act(async () => {
@@ -38,13 +41,16 @@ it('keeps the saved item and warning after optional fields fail', async () => {
   expect(saved).toEqual({
     success: true,
     item: {id: 'saved'},
-    warning: 'Optional fields failed',
+    warning: expect.stringContaining('Optional fields failed'),
   });
 });
 
 it('rejects unsupported scanned IDs before creating an item', async () => {
   const createItem = jest.fn();
-  (ServerService.getInstance as jest.Mock).mockReturnValue({createItem});
+  (ServerService.getInstance as jest.Mock).mockReturnValue({
+    createItem,
+    getCurrentConfig: () => ({id: 'test-server'}),
+  });
   const {result} = await renderHook(() => useSaveItem());
   const saved = await result.current.saveItem({
     ...params,

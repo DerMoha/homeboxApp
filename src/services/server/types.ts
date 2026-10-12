@@ -6,6 +6,7 @@ export interface ErrorResponse {
 }
 
 export interface CreateItemResponse {
+  uncertain?: boolean;
   success: boolean;
   data?: Item;
   error?: string;

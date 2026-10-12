@@ -73,12 +73,14 @@ export const toMutationError = (
     if (error.response) {
       return {
         success: false,
+        uncertain: error.response.status >= 500,
         error: messageForStatus(error.response.status, fallbackMessage),
       };
     }
 
     return {
       success: false,
+      uncertain: true,
       error: error.request
         ? `${fallbackMessage}. Please check your connection.`
         : fallbackMessage,
@@ -87,6 +89,7 @@ export const toMutationError = (
 
   return {
     success: false,
+    uncertain: true,
     error: error instanceof Error ? error.message : fallbackMessage,
   };
 };

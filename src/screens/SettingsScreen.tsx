@@ -190,6 +190,12 @@ const SettingsScreen: React.FC = () => {
         {backgroundColor: theme.colors.background.primary},
       ]}
       contentContainerStyle={styles.contentContainer}>
+      <SettingsItem
+        icon="cloud-upload"
+        title="Pending saves"
+        theme={theme}
+        onPress={() => navigation.navigate('SaveRecovery')}
+      />
       <SectionHeader title="Server" variant="withLine" />
 
       <View
