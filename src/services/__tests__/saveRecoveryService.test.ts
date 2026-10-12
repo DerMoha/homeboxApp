@@ -160,3 +160,12 @@ test('keeps only unfinished attachments and retries them on the original item', 
   expect(gateway.uploadItemImage).toHaveBeenCalledTimes(3);
   expect(await saveRecoveryService.list('server-a')).toEqual([]);
 });
+
+test('blocks a fresh create after restarting with a known item and unfinished attachments', async () => {
+  gateway.uploadItemImage.mockResolvedValueOnce({success: false});
+  await saveRecoveryService.begin(gateway, data, 'file:///cache/photo.jpg');
+  await expect(
+    saveRecoveryService.begin(gateway, data, 'file:///cache/photo.jpg'),
+  ).rejects.toThrow('unfinished save');
+  expect(gateway.createItem).toHaveBeenCalledTimes(1);
+});

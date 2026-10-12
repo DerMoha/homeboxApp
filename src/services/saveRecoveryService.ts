@@ -1,3 +1,4 @@
+import {localFilePath} from '../utils/localFiles';
 import {LocalAttachment} from './attachmentService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FS from 'react-native-fs';
@@ -75,11 +76,13 @@ export const saveRecoveryService = {
       throw new Error('Connect to a server before saving.');
     }
     const existing = (await this.list(serverId)).find(
-      job => job.uncertain && JSON.stringify(job.data) === JSON.stringify(data),
+      job => JSON.stringify(job.data) === JSON.stringify(data),
     );
     if (existing && !itemId) {
       throw new Error(
-        'This save has an uncertain outcome. Open Pending saves in Settings to check the server before retrying.',
+        existing.uncertain
+          ? 'This save has an uncertain outcome. Open Pending saves in Settings to check the server before retrying.'
+          : 'This item already has an unfinished save. Open Pending saves in Settings to finish its attachments or optional fields.',
       );
     }
     const job: PendingSave = {
@@ -96,7 +99,7 @@ export const saveRecoveryService = {
       const directory = `${FS.DocumentDirectoryPath}/pending-saves`;
       await FS.mkdir(directory);
       const path = `${directory}/${job.id}.jpg`;
-      await FS.copyFile(imageUri.replace('file://', ''), path);
+      await FS.copyFile(localFilePath(imageUri), path);
       job.imageUri = `file://${path}`;
     }
     if (attachments.length) {
@@ -108,7 +111,7 @@ export const saveRecoveryService = {
           throw new Error('Reselect unavailable attachments before saving.');
         }
         const path = `${directory}/${attachment.id}-${attachment.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-        await FS.copyFile(attachment.uri.replace('file://', ''), path);
+        await FS.copyFile(localFilePath(attachment.uri), path);
         job.attachments.push({...attachment, uri: `file://${path}`});
       }
     }
@@ -260,8 +263,8 @@ export const saveRecoveryService = {
           const previousImage = job.imageUri;
           job = {...job, imageUri: null};
           await put(job);
-          if (await FS.exists(previousImage.replace('file://', ''))) {
-            await FS.unlink(previousImage.replace('file://', ''));
+          if (await FS.exists(localFilePath(previousImage))) {
+            await FS.unlink(localFilePath(previousImage));
           }
         }
       }

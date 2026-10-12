@@ -34,7 +34,6 @@ export const useInventoryFilters = () => {
       if (server === serverRef.current) {
         return;
       }
-      serverRef.current = server;
       setStorageKey(null);
       setFilters(DEFAULT_FILTERS);
       setTempFilters(DEFAULT_FILTERS);
@@ -44,6 +43,7 @@ export const useInventoryFilters = () => {
         const key = `${STORAGE_KEYS.INVENTORY_FILTERS}:${encodeURIComponent(server)}`;
         storageService.getItem<FilterState>(key).then(saved => {
           if (active) {
+            serverRef.current = server;
             setFilters(saved || DEFAULT_FILTERS);
             setTempFilters(saved || DEFAULT_FILTERS);
             setStorageKey(key);

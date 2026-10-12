@@ -1,3 +1,4 @@
+import {safeFileName} from '../utils/localFiles';
 import {
   keepLocalCopy,
   pick,
@@ -74,7 +75,7 @@ export async function openAttachment(
   if (!server) {
     throw new Error('Select a server to view attachments.');
   }
-  const directory = `${FS.CachesDirectoryPath}/attachments-${encodeURIComponent(server.id)}`;
+  const directory = `${FS.CachesDirectoryPath}/attachments-${safeFileName(server.id)}`;
   await FS.mkdir(directory);
   const extension =
     attachment.title
@@ -82,20 +83,27 @@ export async function openAttachment(
       .pop()
       ?.replace(/[^a-zA-Z0-9]/g, '') ||
     (attachment.mimeType === 'application/pdf' ? 'pdf' : 'file');
-  const path = `${directory}/${encodeURIComponent(itemId)}-${encodeURIComponent(attachment.id)}.${extension}`;
+  const path = `${directory}/${safeFileName(itemId)}-${safeFileName(attachment.id)}.${extension}`;
   if (!(await FS.exists(path))) {
-    const download = await FS.downloadFile({
-      fromUrl:
-        service.getBaseUrl() +
-        HOMEBOX_ENDPOINTS.entityAttachment(itemId, attachment.id),
-      toFile: path,
-      headers: service.getAuthHeaders(),
-    }).promise;
-    if (download.statusCode !== 200) {
-      if (await FS.exists(path)) {
-        await FS.unlink(path);
+    try {
+      const download = await FS.downloadFile({
+        fromUrl:
+          service.getBaseUrl() +
+          HOMEBOX_ENDPOINTS.entityAttachment(itemId, attachment.id),
+        toFile: path,
+        headers: service.getAuthHeaders(),
+      }).promise;
+      if (download.statusCode !== 200) {
+        if (await FS.exists(path)) {
+          await FS.unlink(path);
+        }
+        throw new Error('Attachment unavailable. Reconnect to download it.');
       }
-      throw new Error('Attachment unavailable. Reconnect to download it.');
+    } catch (error) {
+      if (await FS.exists(path)) {
+        await FS.unlink(path).catch(() => undefined);
+      }
+      throw error;
     }
   }
   await viewDocument({

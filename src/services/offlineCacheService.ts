@@ -1,3 +1,4 @@
+import {safeFileName} from '../utils/localFiles';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FS from 'react-native-fs';
 import {ApiResponse, Item} from '../types';
@@ -87,7 +88,7 @@ export const offlineCacheService = {
     downloading.add(server);
     try {
       await this.loadImages(server);
-      const directory = `${FS.CachesDirectoryPath}/inventory-${encodeURIComponent(server)}`;
+      const directory = `${FS.CachesDirectoryPath}/inventory-${safeFileName(server)}`;
       await FS.mkdir(directory);
       const records = images.get(server) || {};
       // Sequential downloads keep large inventories from overwhelming the server.
@@ -99,7 +100,7 @@ export const offlineCacheService = {
         if (records[key] && (await FS.exists(records[key]))) {
           continue;
         }
-        const path = `${directory}/${encodeURIComponent(key)}.image`;
+        const path = `${directory}/${safeFileName(key)}.image`;
         try {
           const result = await FS.downloadFile({
             fromUrl:
@@ -183,11 +184,11 @@ export const offlineCacheService = {
     );
     await AsyncStorage.removeMany(keys);
     images.delete(server);
-    const attachmentsDirectory = `${FS.CachesDirectoryPath}/attachments-${encodeURIComponent(server)}`;
+    const attachmentsDirectory = `${FS.CachesDirectoryPath}/attachments-${safeFileName(server)}`;
     if (await FS.exists(attachmentsDirectory)) {
       await FS.unlink(attachmentsDirectory);
     }
-    const directory = `${FS.CachesDirectoryPath}/inventory-${encodeURIComponent(server)}`;
+    const directory = `${FS.CachesDirectoryPath}/inventory-${safeFileName(server)}`;
     if (await FS.exists(directory)) {
       await FS.unlink(directory);
     }

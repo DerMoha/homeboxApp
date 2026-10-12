@@ -6,6 +6,9 @@ import {ApiResponse, InventoryItem, SortOption} from '../types';
 
 export const useInventoryData = (query = '') => {
   const pageRef = useRef(0);
+  const sourceRef = useRef<{fromCache: boolean; cachedAt?: string}>({
+    fromCache: false,
+  });
   const loadingRef = useRef(false);
   const [total, setTotal] = useState(0);
   const [hasMore, setHasMore] = useState(false);
@@ -85,6 +88,7 @@ export const useInventoryData = (query = '') => {
       if (!append || activeServer.current !== serverId) {
         activeServer.current = serverId;
         pageRef.current = 0;
+        sourceRef.current = {fromCache: false};
         setInventory([]);
         setCacheInfo({success: false});
       }
@@ -97,7 +101,16 @@ export const useInventoryData = (query = '') => {
         ) {
           return;
         }
-        setCacheInfo(response);
+        sourceRef.current = {
+          fromCache: sourceRef.current.fromCache || Boolean(response.fromCache),
+          cachedAt:
+            sourceRef.current.cachedAt &&
+            response.cachedAt &&
+            sourceRef.current.cachedAt < response.cachedAt
+              ? sourceRef.current.cachedAt
+              : response.cachedAt,
+        };
+        setCacheInfo({...response, ...sourceRef.current});
         if (!response.success || !response.data) {
           setError(response.error || 'Failed to load inventory');
           return;
@@ -164,13 +177,27 @@ export const useInventoryData = (query = '') => {
         pageRef.current = page;
         setInventory(sortInventory([...records.values()], sortOption));
         setTotal(responseTotal);
-        setCacheInfo(response);
+        sourceRef.current = {
+          fromCache: sourceRef.current.fromCache || Boolean(response.fromCache),
+          cachedAt:
+            sourceRef.current.cachedAt &&
+            response.cachedAt &&
+            sourceRef.current.cachedAt < response.cachedAt
+              ? sourceRef.current.cachedAt
+              : response.cachedAt,
+        };
+        setCacheInfo({...response, ...sourceRef.current});
         setHasMore(page * 50 < responseTotal && response.data.items.length > 0);
         if (!response.data.items.length) {
           break;
         }
       } while (page * 50 < responseTotal);
-      if (serverId && !query.trim() && records.size >= responseTotal) {
+      if (
+        serverId &&
+        !query.trim() &&
+        !sourceRef.current.fromCache &&
+        records.size >= responseTotal
+      ) {
         await offlineCacheService.set(serverId, 'inventory:-1:-1', {
           items: [...records.values()],
           total: responseTotal,

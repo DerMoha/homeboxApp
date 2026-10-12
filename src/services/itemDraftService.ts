@@ -1,3 +1,4 @@
+import {safeFileName, localFilePath} from '../utils/localFiles';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'react-native-fs';
 import {LocalAttachment} from './attachmentService';
@@ -36,7 +37,7 @@ export const itemDraftService = {
     }
     if (
       draft.imageUri &&
-      !(await FileSystem.exists(draft.imageUri.replace('file://', '')))
+      !(await FileSystem.exists(localFilePath(draft.imageUri)))
     ) {
       draft.imageUri = null;
     }
@@ -44,9 +45,7 @@ export const itemDraftService = {
       draft.attachments = await Promise.all(
         draft.attachments.map(async attachment => ({
           ...attachment,
-          missing: !(await FileSystem.exists(
-            attachment.uri.replace('file://', ''),
-          )),
+          missing: !(await FileSystem.exists(localFilePath(attachment.uri))),
         })),
       );
     }
@@ -57,17 +56,22 @@ export const itemDraftService = {
       const meaningful =
         Object.entries(draft.formData).some(
           ([field, value]) =>
-            field !== 'quantity' &&
+            (field !== 'quantity' || String(value) !== '1') &&
             value !== undefined &&
             value !== '' &&
             value !== false,
         ) ||
+        Boolean(draft.selectedLocation) ||
         draft.selectedLabels.length > 0 ||
         Boolean(draft.imageUri) ||
         Boolean(draft.attachments?.length);
-      const photoPath = `${FileSystem.DocumentDirectoryPath}/item-drafts/${encodeURIComponent(key)}.jpg`;
+      const photoPath = `${FileSystem.DocumentDirectoryPath}/item-drafts/${safeFileName(key)}.jpg`;
       if (!meaningful) {
         await AsyncStorage.removeItem(key);
+        const attachmentsFolder = `${FileSystem.DocumentDirectoryPath}/item-drafts/${safeFileName(key)}-attachments`;
+        if (await FileSystem.exists(attachmentsFolder)) {
+          await FileSystem.unlink(attachmentsFolder);
+        }
         if (await FileSystem.exists(photoPath)) {
           await FileSystem.unlink(photoPath);
         }
@@ -77,9 +81,9 @@ export const itemDraftService = {
       if (imageUri) {
         const directory = `${FileSystem.DocumentDirectoryPath}/item-drafts`;
         await FileSystem.mkdir(directory);
-        const path = `${directory}/${encodeURIComponent(key)}.jpg`;
-        if (imageUri.replace('file://', '') !== path) {
-          await FileSystem.copyFile(imageUri.replace('file://', ''), path);
+        const path = `${directory}/${safeFileName(key)}.jpg`;
+        if (localFilePath(imageUri) !== path) {
+          await FileSystem.copyFile(localFilePath(imageUri), path);
         }
         imageUri = `file://${path}`;
       }
@@ -87,18 +91,12 @@ export const itemDraftService = {
         ? ([] as LocalAttachment[])
         : undefined;
       if (draft.attachments?.length) {
-        const directory = `${FileSystem.DocumentDirectoryPath}/item-drafts/${encodeURIComponent(key)}-attachments`;
+        const directory = `${FileSystem.DocumentDirectoryPath}/item-drafts/${safeFileName(key)}-attachments`;
         await FileSystem.mkdir(directory);
         for (const attachment of draft.attachments) {
           const path = `${directory}/${attachment.id}-${attachment.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-          if (
-            !attachment.missing &&
-            attachment.uri.replace('file://', '') !== path
-          ) {
-            await FileSystem.copyFile(
-              attachment.uri.replace('file://', ''),
-              path,
-            );
+          if (!attachment.missing && localFilePath(attachment.uri) !== path) {
+            await FileSystem.copyFile(localFilePath(attachment.uri), path);
           }
           attachments?.push({...attachment, uri: `file://${path}`});
         }
@@ -119,11 +117,11 @@ export const itemDraftService = {
   clear(key: string): Promise<void> {
     return serialize(async () => {
       await AsyncStorage.removeItem(key);
-      const folder = `${FileSystem.DocumentDirectoryPath}/item-drafts/${encodeURIComponent(key)}-attachments`;
+      const folder = `${FileSystem.DocumentDirectoryPath}/item-drafts/${safeFileName(key)}-attachments`;
       if (await FileSystem.exists(folder)) {
         await FileSystem.unlink(folder);
       }
-      const path = `${FileSystem.DocumentDirectoryPath}/item-drafts/${encodeURIComponent(key)}.jpg`;
+      const path = `${FileSystem.DocumentDirectoryPath}/item-drafts/${safeFileName(key)}.jpg`;
       if (await FileSystem.exists(path)) {
         await FileSystem.unlink(path);
       }
