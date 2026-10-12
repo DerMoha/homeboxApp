@@ -8,7 +8,8 @@ Scope accepted on 12 October 2026. Each feature gets its own verified commit.
   - Persistent server-scoped Pending saves screen; durable photo copies; stable upload names; seven recovery regressions (149 tests total).
 - [x] Offline inventory browsing with server isolation and freshness indicators
   - Cached text/details/locations/labels and best-effort thumbnails; offline startup/server selection; mutation-aware cache; explicit cache clearing.
-- [ ] Create locations and labels within the app
+- [x] Create locations and labels within the app
+  - Parent location selection and inline creation; entity-type/tag API contract tests (157 tests total).
 - [ ] Duplicate items with fresh asset IDs
 - [ ] Multiple photos, receipts/manuals, and attachment management
 - [ ] Paginated inventory and server search

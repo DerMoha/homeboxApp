@@ -26,6 +26,7 @@ export const HOMEBOX_ENDPOINTS = {
     )}/attachments/${encodeURIComponent(attachmentId)}`,
   entityTree: '/api/v1/entities/tree',
   tags: '/api/v1/tags',
+  entityTypes: '/api/v1/entity-types',
 } as const;
 
 export interface HomeboxEntityTypeSummary {

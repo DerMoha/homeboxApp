@@ -31,6 +31,7 @@ import {
   getLocations,
   getLocationTree,
 } from './server/serverApi/locationsApi';
+import {createLocation, createLabel} from './server/serverApi/metadataApi';
 import {getLabels} from './server/serverApi/labelsApi';
 import {
   createItem,
@@ -322,6 +323,31 @@ class ServerService {
       'locations',
       () => getLocations(this.axiosInstance, this.token),
     );
+  }
+
+  async createLocation(
+    name: string,
+    description = '',
+    parentId: string | null = null,
+  ) {
+    const result = await createLocation(
+      this.axiosInstance,
+      name,
+      description,
+      parentId,
+    );
+    if (result.success) {
+      await Promise.all([this.getLocations(), this.getLocationTree()]);
+    }
+    return result;
+  }
+
+  async createLabel(name: string, description = '') {
+    const result = await createLabel(this.axiosInstance, name, description);
+    if (result.success) {
+      await this.getLabels();
+    }
+    return result;
   }
 
   async getLabels(): Promise<ApiResponse<Label[]>> {

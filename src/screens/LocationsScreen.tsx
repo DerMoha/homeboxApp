@@ -9,6 +9,7 @@ import {
   Animated,
 } from 'react-native';
 import {CacheStatus, CacheInfo} from '../components/common/CacheStatus';
+import {CreateMetadataButton} from '../components/AddItem/CreateMetadataButton';
 import {useTheme} from '../theme/ThemeContext';
 import type {Theme} from '../theme/theme';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
@@ -367,6 +368,12 @@ const LocationsScreen: React.FC = () => {
   return (
     <View style={containerStyle}>
       <CacheStatus info={cacheInfo} />
+      <CreateMetadataButton
+        kind="location"
+        onCreated={() => {
+          loadLocations();
+        }}
+      />
       <ScrollView
         contentContainerStyle={listContentStyle}
         refreshControl={

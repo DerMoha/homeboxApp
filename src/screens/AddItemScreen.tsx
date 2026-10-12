@@ -31,6 +31,7 @@ import {
   LabelSelector,
   ItemFormFields,
 } from '../components/AddItem';
+import {CreateMetadataButton} from '../components/AddItem/CreateMetadataButton';
 import {SectionHeader} from '../components/SectionHeader';
 import {BarcodeScannerModal} from '../components/BarcodeScanner';
 import {AddItemStackParamList, RootTabParamList} from '../navigation/types';
@@ -378,6 +379,13 @@ const AddItemScreen: React.FC = () => {
           />
         </View>
 
+        <CreateMetadataButton
+          kind="location"
+          onCreated={location => {
+            setSelectedLocation(location);
+            loadMetadata();
+          }}
+        />
         <SectionHeader title="Location" icon="place" variant="withIcon" />
 
         <View style={formCardStyle}>
@@ -411,6 +419,13 @@ const AddItemScreen: React.FC = () => {
 
         {!isQuickEntry && enabledFields.labels && (
           <>
+            <CreateMetadataButton
+              kind="label"
+              onCreated={label => {
+                handleLabelToggle(label);
+                loadMetadata();
+              }}
+            />
             <SectionHeader title="Labels" icon="label" variant="withIcon" />
 
             <View style={formCardStyle}>
