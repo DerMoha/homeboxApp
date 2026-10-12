@@ -1,4 +1,6 @@
-import {useState, useEffect, useCallback, useMemo} from 'react';
+import {useState, useEffect, useCallback, useMemo, useRef} from 'react';
+import {useFocusEffect} from '@react-navigation/native';
+import ServerService from '../services/serverService';
 import {FilterState} from '../types';
 import {storageService, STORAGE_KEYS} from '../services/storageService';
 import {getActiveFilterCount} from '../utils/inventoryFilters';
@@ -22,24 +24,37 @@ export const useInventoryFilters = () => {
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [tempFilters, setTempFilters] = useState<FilterState>(DEFAULT_FILTERS);
 
-  // Load filters from storage on mount
-  useEffect(() => {
-    const loadFilters = async () => {
-      try {
-        const savedFilters = await storageService.getItem<FilterState>(
-          STORAGE_KEYS.INVENTORY_FILTERS,
-        );
-        if (savedFilters) {
-          setFilters(savedFilters);
-          setTempFilters(savedFilters);
-        }
-      } catch (error) {
-        logger.error('Error loading filters:', error);
+  const serverRef = useRef<string | undefined>(undefined);
+  const [storageKey, setStorageKey] = useState<string | null>(null);
+  // Load filters independently for each server.
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      const server = ServerService.getInstance().getBrowsingConfig()?.id;
+      if (server === serverRef.current) {
+        return;
       }
-    };
-
-    loadFilters();
-  }, []);
+      serverRef.current = server;
+      setStorageKey(null);
+      setFilters(DEFAULT_FILTERS);
+      setTempFilters(DEFAULT_FILTERS);
+      setSearchQuery('');
+      setDebouncedQuery('');
+      if (server) {
+        const key = `${STORAGE_KEYS.INVENTORY_FILTERS}:${encodeURIComponent(server)}`;
+        storageService.getItem<FilterState>(key).then(saved => {
+          if (active) {
+            setFilters(saved || DEFAULT_FILTERS);
+            setTempFilters(saved || DEFAULT_FILTERS);
+            setStorageKey(key);
+          }
+        });
+      }
+      return () => {
+        active = false;
+      };
+    }, []),
+  );
 
   // Debounce search query
   useEffect(() => {
@@ -54,14 +69,16 @@ export const useInventoryFilters = () => {
   useEffect(() => {
     const saveFilters = async () => {
       try {
-        await storageService.setItem(STORAGE_KEYS.INVENTORY_FILTERS, filters);
+        if (storageKey) {
+          await storageService.setItem(storageKey, filters);
+        }
       } catch (error) {
         logger.error('Error saving filters:', error);
       }
     };
 
     saveFilters();
-  }, [filters]);
+  }, [filters, storageKey]);
 
   // Clear search
   const clearSearch = useCallback(() => {
@@ -70,12 +87,9 @@ export const useInventoryFilters = () => {
   }, []);
 
   // Update temporary filters (used in modal before applying)
-  const updateTempFilters = useCallback(
-    (updates: Partial<FilterState>) => {
-      setTempFilters(prev => ({...prev, ...updates}));
-    },
-    [],
-  );
+  const updateTempFilters = useCallback((updates: Partial<FilterState>) => {
+    setTempFilters(prev => ({...prev, ...updates}));
+  }, []);
 
   // Apply filters from temp state
   const applyFilters = useCallback(() => {
@@ -107,6 +121,8 @@ export const useInventoryFilters = () => {
     clearSearch,
 
     // Filters
+    setFilters,
+    setTempFilters,
     filters,
     tempFilters,
     updateTempFilters,

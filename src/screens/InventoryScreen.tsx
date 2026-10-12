@@ -1,7 +1,9 @@
-import React, {useEffect, useCallback, useMemo} from 'react';
+import React, {useEffect, useCallback, useMemo, useState} from 'react';
 import {View, StyleSheet, FlatList, RefreshControl, Alert} from 'react-native';
 import {Text} from 'react-native';
 import {Button} from '../components/common/Button';
+import {SavedSearches} from '../components/Inventory/SavedSearches';
+import {matchesReview, ReviewList} from '../services/savedSearchService';
 import {CacheStatus} from '../components/common/CacheStatus';
 import {useTheme} from '../theme/ThemeContext';
 import {
@@ -44,6 +46,7 @@ type InventoryScreenNavigationProp = CompositeNavigationProp<
 
 const InventoryScreen: React.FC = () => {
   const {theme} = useTheme();
+  const [review, setReview] = useState<ReviewList>('all');
   const navigation = useNavigation<InventoryScreenNavigationProp>();
 
   const {
@@ -52,6 +55,8 @@ const InventoryScreen: React.FC = () => {
     setSearchQuery,
     clearSearch,
     filters,
+    setFilters,
+    setTempFilters,
     tempFilters,
     updateTempFilters,
     applyFilters: applyFilterChanges,
@@ -115,10 +120,12 @@ const InventoryScreen: React.FC = () => {
   const filteredInventory = useMemo(() => {
     let result = [...inventory];
 
-    result = applyFilters(result, filters);
+    result = applyFilters(result, filters).filter(item =>
+      matchesReview(item, review),
+    );
 
     return result;
-  }, [inventory, filters]);
+  }, [inventory, filters, review]);
 
   const selectedItems = useMemo(
     () => inventory.filter(item => batchSelection.selectedIds.has(item.id)),
@@ -455,6 +462,16 @@ const InventoryScreen: React.FC = () => {
         onClear={clearSearch}
         resultCount={filteredInventory.length}
         totalCount={total}
+      />
+      <SavedSearches
+        current={{query: searchQuery, filters, sort: sortOption, review}}
+        onApply={search => {
+          setSearchQuery(search.query);
+          setFilters(search.filters);
+          setTempFilters(search.filters);
+          updateSortOption(search.sort);
+          setReview(search.review);
+        }}
       />
       <FlatList
         ListHeaderComponent={

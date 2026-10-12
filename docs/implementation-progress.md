@@ -16,7 +16,8 @@ Scope accepted on 12 October 2026. Each feature gets its own verified commit.
   - Durable multi-file drafts/recovery; gallery with pinch/accessible zoom; native document viewer; rename/primary/delete. 162 tests and both native builds passed.
 - [x] Paginated inventory and server search
   - 50-item pages, debounced Homebox queries, stale-request protection, retry/load-more, explicit partial counts, load-all/offline snapshot. 164 tests passed.
-- [ ] Saved searches and data-quality review lists
+- [x] Saved searches and data-quality review lists
+  - Server-scoped saved query/filter/sort/review presets and four review lists; safe persistence errors. 167 tests passed.
 - [ ] Automated login/create/photo/edit/reload end-to-end coverage
 - [ ] Accessibility: screen reader semantics, large text, and checks
 - [ ] Refresh the UI roadmap against implemented behavior
