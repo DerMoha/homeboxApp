@@ -30,7 +30,7 @@ it('keeps the saved item and warning after optional fields fail', async () => {
     warning: 'Optional fields failed',
   });
   (ServerService.getInstance as jest.Mock).mockReturnValue({createItem});
-  const {result} = renderHook(() => useSaveItem());
+  const {result} = await renderHook(() => useSaveItem());
   let saved;
   await act(async () => {
     saved = await result.current.saveItem(params);
@@ -45,7 +45,7 @@ it('keeps the saved item and warning after optional fields fail', async () => {
 it('rejects unsupported scanned IDs before creating an item', async () => {
   const createItem = jest.fn();
   (ServerService.getInstance as jest.Mock).mockReturnValue({createItem});
-  const {result} = renderHook(() => useSaveItem());
+  const {result} = await renderHook(() => useSaveItem());
   const saved = await result.current.saveItem({
     ...params,
     formData: {...params.formData, barcode: 'https://example.com/item'},

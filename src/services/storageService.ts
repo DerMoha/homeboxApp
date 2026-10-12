@@ -97,10 +97,10 @@ class StorageService {
    */
   async multiGet<T>(keys: string[]): Promise<Record<string, T | null>> {
     try {
-      const result = await AsyncStorage.multiGet(keys);
+      const result = await AsyncStorage.getMany(keys);
       const data: Record<string, T | null> = {};
 
-      result.forEach(([key, value]) => {
+      Object.entries(result).forEach(([key, value]) => {
         if (value !== null) {
           try {
             data[key] = JSON.parse(value) as T;
@@ -127,7 +127,7 @@ class StorageService {
       const stringifiedPairs: Array<[string, string]> = keyValuePairs.map(
         ([key, value]) => [key, JSON.stringify(value)],
       );
-      await AsyncStorage.multiSet(stringifiedPairs);
+      await AsyncStorage.setMany(Object.fromEntries(stringifiedPairs));
       return true;
     } catch (error) {
       logger.error('Error setting multiple items in storage:', {error});

@@ -101,7 +101,7 @@ const LocationItemsScreen: React.FC = () => {
 
   return (
     <FlatList
-      data={items}
+      data={items ?? []}
       renderItem={renderItem}
       keyExtractor={item => item.id}
       contentContainerStyle={styles.listContent}

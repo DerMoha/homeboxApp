@@ -17,8 +17,8 @@ it('activates a saved server before reporting successful setup', async () => {
     getCurrentConfig: jest.fn().mockReturnValue(null),
   };
   (ServerService.getInstance as jest.Mock).mockReturnValue(service);
-  const {result} = renderHook(() => useServerConfig());
-  act(() => {
+  const {result} = await renderHook(() => useServerConfig());
+  await act(() => {
     result.current.updateField('host', 'https://example.com');
     result.current.updateField('username', 'user@example.com');
     result.current.updateField('password', 'test-password');
@@ -43,7 +43,7 @@ it('shows authentication errors when selecting a saved server', async () => {
       .mockResolvedValue({success: false, error: 'Authentication failed'}),
   };
   (ServerService.getInstance as jest.Mock).mockReturnValue(service);
-  const {result} = renderHook(() => useServerConfig());
+  const {result} = await renderHook(() => useServerConfig());
   await act(async () => {
     await result.current.selectServer({
       id: 'one',

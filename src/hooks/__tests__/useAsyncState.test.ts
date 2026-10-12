@@ -3,8 +3,8 @@ import {useAsyncState} from '../useAsyncState';
 
 describe('useAsyncState', () => {
   describe('Initial state', () => {
-    it('should have correct initial state structure', () => {
-      const {result} = renderHook(() => useAsyncState());
+    it('should have correct initial state structure', async () => {
+      const {result} = await renderHook(() => useAsyncState());
 
       expect(result.current).toHaveProperty('data');
       expect(result.current).toHaveProperty('isLoading');
@@ -19,8 +19,8 @@ describe('useAsyncState', () => {
       expect(result.current).toHaveProperty('setError');
     });
 
-    it('should initialize with null data by default', () => {
-      const {result} = renderHook(() => useAsyncState());
+    it('should initialize with null data by default', async () => {
+      const {result} = await renderHook(() => useAsyncState());
 
       expect(result.current.data).toBeNull();
       expect(result.current.isLoading).toBe(false);
@@ -28,9 +28,9 @@ describe('useAsyncState', () => {
       expect(result.current.error).toBeNull();
     });
 
-    it('should initialize with provided initial data', () => {
+    it('should initialize with provided initial data', async () => {
       const initialData = 'test data';
-      const {result} = renderHook(() => useAsyncState<string>(initialData));
+      const {result} = await renderHook(() => useAsyncState<string>(initialData));
 
       expect(result.current.data).toBe(initialData);
     });
@@ -41,7 +41,7 @@ describe('useAsyncState', () => {
       const mockData = 'test data';
       const asyncFn = jest.fn().mockResolvedValue(mockData);
 
-      const {result} = renderHook(() => useAsyncState<string>());
+      const {result} = await renderHook(() => useAsyncState<string>());
 
       await act(async () => {
         await result.current.execute(asyncFn);
@@ -53,13 +53,13 @@ describe('useAsyncState', () => {
     });
 
     it('should set loading state during execution', async () => {
-      const {result} = renderHook(() => useAsyncState<string>());
+      const {result} = await renderHook(() => useAsyncState<string>());
 
       let loadingAfterExecution = false;
 
       await act(async () => {
         const promise = result.current.execute(async () => {
-          await new Promise(resolve => setTimeout(resolve, 10));
+          await new Promise<void>(resolve => setTimeout(resolve, 10));
           return 'test';
         });
         await promise;
@@ -74,7 +74,7 @@ describe('useAsyncState', () => {
       const mockData = 'test data';
       const onSuccess = jest.fn();
 
-      const {result} = renderHook(() => useAsyncState<string>());
+      const {result} = await renderHook(() => useAsyncState<string>());
 
       await act(async () => {
         await result.current.execute(async () => mockData, {onSuccess});
@@ -91,7 +91,7 @@ describe('useAsyncState', () => {
         array: [1, 2, 3],
       };
 
-      const {result} = renderHook(() => useAsyncState<any>());
+      const {result} = await renderHook(() => useAsyncState<any>());
 
       await act(async () => {
         await result.current.execute(async () => mockData);
@@ -106,7 +106,7 @@ describe('useAsyncState', () => {
       const error = new Error('Test error');
       const onError = jest.fn();
 
-      const {result} = renderHook(() => useAsyncState<string>());
+      const {result} = await renderHook(() => useAsyncState<string>());
 
       await act(async () => {
         await result.current.execute(
@@ -123,7 +123,7 @@ describe('useAsyncState', () => {
     });
 
     it('should handle non-Error thrown values', async () => {
-      const {result} = renderHook(() => useAsyncState<string>());
+      const {result} = await renderHook(() => useAsyncState<string>());
 
       await act(async () => {
         await result.current.execute(async () => {
@@ -135,7 +135,7 @@ describe('useAsyncState', () => {
     });
 
     it('should clear previous error on new execution', async () => {
-      const {result} = renderHook(() => useAsyncState<string>());
+      const {result} = await renderHook(() => useAsyncState<string>());
 
       await act(async () => {
         await result.current.execute(async () => {
@@ -154,68 +154,68 @@ describe('useAsyncState', () => {
   });
 
   describe('State management', () => {
-    it('should manually set data', () => {
-      const {result} = renderHook(() => useAsyncState<string>());
+    it('should manually set data', async () => {
+      const {result} = await renderHook(() => useAsyncState<string>());
 
-      act(() => {
+      await act(() => {
         result.current.setData('manual data');
       });
 
       expect(result.current.data).toBe('manual data');
     });
 
-    it('should manually set error', () => {
-      const {result} = renderHook(() => useAsyncState());
+    it('should manually set error', async () => {
+      const {result} = await renderHook(() => useAsyncState());
 
-      act(() => {
+      await act(() => {
         result.current.setError('manual error');
       });
 
       expect(result.current.error).toBe('manual error');
     });
 
-    it('should clear error state', () => {
-      const {result} = renderHook(() => useAsyncState<string>());
+    it('should clear error state', async () => {
+      const {result} = await renderHook(() => useAsyncState<string>());
 
-      act(() => {
+      await act(() => {
         result.current.setError('test error');
       });
 
       expect(result.current.error).toBe('test error');
 
-      act(() => {
+      await act(() => {
         result.current.clearError();
       });
 
       expect(result.current.error).toBeNull();
     });
 
-    it('should manually set loading state', () => {
-      const {result} = renderHook(() => useAsyncState());
+    it('should manually set loading state', async () => {
+      const {result} = await renderHook(() => useAsyncState());
 
-      act(() => {
+      await act(() => {
         result.current.setIsLoading(true);
       });
 
       expect(result.current.isLoading).toBe(true);
 
-      act(() => {
+      await act(() => {
         result.current.setIsLoading(false);
       });
 
       expect(result.current.isLoading).toBe(false);
     });
 
-    it('should manually set refreshing state', () => {
-      const {result} = renderHook(() => useAsyncState());
+    it('should manually set refreshing state', async () => {
+      const {result} = await renderHook(() => useAsyncState());
 
-      act(() => {
+      await act(() => {
         result.current.setRefreshing(true);
       });
 
       expect(result.current.refreshing).toBe(true);
 
-      act(() => {
+      await act(() => {
         result.current.setRefreshing(false);
       });
 
@@ -226,20 +226,20 @@ describe('useAsyncState', () => {
   describe('reset()', () => {
     it('should reset to initial data', async () => {
       const initialData = 'initial';
-      const {result} = renderHook(() => useAsyncState<string>(initialData));
+      const {result} = await renderHook(() => useAsyncState<string>(initialData));
 
       await act(async () => {
         await result.current.execute(async () => 'updated');
       });
 
-      act(() => {
+      await act(() => {
         result.current.setError('test error');
       });
 
       expect(result.current.data).toBe('updated');
       expect(result.current.error).toBe('test error');
 
-      act(() => {
+      await act(() => {
         result.current.reset();
       });
 
@@ -250,13 +250,13 @@ describe('useAsyncState', () => {
     });
 
     it('should reset to null when no initial data provided', async () => {
-      const {result} = renderHook(() => useAsyncState<string>());
+      const {result} = await renderHook(() => useAsyncState<string>());
 
       await act(async () => {
         await result.current.execute(async () => 'data');
       });
 
-      act(() => {
+      await act(() => {
         result.current.reset();
       });
 
@@ -266,7 +266,7 @@ describe('useAsyncState', () => {
 
   describe('Multiple sequential executions', () => {
     it('should handle multiple sequential executions', async () => {
-      const {result} = renderHook(() => useAsyncState<number>());
+      const {result} = await renderHook(() => useAsyncState<number>());
 
       await act(async () => {
         await result.current.execute(async () => 1);
@@ -285,7 +285,7 @@ describe('useAsyncState', () => {
     });
 
     it('should handle success after error', async () => {
-      const {result} = renderHook(() => useAsyncState<string>());
+      const {result} = await renderHook(() => useAsyncState<string>());
 
       await act(async () => {
         await result.current.execute(async () => {
@@ -306,11 +306,11 @@ describe('useAsyncState', () => {
 
   describe('Async timing', () => {
     it('should handle delayed async operations', async () => {
-      const {result} = renderHook(() => useAsyncState<string>());
+      const {result} = await renderHook(() => useAsyncState<string>());
 
       await act(async () => {
         await result.current.execute(async () => {
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise<void>(resolve => setTimeout(resolve, 100));
           return 'delayed data';
         });
       });
@@ -321,7 +321,7 @@ describe('useAsyncState', () => {
 
   describe('Refresh mode', () => {
     it('should set refreshing state instead of loading when isRefresh is true', async () => {
-      const {result} = renderHook(() => useAsyncState<string>('initial'));
+      const {result} = await renderHook(() => useAsyncState<string>('initial'));
 
       await act(async () => {
         await result.current.execute(async () => 'updated', {isRefresh: true});

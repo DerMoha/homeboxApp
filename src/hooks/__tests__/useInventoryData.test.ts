@@ -15,7 +15,7 @@ it('loads and retains inventory beyond the first 50 items', async () => {
     .fn()
     .mockResolvedValue({success: true, data: {items, total: 75}});
   (ServerService.getInstance as jest.Mock).mockReturnValue({getInventory});
-  const {result} = renderHook(() => useInventoryData());
+  const {result} = await renderHook(() => useInventoryData());
   await act(async () => {
     await result.current.loadInventory();
   });

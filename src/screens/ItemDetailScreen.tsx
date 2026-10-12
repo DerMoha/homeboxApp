@@ -13,6 +13,7 @@ import {NavigationProp} from '@react-navigation/native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import ServerService from '../services/serverService';
 import {Item} from '../types';
+import {RootTabParamList} from '../types/navigation';
 import {useTheme} from '../theme/ThemeContext';
 import {useAsyncState} from '../hooks/useAsyncState';
 import {getImageSource, formatDateTime} from '../utils/imageUtils';
@@ -210,7 +211,7 @@ const MetaRow: React.FC<MetaRowProps> = ({icon, label, value, theme}) => {
 const ItemDetailScreen: React.FC = () => {
   const {theme} = useTheme();
   const route = useRoute<ItemDetailRouteProp>();
-  const navigation = useNavigation<NavigationProp<{}>>();
+  const navigation = useNavigation<NavigationProp<RootTabParamList>>();
   const {itemId} = route.params;
   const {data: item, isLoading, error, execute} = useAsyncState<Item>();
   const [locationPath, setLocationPath] = useState<BreadcrumbItem[]>([]);
@@ -251,14 +252,14 @@ const ItemDetailScreen: React.FC = () => {
     (breadcrumbItem: BreadcrumbItem, _index: number) => {
       hapticImpact('light');
       navigation.navigate(
-        'Locations' as never,
+        'Locations',
         {
           screen: 'LocationItems',
           params: {
             locationId: breadcrumbItem.id,
             locationName: breadcrumbItem.name,
           },
-        } as never,
+        },
       );
     },
     [navigation],

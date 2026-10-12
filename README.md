@@ -4,7 +4,8 @@ React Native client for a self-hosted Homebox server.
 
 ## Requirements
 
-- Node.js 22
+- Node.js 22.13+, 24.3+, or 26+ (matching the supported ranges in `package.json`)
+- Ruby 3.2+ and Bundler for iOS dependencies
 - npm 10+
 - Xcode for iOS builds
 - Android Studio for Android builds
@@ -13,8 +14,17 @@ React Native client for a self-hosted Homebox server.
 ## Getting Started
 
 ```bash
-npm install --legacy-peer-deps
+npm ci
 npm start
+```
+
+For iOS, install the Ruby tools and native dependencies first:
+
+```bash
+bundle install
+cd ios
+bundle exec pod install
+cd ..
 ```
 
 In a second terminal, launch the platform app:
@@ -28,8 +38,7 @@ npm run ios
 ## Quality Checks
 
 ```bash
-npm run lint
-npm test -- --runInBand
+npm run validate
 ```
 
 ## Server Security

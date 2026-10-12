@@ -15,7 +15,7 @@ it('requests Android camera permission before launching the camera', async () =>
     .spyOn(PermissionsAndroid, 'request')
     .mockResolvedValue(PermissionsAndroid.RESULTS.GRANTED);
   (ImagePicker.launchCamera as jest.Mock).mockResolvedValue({didCancel: true});
-  const {result} = renderHook(() => useImageHandler());
+  const {result} = await renderHook(() => useImageHandler());
   await act(async () => {
     await result.current.handleImagePicker('camera');
   });
@@ -27,7 +27,7 @@ it('does not launch the camera when permission is denied', async () => {
   jest
     .spyOn(PermissionsAndroid, 'request')
     .mockResolvedValue(PermissionsAndroid.RESULTS.DENIED);
-  const {result} = renderHook(() => useImageHandler());
+  const {result} = await renderHook(() => useImageHandler());
   await act(async () => {
     await result.current.handleImagePicker('camera');
   });
@@ -39,7 +39,7 @@ it('does not delete the original library photo after resizing', async () => {
   (ImagePicker.launchImageLibrary as jest.Mock).mockResolvedValue({
     assets: [{uri: 'file:///photos/original.jpg'}],
   });
-  const {result} = renderHook(() => useImageHandler());
+  const {result} = await renderHook(() => useImageHandler());
   await act(async () => {
     await result.current.handleImagePicker('library');
   });

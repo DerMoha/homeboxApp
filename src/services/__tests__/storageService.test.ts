@@ -176,7 +176,7 @@ describe('StorageService', () => {
         ['key3', JSON.stringify({value: 3})],
       ];
 
-      mockedAsyncStorage.multiGet.mockResolvedValueOnce(mockData as any);
+      mockedAsyncStorage.getMany.mockResolvedValueOnce(Object.fromEntries(mockData));
 
       const result = await storageService.multiGet(['key1', 'key2', 'key3']);
 
@@ -194,7 +194,7 @@ describe('StorageService', () => {
         ['key3', JSON.stringify({value: 3})],
       ];
 
-      mockedAsyncStorage.multiGet.mockResolvedValueOnce(mockData as any);
+      mockedAsyncStorage.getMany.mockResolvedValueOnce(Object.fromEntries(mockData));
 
       const result = await storageService.multiGet(['key1', 'key2', 'key3']);
 
@@ -212,7 +212,7 @@ describe('StorageService', () => {
         ['key3', JSON.stringify({value: 3})],
       ];
 
-      mockedAsyncStorage.multiGet.mockResolvedValueOnce(mockData as any);
+      mockedAsyncStorage.getMany.mockResolvedValueOnce(Object.fromEntries(mockData));
 
       const result = await storageService.multiGet(['key1', 'key2', 'key3']);
 
@@ -224,7 +224,7 @@ describe('StorageService', () => {
     });
 
     it('should handle multiGet errors', async () => {
-      mockedAsyncStorage.multiGet.mockRejectedValueOnce(
+      mockedAsyncStorage.getMany.mockRejectedValueOnce(
         new Error('MultiGet failed'),
       );
 
@@ -234,7 +234,7 @@ describe('StorageService', () => {
     });
 
     it('should handle empty keys array', async () => {
-      mockedAsyncStorage.multiGet.mockResolvedValueOnce([]);
+      mockedAsyncStorage.getMany.mockResolvedValueOnce({});
 
       const result = await storageService.multiGet([]);
 
@@ -244,7 +244,7 @@ describe('StorageService', () => {
 
   describe('multiSet()', () => {
     it('should set multiple items successfully', async () => {
-      mockedAsyncStorage.multiSet.mockResolvedValueOnce();
+      mockedAsyncStorage.setMany.mockResolvedValueOnce();
 
       const keyValuePairs: Array<[string, any]> = [
         ['key1', {value: 1}],
@@ -255,15 +255,15 @@ describe('StorageService', () => {
       const result = await storageService.multiSet(keyValuePairs);
 
       expect(result).toBe(true);
-      expect(mockedAsyncStorage.multiSet).toHaveBeenCalledWith([
-        ['key1', JSON.stringify({value: 1})],
-        ['key2', JSON.stringify({value: 2})],
-        ['key3', JSON.stringify({value: 3})],
-      ]);
+      expect(mockedAsyncStorage.setMany).toHaveBeenCalledWith({
+        key1: JSON.stringify({value: 1}),
+        key2: JSON.stringify({value: 2}),
+        key3: JSON.stringify({value: 3}),
+      });
     });
 
     it('should handle multiSet errors', async () => {
-      mockedAsyncStorage.multiSet.mockRejectedValueOnce(
+      mockedAsyncStorage.setMany.mockRejectedValueOnce(
         new Error('MultiSet failed'),
       );
 
@@ -273,12 +273,12 @@ describe('StorageService', () => {
     });
 
     it('should handle empty array', async () => {
-      mockedAsyncStorage.multiSet.mockResolvedValueOnce();
+      mockedAsyncStorage.setMany.mockResolvedValueOnce();
 
       const result = await storageService.multiSet([]);
 
       expect(result).toBe(true);
-      expect(mockedAsyncStorage.multiSet).toHaveBeenCalledWith([]);
+      expect(mockedAsyncStorage.setMany).toHaveBeenCalledWith({});
     });
   });
 

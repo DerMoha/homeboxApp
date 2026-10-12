@@ -27,6 +27,7 @@ project.xcworkspace
 build/
 .idea
 .gradle
+.kotlin/
 local.properties
 *.iml
 *.hprof
@@ -125,3 +126,7 @@ android/app/build/
 android/build/
 ios/build/
 src/assets/
+
+# Track resolved native and Ruby dependencies for reproducible installs.
+!Gemfile.lock
+!ios/Podfile.lock

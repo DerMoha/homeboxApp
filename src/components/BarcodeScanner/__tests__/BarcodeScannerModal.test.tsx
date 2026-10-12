@@ -9,7 +9,7 @@ it('opens the Android scanner after permission is granted before a camera ref ex
   jest
     .spyOn(PermissionsAndroid, 'request')
     .mockResolvedValue(PermissionsAndroid.RESULTS.GRANTED);
-  const screen = render(
+  const screen = await render(
     <ThemeProvider>
       <BarcodeScannerModal
         visible
@@ -21,5 +21,5 @@ it('opens the Android scanner after permission is granted before a camera ref ex
   await waitFor(() =>
     expect(screen.getByTestId('mock-camera-kit')).toBeTruthy(),
   );
-  screen.unmount();
+  await screen.unmount();
 });

@@ -24,7 +24,7 @@ export const useFormInputFocus = () => useContext(FormInputFocusContext);
 export const KeyboardFormScrollView: React.FC<
   ScrollViewProps & {resetScrollKey?: number}
 > = ({resetScrollKey, ...props}) => {
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<React.ElementRef<typeof ScrollView>>(null);
   useEffect(() => {
     if (resetScrollKey !== undefined) {
       scrollRef.current?.scrollTo({y: 0, animated: false});

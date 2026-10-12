@@ -1,11 +1,11 @@
 buildscript {
     ext {
-        buildToolsVersion = "35.0.0"
+        buildToolsVersion = "37.0.0"
         minSdkVersion = 24
-        compileSdkVersion = 35
-        targetSdkVersion = 35
+        compileSdkVersion = 37
+        targetSdkVersion = 36
         ndkVersion = "27.1.12297006"
-        kotlinVersion = "2.0.21"
+        kotlinVersion = "2.2.10"
     }
     repositories {
         google()
@@ -19,3 +19,13 @@ buildscript {
 }
 
 apply plugin: "com.facebook.react.rootproject"
+
+// Older native modules need explicit BuildConfig generation with AGP 9.
+subprojects { subproject ->
+    subproject.plugins.withId("com.android.library") {
+        subproject.android.buildFeatures.buildConfig = true
+        if (subproject.name == "bam.tech_react-native-image-resizer") {
+            subproject.android.namespace = "com.reactnativeimageresizer"
+        }
+    }
+}

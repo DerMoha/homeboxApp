@@ -145,8 +145,8 @@ describe('useAddItemForm', () => {
           data: warning ? undefined : item,
         });
         const onSuccess = jest.fn();
-        const {result} = renderHook(() => useAddItemForm());
-        act(() => {
+        const {result} = await renderHook(() => useAddItemForm());
+        await act(() => {
           result.current.updateFormField('name', item.name);
           result.current.setSelectedLocation({
             id: 'loc-1',
@@ -175,7 +175,7 @@ describe('useAddItemForm', () => {
             expect.stringContaining('image upload failed'),
             expect.any(Array),
           );
-          act(() => mockAlert.mock.calls[0][2][0].onPress());
+          await act(() => mockAlert.mock.calls[0][2][0].onPress());
         } else {
           expect(mockAlert).not.toHaveBeenCalled();
         }
@@ -187,8 +187,8 @@ describe('useAddItemForm', () => {
     it('keeps the draft when quick entry cannot save', async () => {
       mockServiceInstance.createItem.mockResolvedValueOnce({success: false});
       const onSuccess = jest.fn();
-      const {result} = renderHook(() => useAddItemForm());
-      act(() => {
+      const {result} = await renderHook(() => useAddItemForm());
+      await act(() => {
         result.current.updateFormField('name', 'Keep this draft');
         result.current.setSelectedLocation({
           id: 'loc-1',
@@ -223,9 +223,9 @@ describe('useAddItemForm', () => {
       });
 
       const onSuccess = jest.fn();
-      const {result} = renderHook(() => useAddItemForm());
+      const {result} = await renderHook(() => useAddItemForm());
 
-      act(() => {
+      await act(() => {
         result.current.updateFormField('name', 'Test Item');
         result.current.updateFormField('barcode', '123456789');
         result.current.setSelectedLocation({
@@ -267,9 +267,9 @@ describe('useAddItemForm', () => {
       });
 
       const onSuccess = jest.fn();
-      const {result} = renderHook(() => useAddItemForm());
+      const {result} = await renderHook(() => useAddItemForm());
 
-      act(() => {
+      await act(() => {
         result.current.updateFormField('name', 'Updated Item');
         result.current.setSelectedLocation({
           id: 'loc-1',
