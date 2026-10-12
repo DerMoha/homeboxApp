@@ -40,9 +40,9 @@ export const offlineCacheService = {
     }
     await this.loadImages(server);
     if (result.success && result.data !== undefined) {
-      const updatedAt = new Date().toISOString();
+      let updatedAt = new Date().toISOString();
       try {
-        await this.set(server, key, result.data);
+        updatedAt = (await this.set(server, key, result.data)).updatedAt;
       } catch {
         /* Online reads still work when storage is full. */
       }
