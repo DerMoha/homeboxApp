@@ -190,7 +190,9 @@ const TabItem: React.FC<TabItemProps> = ({
       style={styles.tab}
       activeOpacity={0.7}>
       <TabIcon name={config.icon} focused={isFocused} theme={theme} />
-      <Text style={labelStyle}>{config.label}</Text>
+      <Text style={labelStyle} numberOfLines={1} maxFontSizeMultiplier={1.5}>
+        {config.label}
+      </Text>
       {isFocused && <View style={activeIndicatorStyle} />}
     </TouchableOpacity>
   );

@@ -501,7 +501,10 @@ const AddItemScreen: React.FC = () => {
                 ? 'Save & next'
                 : 'Add Item'
           }
-          accessibilityState={{disabled: isLoading, busy: isLoading}}
+          accessibilityState={{
+            disabled: isLoading || isPreparingItem || !draftReady,
+            busy: isLoading,
+          }}
           activeOpacity={0.8}>
           {isLoading ? (
             <ActivityIndicator color={theme.colors.text.inverse} />
