@@ -24,6 +24,10 @@ jest.mock('react-native-image-picker', () => ({
 
 // Mock react-native-fs
 jest.mock('react-native-fs', () => ({
+  DocumentDirectoryPath: '/documents',
+  CachesDirectoryPath: '/cache',
+  mkdir: jest.fn(() => Promise.resolve()),
+  copyFile: jest.fn(() => Promise.resolve()),
   readFile: jest.fn(() => Promise.resolve('')),
   writeFile: jest.fn(() => Promise.resolve()),
   unlink: jest.fn(() => Promise.resolve()),

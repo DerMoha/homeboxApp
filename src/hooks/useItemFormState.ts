@@ -58,6 +58,8 @@ export const useItemFormState = () => {
   }, []);
 
   return {
+    setFormData,
+    setSelectedLabels,
     formData,
     selectedLocation,
     selectedLabels,

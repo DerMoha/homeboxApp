@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Keyboard,
+  Alert,
 } from 'react-native';
 import {useTheme} from '../theme/ThemeContext';
 import {
@@ -20,6 +21,7 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useAddItemMetadata} from '../hooks/useAddItemMetadata';
 import {useBarcodeAutofill} from '../hooks/useBarcodeAutofill';
 import {useEditableItemLoader} from '../hooks/useEditableItemLoader';
+import {useItemDraft} from '../hooks/useItemDraft';
 import {useImageHandler} from '../hooks/useImageHandler';
 import {useAddItemForm} from '../hooks/useAddItemForm';
 import {usePostSaveNavigation} from '../hooks/usePostSaveNavigation';
@@ -64,6 +66,7 @@ const AddItemScreen: React.FC = () => {
 
   const {
     selectedImage,
+    setSelectedImage,
     imageRotation,
     imageFlip,
     originalSize,
@@ -83,6 +86,8 @@ const AddItemScreen: React.FC = () => {
 
   const {
     formData,
+    setFormData,
+    setSelectedLabels,
     selectedLocation,
     selectedLabels,
     isLoading,
@@ -126,10 +131,35 @@ const AddItemScreen: React.FC = () => {
       });
   }, [navigation]);
 
-  const {isPreparingItem} = useEditableItemLoader(
+  const {isPreparingItem, preparedItemId} = useEditableItemLoader(
     itemId,
     populateForm,
     handleMissingItem,
+  );
+
+  const draftSnapshot = useMemo(
+    () => ({
+      formData,
+      selectedLocation,
+      selectedLabels,
+      imageUri: selectedImage,
+    }),
+    [formData, selectedLocation, selectedLabels, selectedImage],
+  );
+  const {draftStatus, discardDraft, draftReady} = useItemDraft(
+    itemId,
+    !itemId || preparedItemId === itemId,
+    draftSnapshot,
+    draft => {
+      setFormData(draft.formData);
+      setSelectedLocation(draft.selectedLocation);
+      setSelectedLabels(draft.selectedLabels);
+      setSelectedImage(draft.imageUri);
+    },
+    () => {
+      resetForm();
+      clearImage();
+    },
   );
 
   const submitButtonStyle = useMemo(
@@ -204,6 +234,7 @@ const AddItemScreen: React.FC = () => {
         selectedImage,
         enabledFields,
         item => {
+          discardDraft();
           if (isQuickEntry) {
             resetForm();
             setSelectedLocation(selectedLocation);
@@ -275,6 +306,41 @@ const AddItemScreen: React.FC = () => {
         style={styles.scrollView}
         contentContainerStyle={contentStyle}
         showsVerticalScrollIndicator={false}>
+        {draftStatus ? (
+          <View>
+            <Text
+              accessibilityLiveRegion="polite"
+              style={{color: theme.colors.text.secondary}}>
+              {draftStatus}
+            </Text>
+            <TouchableOpacity
+              accessibilityRole="button"
+              onPress={() =>
+                Alert.alert(
+                  'Discard draft?',
+                  'Remove the saved draft and photo from this device?',
+                  [
+                    {text: 'Cancel', style: 'cancel'},
+                    {
+                      text: 'Discard',
+                      style: 'destructive',
+                      onPress: () => {
+                        discardDraft();
+                      },
+                    },
+                  ],
+                )
+              }>
+              <Text
+                style={[
+                  styles.modeButton,
+                  {color: theme.colors.accent.primary},
+                ]}>
+                Discard draft
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
         {!isEditing && (
           <TouchableOpacity
             disabled={isLoading}
@@ -361,7 +427,7 @@ const AddItemScreen: React.FC = () => {
         <TouchableOpacity
           style={submitButtonStyle}
           onPress={handleSubmit}
-          disabled={isLoading || isPreparingItem}
+          disabled={isLoading || isPreparingItem || !draftReady}
           activeOpacity={0.8}>
           {isLoading ? (
             <ActivityIndicator color={theme.colors.text.inverse} />
@@ -378,8 +444,8 @@ const AddItemScreen: React.FC = () => {
                 {isEditing
                   ? 'Save Changes'
                   : isQuickEntry
-                  ? 'Save & next'
-                  : 'Add Item'}
+                    ? 'Save & next'
+                    : 'Add Item'}
               </Text>
             </>
           )}

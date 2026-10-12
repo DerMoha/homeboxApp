@@ -7,6 +7,7 @@ export const useEditableItemLoader = (
   onItemLoaded: (item: Item) => void,
   onMissingItem: () => void,
 ) => {
+  const [preparedItemId, setPreparedItemId] = useState<string | undefined>();
   const [isPreparingItem, setIsPreparingItem] = useState(false);
 
   useEffect(() => {
@@ -27,6 +28,7 @@ export const useEditableItemLoader = (
 
         if (result.success && result.data) {
           onItemLoaded(result.data);
+          setPreparedItemId(itemId);
           return;
         }
 
@@ -45,5 +47,5 @@ export const useEditableItemLoader = (
     };
   }, [itemId, onItemLoaded, onMissingItem]);
 
-  return {isPreparingItem};
+  return {isPreparingItem, preparedItemId};
 };

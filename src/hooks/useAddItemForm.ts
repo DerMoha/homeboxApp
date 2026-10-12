@@ -59,6 +59,8 @@ export const useAddItemForm = () => {
   );
 
   return {
+    setFormData: formState.setFormData,
+    setSelectedLabels: formState.setSelectedLabels,
     formData: formState.formData,
     selectedLocation: formState.selectedLocation,
     selectedLabels: formState.selectedLabels,

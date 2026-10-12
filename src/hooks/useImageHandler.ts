@@ -181,6 +181,7 @@ export const useImageHandler = () => {
   }, []);
 
   return {
+    setSelectedImage,
     selectedImage,
     imageRotation,
     imageFlip,
