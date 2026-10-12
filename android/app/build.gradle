@@ -92,6 +92,7 @@ android {
 
     namespace "com.homeboxapp"
     defaultConfig {
+        testInstrumentationRunner "com.homeboxapp.e2e.NativeFlow"
         applicationId "com.homeboxapp"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
@@ -115,6 +116,7 @@ android {
             }
         }
     }
+    testBuildType "fieldTest"
     buildTypes {
         debug {
             signingConfig signingConfigs.debug

@@ -130,3 +130,8 @@ src/assets/
 # Track resolved native and Ruby dependencies for reproducible installs.
 !Gemfile.lock
 !ios/Podfile.lock
+
+# Native end-to-end run evidence
+e2e/artifacts/
+
+e2e/__pycache__/

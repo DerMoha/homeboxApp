@@ -18,7 +18,8 @@ Scope accepted on 12 October 2026. Each feature gets its own verified commit.
   - 50-item pages, debounced Homebox queries, stale-request protection, retry/load-more, explicit partial counts, load-all/offline snapshot. 164 tests passed.
 - [x] Saved searches and data-quality review lists
   - Server-scoped saved query/filter/sort/review presets and four review lists; safe persistence errors. 167 tests passed.
-- [ ] Automated login/create/photo/edit/reload end-to-end coverage
+- [x] Automated login/create/photo/edit/reload end-to-end coverage
+  - Android native instrumentation + local Homebox fixture; actual multipart photo, edit of the same ID, process restart, and rendered-photo pixel assertion. Passed at normal and 200% text size.
 - [x] Accessibility: screen reader semantics, large text, and checks
   - Labeled/stateful controls, required-input/error announcements, growing buttons, measured rows, scrollable inventory controls, and reduced-motion press effects; native flow also passed at 200% font scale.
 - [ ] Refresh the UI roadmap against implemented behavior
