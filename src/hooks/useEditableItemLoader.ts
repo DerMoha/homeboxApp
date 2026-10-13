@@ -9,7 +9,7 @@ export const useEditableItemLoader = (
   onMissingItem: () => void,
 ) => {
   const [preparedItemId, setPreparedItemId] = useState<string | undefined>();
-  const [isPreparingItem, setIsPreparingItem] = useState(false);
+  const [isPreparingItem, setIsPreparingItem] = useState(Boolean(itemId));
 
   useFocusEffect(
     useCallback(() => {

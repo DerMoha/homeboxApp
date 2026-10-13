@@ -304,7 +304,10 @@ const AddItemScreen: React.FC = () => {
 
   if (isPreparingItem) {
     return (
-      <View style={styles.loadingContainer}>
+      <View
+        key="preparing-item"
+        collapsable={false}
+        style={styles.loadingContainer}>
         <View
           style={[
             styles.loadingIconContainer,
@@ -331,7 +334,7 @@ const AddItemScreen: React.FC = () => {
   }
 
   return (
-    <View style={screenStyle}>
+    <View key="item-form" collapsable={false} style={screenStyle}>
       <KeyboardFormScrollView
         footer={
           <View

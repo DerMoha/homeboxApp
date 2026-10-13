@@ -136,6 +136,7 @@ public class NativeFlow extends Instrumentation {
     throw new AssertionError("Missing " + label);
   }
   private void click(String label, boolean exact, boolean scroll) {
+    Bundle step=new Bundle();step.putString("step",label);sendStatus(1,step);
     AccessibilityNodeInfo node = find(label,exact,scroll,false);
     while(node != null && !node.performAction(AccessibilityNodeInfo.ACTION_CLICK)) node=node.getParent();
     if(node == null) throw new AssertionError("Cannot click " + label);
