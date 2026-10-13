@@ -471,17 +471,11 @@ const AddItemScreen: React.FC = () => {
           />
         </View>
 
-        <CreateMetadataButton
-          kind="location"
-          onCreated={location => {
-            setSelectedLocation(location);
-            loadMetadata();
-          }}
-        />
         <SectionHeader title="Location" icon="place" variant="withIcon" />
 
         <View style={formCardStyle}>
           <LocationSelector
+            onLocationCreated={loadMetadata}
             compact={isQuickEntry}
             locations={locations}
             selectedLocation={selectedLocation}

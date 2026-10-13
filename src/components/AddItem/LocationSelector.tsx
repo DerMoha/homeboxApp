@@ -1,215 +1,142 @@
-import React, {useMemo, useState} from 'react';
+import React, {useState} from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
+  FlatList,
   Keyboard,
+  Pressable,
+  Text,
+  View,
+  StyleSheet,
 } from 'react-native';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useTheme} from '../../theme/ThemeContext';
 import {Location} from '../../types';
-import {useFormInputFocus} from '../common/KeyboardFormScrollView';
-
-interface LocationSelectorProps {
+import {Sheet} from '../common/Sheet';
+import {Input} from '../common/Input';
+import {Button} from '../common/Button';
+import {MetadataForm} from './MetadataForm';
+interface Props {
   compact?: boolean;
   locations: Location[];
   selectedLocation: Location | null;
   onSelectLocation: (location: Location) => void;
+  onLocationCreated?: () => void;
 }
-
-export const LocationSelector: React.FC<LocationSelectorProps> = ({
+export const LocationSelector = ({
   locations,
-  compact = false,
   selectedLocation,
   onSelectLocation,
-}) => {
+  onLocationCreated,
+}: Props) => {
   const {theme} = useTheme();
-  const revealInput = useFormInputFocus(160);
-  const [expanded, setExpanded] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-
-  const filteredLocations = useMemo(() => {
-    return locations.filter(location =>
-      location.name.toLowerCase().includes(searchQuery.toLowerCase()),
-    );
-  }, [locations, searchQuery]);
-
-  const sectionTitleStyle = useMemo(
-    () => [styles.sectionTitle, {color: theme.colors.text.primary}],
-    [theme.colors.text.primary],
-  );
-
-  const searchInputStyle = useMemo(
-    () => [
-      styles.searchInput,
-      {
-        backgroundColor: theme.colors.background.secondary,
-        color: theme.colors.text.primary,
-        borderColor: theme.colors.border,
-      },
-    ],
-    [
-      theme.colors.background.secondary,
-      theme.colors.border,
-      theme.colors.text.primary,
-    ],
-  );
-
-  const locationListStyle = useMemo(
-    () => [
-      styles.locationList,
-      {
-        backgroundColor: theme.colors.background.secondary,
-        borderColor: theme.colors.border,
-      },
-    ],
-    [theme.colors.background.secondary, theme.colors.border],
-  );
-
-  const locationItemSelectedStyle = useMemo(
-    () => ({backgroundColor: theme.colors.primary}),
-    [theme.colors.primary],
-  );
-
-  const locationNameStyle = useMemo(
-    () => [styles.locationName, {color: theme.colors.text.primary}],
-    [theme.colors.text.primary],
-  );
-
-  const locationNameSelectedStyle = useMemo(
-    () => [styles.locationName, {color: theme.colors.text.inverse}],
-    [theme.colors.text.inverse],
-  );
-
-  const locationDescriptionStyle = useMemo(
-    () => [styles.locationDescription, {color: theme.colors.text.secondary}],
-    [theme.colors.text.secondary],
-  );
-
-  const locationDescriptionSelectedStyle = useMemo(
-    () => [styles.locationDescription, styles.locationDescriptionSelected],
-    [],
-  );
-
+  const [visible, setVisible] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [query, setQuery] = useState('');
+  const close = () => {
+    Keyboard.dismiss();
+    setVisible(false);
+    setCreating(false);
+    setQuery('');
+  };
   return (
-    <View style={styles.section}>
-      <Text style={sectionTitleStyle}>Location *</Text>
-
-      {compact && selectedLocation && !expanded ? (
-        <TouchableOpacity
-          onPress={() => setExpanded(true)}
-          accessibilityRole="button">
-          <Text style={locationNameStyle}>
-            {selectedLocation.name} · Change
-          </Text>
-        </TouchableOpacity>
-      ) : (
-        <>
-          <TextInput
-            accessibilityLabel="Search locations"
-            onFocus={revealInput}
-            style={searchInputStyle}
-            placeholder="Search locations..."
-            placeholderTextColor={theme.colors.text.secondary}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
+    <>
+      <Button
+        title={selectedLocation ? selectedLocation.name : 'Choose location'}
+        icon="place"
+        variant="secondary"
+        onPress={() => setVisible(true)}
+      />
+      <Sheet
+        visible={visible}
+        title={creating ? 'New location' : 'Choose location'}
+        onClose={close}
+        scrollable={creating}>
+        {creating ? (
+          <MetadataForm
+            kind="location"
+            onCancel={() => setCreating(false)}
+            onCreated={value => {
+              onSelectLocation(value as Location);
+              onLocationCreated?.();
+              close();
+            }}
           />
-
-          <ScrollView
-            style={locationListStyle}
-            nestedScrollEnabled
-            keyboardShouldPersistTaps="handled">
-            {filteredLocations.map(location =>
-              (() => {
-                const isSelected = selectedLocation?.id === location.id;
-                const locationItemStyle = isSelected
-                  ? [styles.locationItem, locationItemSelectedStyle]
-                  : styles.locationItem;
-                const locationTextStyle = isSelected
-                  ? locationNameSelectedStyle
-                  : locationNameStyle;
-                const descriptionStyle = isSelected
-                  ? locationDescriptionSelectedStyle
-                  : locationDescriptionStyle;
-                return (
-                  <TouchableOpacity
-                    key={location.id}
-                    style={locationItemStyle}
-                    onPress={() => {
-                      Keyboard.dismiss();
-                      onSelectLocation(location);
-                      setExpanded(false);
-                      setSearchQuery('');
-                    }}>
-                    <View style={styles.locationInfo}>
-                      <Text style={locationTextStyle}>{location.name}</Text>
-                      {location.description && (
-                        <Text style={descriptionStyle} numberOfLines={1}>
-                          {location.description}
-                        </Text>
-                      )}
-                    </View>
-                    {isSelected && (
-                      <MaterialIcons
-                        name="check"
-                        size={20}
-                        color={theme.colors.text.inverse}
-                      />
-                    )}
-                  </TouchableOpacity>
-                );
-              })(),
-            )}
-          </ScrollView>
-        </>
-      )}
-    </View>
+        ) : (
+          <View style={styles.body}>
+            <Input
+              label="Search locations"
+              value={query}
+              onChangeText={setQuery}
+              autoCorrect={false}
+              autoCapitalize="none"
+            />
+            <FlatList
+              style={styles.list}
+              data={locations.filter(location =>
+                location.name
+                  .toLocaleLowerCase()
+                  .includes(query.toLocaleLowerCase()),
+              )}
+              keyExtractor={location => location.id}
+              keyboardShouldPersistTaps="handled"
+              ListEmptyComponent={
+                <Text style={{color: theme.colors.text.secondary}}>
+                  No matching locations
+                </Text>
+              }
+              renderItem={({item}) => (
+                <Pressable
+                  accessibilityRole="radio"
+                  accessibilityState={{
+                    selected: selectedLocation?.id === item.id,
+                  }}
+                  onPress={() => {
+                    onSelectLocation(item);
+                    close();
+                  }}
+                  style={[
+                    styles.row,
+                    {borderColor: theme.colors.borderSubtle},
+                  ]}>
+                  <View style={styles.text}>
+                    <Text style={{color: theme.colors.text.primary}}>
+                      {item.name}
+                    </Text>
+                    {item.description ? (
+                      <Text style={{color: theme.colors.text.secondary}}>
+                        {item.description}
+                      </Text>
+                    ) : null}
+                  </View>
+                  {selectedLocation?.id === item.id ? (
+                    <Text style={{color: theme.colors.accent.primary}}>✓</Text>
+                  ) : null}
+                </Pressable>
+              )}
+            />
+            <Button
+              title="New location"
+              icon="add"
+              variant="ghost"
+              onPress={() => {
+                Keyboard.dismiss();
+                setCreating(true);
+              }}
+            />
+          </View>
+        )}
+      </Sheet>
+    </>
   );
 };
-
 const styles = StyleSheet.create({
-  section: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  searchInput: {
-    padding: 12,
-    borderRadius: 8,
-    fontSize: 14,
-    borderWidth: 1,
-    marginBottom: 8,
-  },
-  locationList: {
-    maxHeight: 200,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  locationItem: {
+  body: {flexShrink: 1},
+  list: {maxHeight: 320, flexGrow: 0, flexShrink: 1},
+  row: {
+    minHeight: 52,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
+    gap: 12,
     alignItems: 'center',
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.05)',
   },
-  locationInfo: {
-    flex: 1,
-  },
-  locationName: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  locationDescription: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  locationDescriptionSelected: {
-    color: 'rgba(255, 255, 255, 0.8)',
-  },
+  text: {flex: 1},
 });
