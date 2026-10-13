@@ -46,7 +46,9 @@ export const Input: React.FC<InputProps> = ({
           {
             backgroundColor: theme.colors.background.tertiary,
             color: theme.colors.text.primary,
-            borderColor: error ? theme.colors.error : theme.colors.borderSubtle,
+            borderColor: error
+              ? theme.colors.error
+              : theme.colors.text.tertiary,
             fontSize: theme.typography.sizes.md,
             fontFamily: theme.typography.fonts.regular,
           },

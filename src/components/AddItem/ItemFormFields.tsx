@@ -1,14 +1,9 @@
 import React, {useMemo} from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  TouchableOpacity,
-} from 'react-native';
+import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useTheme} from '../../theme/ThemeContext';
 import type {EnabledFields} from '../../types';
+import {Input} from '../common/Input';
 import {useFormInputFocus} from '../common/KeyboardFormScrollView';
 
 interface ItemFormFieldsProps {
@@ -130,7 +125,7 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
           <Text style={labelStyle}>Item name</Text>
           <FieldTag label="Required" theme={theme} />
         </View>
-        <TextInput
+        <Input
           style={inputStyle}
           accessibilityLabel="Item name, required"
           placeholder="Enter item name"
@@ -148,7 +143,7 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
             <View style={styles.labelRow}>
               <Text style={labelStyle}>Quantity</Text>
             </View>
-            <TextInput
+            <Input
               style={inputStyle}
               accessibilityLabel="Quantity"
               placeholder="1"
@@ -178,7 +173,7 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
               <FieldTag label="Optional" theme={theme} />
             </View>
             <View style={styles.barcodeRow}>
-              <TextInput
+              <Input
                 style={[inputStyle, styles.barcodeInput]}
                 placeholder="Scan or enter a numeric ID"
                 placeholderTextColor={theme.colors.text.secondary}
@@ -209,7 +204,7 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
             <Text style={labelStyle}>Description</Text>
             <FieldTag label="Optional" theme={theme} />
           </View>
-          <TextInput
+          <Input
             style={[inputStyle, styles.textArea]}
             accessibilityLabel="Item description"
             placeholder="Enter description"
@@ -231,7 +226,7 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
             <Text style={labelStyle}>Purchase price</Text>
             <FieldTag label="Optional" theme={theme} />
           </View>
-          <TextInput
+          <Input
             style={inputStyle}
             accessibilityLabel="Purchase price"
             placeholder="0.00"

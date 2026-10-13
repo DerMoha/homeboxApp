@@ -1,20 +1,13 @@
 import React, {useState} from 'react';
-import {
-  Alert,
-  Pressable,
-  Modal,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-  StyleSheet,
-} from 'react-native';
+import {Alert, Pressable, Text, View, StyleSheet} from 'react-native';
 import {attachmentName} from '../../utils/attachmentNames';
 import {Item} from '../../types';
 import {openAttachment} from '../../services/attachmentService';
 import ServerService from '../../services/serverService';
 import {useTheme} from '../../theme/ThemeContext';
 import {ActionMenu} from '../common/ActionMenu';
+import {Sheet} from '../common/Sheet';
+import {Input} from '../common/Input';
 import {Button} from '../common/Button';
 import {PhotoGallery} from './PhotoGallery';
 
@@ -145,56 +138,54 @@ export function AttachmentList({
           />
         </View>
       ))}
-      <Modal
+      <Sheet
         visible={Boolean(editing)}
-        onRequestClose={() => setEditing(null)}
-        presentationStyle="pageSheet">
-        <ScrollView
-          contentContainerStyle={styles.container}
-          keyboardShouldPersistTaps="handled"
-          style={{backgroundColor: theme.colors.background.primary}}>
-          <TextInput
-            accessibilityLabel="Attachment title"
-            value={title}
-            onChangeText={setTitle}
-            maxLength={255}
-            style={{color: theme.colors.text.primary}}
-          />
-          <Button
-            title="Save attachment title"
-            disabled={busy || !title.trim()}
-            onPress={() =>
-              perform(async () => {
-                const file = files.find(entry => entry.id === editing);
-                if (!file) {
-                  return;
-                }
-                const response =
-                  await ServerService.getInstance().updateAttachment(
-                    item.id,
-                    file.id,
-                    {
-                      title: title.trim(),
-                      type: file.type,
-                      primary: file.primary,
-                    },
-                  );
-                if (!response.success) {
-                  throw new Error(response.error);
-                }
-                setEditing(null);
-                onChanged();
-              })
-            }
-          />
-          <Button
-            title="Cancel"
-            variant="ghost"
-            disabled={busy}
-            onPress={() => setEditing(null)}
-          />
-        </ScrollView>
-      </Modal>
+        title="Rename attachment"
+        onClose={() => {
+          if (!busy) {
+            setEditing(null);
+          }
+        }}>
+        <Input
+          label="Attachment title"
+          value={title}
+          onChangeText={setTitle}
+          maxLength={255}
+        />
+        <Button
+          title="Save attachment title"
+          disabled={busy || !title.trim()}
+          onPress={() =>
+            perform(async () => {
+              const file = files.find(entry => entry.id === editing);
+              if (!file) {
+                return;
+              }
+              const response =
+                await ServerService.getInstance().updateAttachment(
+                  item.id,
+                  file.id,
+                  {
+                    title: title.trim(),
+                    type: file.type,
+                    primary: file.primary,
+                  },
+                );
+              if (!response.success) {
+                throw new Error(response.error);
+              }
+              setEditing(null);
+              onChanged();
+            })
+          }
+        />
+        <Button
+          title="Cancel"
+          variant="ghost"
+          disabled={busy}
+          onPress={() => setEditing(null)}
+        />
+      </Sheet>
     </View>
   );
 }
