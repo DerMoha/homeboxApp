@@ -166,6 +166,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--apk", required=True)
     parser.add_argument("--font-scale", default="1.0")
+    parser.add_argument("--theme", choices=["light", "dark"], default="light")
     args = parser.parse_args()
     assert "emulator-" in adb("devices"), "Run on a dedicated emulator"
 
@@ -192,6 +193,8 @@ def main():
     adb("install", "-r", args.apk)
     adb("shell", "pm", "clear", "com.homeboxapp")
     adb("shell", "settings", "put", "system", "font_scale", args.font_scale)
+    original_night = adb("shell", "cmd", "uimode", "night").rsplit(":", 1)[-1].strip()
+    adb("shell", "cmd", "uimode", "night", "yes" if args.theme == "dark" else "no")
     try:
         adb("push", str(photo), "/sdcard/Pictures/homebox-fixture.png")
         adb(
@@ -217,6 +220,16 @@ def main():
         )
         (OUT / "native-output.txt").write_text(output)
         assert "PASS: login/create/photo/edit" in output, output
+        (OUT / "quick-entry-keyboard.png").write_bytes(
+            subprocess.check_output(
+                [
+                    "adb",
+                    "exec-out",
+                    "cat",
+                    "/sdcard/Android/data/com.homeboxapp/files/quick-entry-keyboard.png",
+                ]
+            )
+        )
         wait_state(
             lambda: (
                 len(STATE["items"]) == 1
@@ -251,7 +264,13 @@ def main():
         )
         (OUT / "result.json").write_text(
             json.dumps(
-                {"passed": True, "fontScale": args.font_scale, **STATE}, indent=2
+                {
+                    "passed": True,
+                    "fontScale": args.font_scale,
+                    "theme": args.theme,
+                    **STATE,
+                },
+                indent=2,
             )
         )
         print("PASS: native login → create → photo → edit → reload")
@@ -261,6 +280,7 @@ def main():
         raise
     finally:
         adb("shell", "settings", "put", "system", "font_scale", "1.0")
+        adb("shell", "cmd", "uimode", "night", original_night)
         server.shutdown()
 
 

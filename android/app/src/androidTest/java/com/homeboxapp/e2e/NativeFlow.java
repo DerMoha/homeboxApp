@@ -4,6 +4,9 @@ import android.app.Instrumentation;
 import android.app.UiAutomation;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Rect;
+import android.accessibilityservice.AccessibilityServiceInfo;
+import android.view.accessibility.AccessibilityWindowInfo;
 import java.io.File;
 import java.io.FileOutputStream;
 import android.os.Bundle;
@@ -21,6 +24,9 @@ public class NativeFlow extends Instrumentation {
     Bundle result = new Bundle();
     try {
       ui = getUiAutomation();
+      AccessibilityServiceInfo info=ui.getServiceInfo();
+      info.flags |= AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS;
+      ui.setServiceInfo(info);
       Intent launch = getTargetContext().getPackageManager().getLaunchIntentForPackage("com.homeboxapp");
       launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
       getTargetContext().startActivity(launch);
@@ -49,6 +55,11 @@ public class NativeFlow extends Instrumentation {
       pause(600);
       click("Add item", true, false);
       fill("Item name", "E2E Camera");
+      click("Search locations",true,true);
+      pause(1000);
+      fill("Search locations","E2E");
+      assertLocationResultsVisible();
+      captureNamed("quick-entry-keyboard.png");
       click("E2E Garage",true,true);
       click("Library", true, true);
       pause(800);
@@ -117,6 +128,24 @@ public class NativeFlow extends Instrumentation {
   private void dismissOptionalOk() {
     pause(700);
     for(AccessibilityNodeInfo n:nodes()) if(matches(n.getText(),"OK",true)) {n.performAction(AccessibilityNodeInfo.ACTION_CLICK);pause(500);return;}
+  }
+  private void assertLocationResultsVisible() {
+    Rect input=new Rect(), match=new Rect();
+    find("Search locations",true,false,true).getBoundsInScreen(input);
+    find("E2E Garage",true,false,false).getBoundsInScreen(match);
+    int keyboardTop=Integer.MAX_VALUE;
+    for(AccessibilityWindowInfo window:ui.getWindows()) if(window.getType()==AccessibilityWindowInfo.TYPE_INPUT_METHOD) {
+      Rect bounds=new Rect();window.getBoundsInScreen(bounds);keyboardTop=bounds.top;
+    }
+    if(keyboardTop==Integer.MAX_VALUE) throw new AssertionError("Location check requires the software keyboard");
+    if(input.top<0 || match.top<input.bottom || match.bottom>keyboardTop || !find("E2E Garage",true,false,false).isVisibleToUser()) {
+      throw new AssertionError("Location list obscured: input="+input+", match="+match+", keyboardTop="+keyboardTop);
+    }
+  }
+  private void captureNamed(String name) throws Exception {
+    Bitmap bitmap=ui.takeScreenshot();
+    File directory=getTargetContext().getExternalFilesDir(null);directory.mkdirs();
+    try(FileOutputStream output=new FileOutputStream(new File(directory,name))) {bitmap.compress(Bitmap.CompressFormat.PNG,100,output);}
   }
   private void assertPhotoVisible() {
     Bitmap bitmap=ui.takeScreenshot();

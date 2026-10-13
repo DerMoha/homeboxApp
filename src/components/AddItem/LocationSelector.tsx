@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
+  Keyboard,
 } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useTheme} from '../../theme/ThemeContext';
@@ -26,7 +27,7 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
   onSelectLocation,
 }) => {
   const {theme} = useTheme();
-  const revealInput = useFormInputFocus();
+  const revealInput = useFormInputFocus(160);
   const [expanded, setExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -108,6 +109,7 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
       ) : (
         <>
           <TextInput
+            accessibilityLabel="Search locations"
             onFocus={revealInput}
             style={searchInputStyle}
             placeholder="Search locations..."
@@ -137,6 +139,7 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
                     key={location.id}
                     style={locationItemStyle}
                     onPress={() => {
+                      Keyboard.dismiss();
                       onSelectLocation(location);
                       setExpanded(false);
                       setSearchQuery('');

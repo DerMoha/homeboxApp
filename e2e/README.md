@@ -16,6 +16,7 @@ cd android
 cd ..
 python3 e2e/android_flow.py --apk android/app/build/outputs/apk/fieldTest/app-fieldTest.apk
 python3 e2e/android_flow.py --apk android/app/build/outputs/apk/fieldTest/app-fieldTest.apk --font-scale 2.0
+python3 e2e/android_flow.py --apk android/app/build/outputs/apk/fieldTest/app-fieldTest.apk --theme dark
 ```
 
 Use the appropriate React Native architecture on an x86_64 emulator. The
@@ -29,6 +30,11 @@ nonempty multipart upload, editing the same entity, process restart, automatic
 login, and the restored photo gallery, including a pixel check that the fixture photo renders. The fixture asserts exactly one item and
 one attachment, with the edited name. Result JSON, screenshots, and native
 failure output go to ignored `e2e/artifacts/`.
+
+The flow also opens the software keyboard for location search and checks that
+the search field and matching location remain visible above it. `--theme light`
+(default) and `--theme dark` exercise both system theme modes. The runner restores
+the prior system night-mode setting afterward.
 
 Large-text runs exercise the same flow at 200% font scale. Unit checks also cover
 button roles/busy states and required input/error announcements. This does not

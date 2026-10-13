@@ -4,7 +4,6 @@ import React, {
   useContext,
   useEffect,
   useRef,
-  useState,
 } from 'react';
 import {
   Keyboard,
@@ -16,49 +15,87 @@ import {
   StyleSheet,
 } from 'react-native';
 import {useHeaderHeight} from '@react-navigation/elements';
+import {focusedScrollOffset} from '../../utils/formScroll';
 
-const FormInputFocusContext = createContext<() => void>(() => {});
-export const useFormInputFocus = () => useContext(FormInputFocusContext);
+const FormInputFocusContext = createContext<(spaceBelow: number) => void>(
+  () => {},
+);
+export const useFormInputFocus = (spaceBelow = 24) => {
+  const focus = useContext(FormInputFocusContext);
+  return useCallback(() => focus(spaceBelow), [focus, spaceBelow]);
+};
 
-/** Keep form fields and actions reachable above the software keyboard. */
+/** Android resizes the viewport; iOS uses padding to avoid the keyboard. */
 export const KeyboardFormScrollView: React.FC<
   ScrollViewProps & {resetScrollKey?: number}
 > = ({resetScrollKey, ...props}) => {
   const scrollRef = useRef<React.ElementRef<typeof ScrollView>>(null);
+  const offset = useRef(0);
+  const reservedSpace = useRef(24);
+  const frame = useRef<number | null>(null);
+  const headerHeight = useHeaderHeight();
   useEffect(() => {
     if (resetScrollKey !== undefined) {
+      offset.current = 0;
       scrollRef.current?.scrollTo({y: 0, animated: false});
     }
   }, [resetScrollKey]);
-  const headerHeight = useHeaderHeight();
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
-  const revealFocusedInput = useCallback(() => {
-    const input = TextInput.State.currentlyFocusedInput();
-    if (input) {
-      scrollRef.current?.scrollResponderScrollNativeHandleToKeyboard(
-        input,
-        24,
-        true,
-      );
-    }
-  }, []);
-  const onInputFocus = useCallback(() => {
-    if (Keyboard.isVisible()) {
-      requestAnimationFrame(revealFocusedInput);
-    }
-  }, [revealFocusedInput]);
 
-  useEffect(() => {
-    const subscription = Keyboard.addListener('keyboardDidShow', event => {
-      setKeyboardHeight(event.endCoordinates.height);
-      requestAnimationFrame(revealFocusedInput);
+  const revealFocusedInput = useCallback(() => {
+    if (frame.current !== null) {
+      cancelAnimationFrame(frame.current);
+    }
+    frame.current = requestAnimationFrame(() => {
+      frame.current = null;
+      if (!Keyboard.isVisible()) {
+        return;
+      }
+      const input = TextInput.State.currentlyFocusedInput();
+      const scroll = scrollRef.current;
+      if (!input || !scroll) {
+        return;
+      }
+      scroll.measureInWindow((_x, top, _width, height) => {
+        input.measureInWindow((_inputX, inputTop, _inputWidth, inputHeight) => {
+          if (
+            TextInput.State.currentlyFocusedInput() !== input ||
+            !Keyboard.isVisible()
+          ) {
+            return;
+          }
+          const next = focusedScrollOffset(
+            offset.current,
+            top,
+            height,
+            inputTop,
+            inputHeight,
+            reservedSpace.current,
+          );
+          if (Math.abs(next - offset.current) > 1) {
+            offset.current = next;
+            scroll.scrollTo({y: next, animated: false});
+          }
+        });
+      });
     });
-    const hideSubscription = Keyboard.addListener('keyboardDidHide', () =>
-      setKeyboardHeight(0),
+  }, []);
+  const onInputFocus = useCallback(
+    (spaceBelow: number) => {
+      reservedSpace.current = spaceBelow;
+      revealFocusedInput();
+    },
+    [revealFocusedInput],
+  );
+  useEffect(() => {
+    const subscription = Keyboard.addListener(
+      'keyboardDidShow',
+      revealFocusedInput,
     );
     return () => {
       subscription.remove();
-      hideSubscription.remove();
+      if (frame.current !== null) {
+        cancelAnimationFrame(frame.current);
+      }
     };
   }, [revealFocusedInput]);
 
@@ -72,19 +109,20 @@ export const KeyboardFormScrollView: React.FC<
         <ScrollView
           {...props}
           ref={scrollRef}
-          contentContainerStyle={[
-            props.contentContainerStyle,
-            Platform.OS === 'android' && keyboardHeight > 0
-              ? {paddingBottom: keyboardHeight + 24}
-              : undefined,
-          ]}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'none'}
-          onLayout={revealFocusedInput}
+          scrollEventThrottle={16}
+          onScroll={event => {
+            offset.current = event.nativeEvent.contentOffset.y;
+            props.onScroll?.(event);
+          }}
+          onLayout={event => {
+            props.onLayout?.(event);
+            revealFocusedInput();
+          }}
         />
       </FormInputFocusContext.Provider>
     </KeyboardAvoidingView>
   );
 };
-
 const styles = StyleSheet.create({container: {flex: 1}});
