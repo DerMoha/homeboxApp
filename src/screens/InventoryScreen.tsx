@@ -157,6 +157,18 @@ const InventoryScreen: React.FC = () => {
         onSelectSort={updateSortOption}
         onOpenFilter={() => setFilterModalVisible(true)}
         activeFilterCount={activeFilterCount}
+        savedSearches={
+          <SavedSearches
+            current={{query: searchQuery, filters, sort: sortOption, review}}
+            onApply={search => {
+              setSearchQuery(search.query);
+              setFilters(search.filters);
+              setTempFilters(search.filters);
+              updateSortOption(search.sort);
+              setReview(search.review);
+            }}
+          />
+        }
       />
     ),
     [
@@ -170,6 +182,12 @@ const InventoryScreen: React.FC = () => {
       decreaseListZoom,
       setFilterModalVisible,
       activeFilterCount,
+      searchQuery,
+      filters,
+      review,
+      setSearchQuery,
+      setFilters,
+      setTempFilters,
       sortOption,
       updateSortOption,
     ],
@@ -443,12 +461,6 @@ const InventoryScreen: React.FC = () => {
         styles.container,
         {backgroundColor: theme.colors.background.primary},
       ]}>
-      <Button
-        title="Add item"
-        icon="add"
-        size="small"
-        onPress={handleAddItem}
-      />
       <CacheStatus info={cacheInfo} />
       {error ? <ErrorState error={error} onRetry={loadInventory} /> : null}
       <SearchBar
@@ -468,16 +480,6 @@ const InventoryScreen: React.FC = () => {
         onChange={next => {
           setFilters(next);
           setTempFilters(next);
-        }}
-      />
-      <SavedSearches
-        current={{query: searchQuery, filters, sort: sortOption, review}}
-        onApply={search => {
-          setSearchQuery(search.query);
-          setFilters(search.filters);
-          setTempFilters(search.filters);
-          updateSortOption(search.sort);
-          setReview(search.review);
         }}
       />
       <FlatList
@@ -544,6 +546,11 @@ const InventoryScreen: React.FC = () => {
         removeClippedSubviews={true}
       />
 
+      {!batchSelection.isSelectionMode && (
+        <View style={styles.addAction}>
+          <Button title="Add item" icon="add" onPress={handleAddItem} />
+        </View>
+      )}
       <BatchActionBar
         visible={
           batchSelection.isSelectionMode && batchSelection.selectedCount > 0
@@ -563,7 +570,10 @@ const InventoryScreen: React.FC = () => {
         locations={locations}
         labels={labels}
         onUpdateFilters={updateTempFilters}
-        onApply={applyFilterChanges}
+        onApply={() => {
+          applyFilterChanges();
+          setFilterModalVisible(false);
+        }}
         onClear={clearAllFilters}
         onClose={() => {
           resetTempFilters();
@@ -597,13 +607,13 @@ const InventoryScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  controlsScroller: {flexGrow: 0},
+  addAction: {position: 'absolute', bottom: 24, right: 16},
   container: {
     flex: 1,
   },
   listContent: {
+    paddingBottom: 112,
     paddingTop: 8,
-    paddingBottom: 16,
   },
   emptyStateContainer: {
     flex: 1,

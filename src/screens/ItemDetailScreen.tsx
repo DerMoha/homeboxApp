@@ -528,34 +528,26 @@ const ItemDetailScreen: React.FC = () => {
     ],
   );
 
+  const editItemId = item?.id;
+  const renderEditAction = useCallback(
+    () => (
+      <Button
+        title="Edit"
+        size="small"
+        variant="ghost"
+        disabled={!editItemId || Boolean(cacheInfo.fromCache)}
+        onPress={() => {
+          if (editItemId) {
+            navigation.navigate('AddItem', {itemId: editItemId});
+          }
+        }}
+      />
+    ),
+    [editItemId, cacheInfo.fromCache, navigation],
+  );
   useEffect(() => {
-    navigation.setOptions({
-      headerRight: () =>
-        item ? (
-          <View style={styles.headerActions}>
-            <Button
-              title="Edit"
-              size="small"
-              variant="ghost"
-              disabled={Boolean(cacheInfo.fromCache)}
-              onPress={() => navigation.navigate('AddItem', {itemId: item.id})}
-            />
-            <ActionMenu
-              title="Item actions"
-              actions={[
-                {
-                  title: 'Duplicate item',
-                  disabled: Boolean(cacheInfo.fromCache),
-                  onPress: () =>
-                    navigation.navigate('AddItem', {duplicateItemId: item.id}),
-                },
-                {title: 'Share item', onPress: handleShare},
-              ]}
-            />
-          </View>
-        ) : null,
-    });
-  }, [navigation, item, cacheInfo.fromCache, handleShare]);
+    navigation.setOptions({headerRight: renderEditAction});
+  }, [navigation, renderEditAction]);
 
   if (isLoading) {
     return <LoadingState message="Loading item details..." />;
@@ -597,6 +589,20 @@ const ItemDetailScreen: React.FC = () => {
               <View style={styles.heroText}>
                 <View style={styles.titleRow}>
                   <Text style={titleStyle}>{item.name}</Text>
+                  <ActionMenu
+                    title="Item actions"
+                    actions={[
+                      {
+                        title: 'Duplicate item',
+                        disabled: Boolean(cacheInfo.fromCache),
+                        onPress: () =>
+                          navigation.navigate('AddItem', {
+                            duplicateItemId: item.id,
+                          }),
+                      },
+                      {title: 'Share item', onPress: handleShare},
+                    ]}
+                  />
                 </View>
                 <Text style={descStyle}>
                   {description || 'No description added yet.'}

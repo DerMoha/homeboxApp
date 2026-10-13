@@ -53,8 +53,10 @@ public class NativeFlow extends Instrumentation {
       click("OK", true, false);
       ui.performGlobalAction(1); // back to Settings
       pause(600);
+      click("Home",true,false);
       click("Add item", true, false);
       fill("Item name", "E2E Camera");
+      click("Choose location",true,true);
       click("Search locations",true,true);
       pause(1000);
       fill("Search locations","E2E");
@@ -70,17 +72,37 @@ public class NativeFlow extends Instrumentation {
       pause(1500);
       // Quick entry is the default; success may use inline feedback.
       dismissOptionalOk();
+      click("Cancel",true,false);
       click("Items", true, false);
+      click("Display",true,false);
+      click("Grid",true,false);
+      click("Close",true,false);
+      click("Display",true,false);
+      click("List",true,false);
+      click("Close",true,false);
+      click("Filters",true,false);
+      click("uninsured",true,true);
+      click("Apply filters",true,true);
+      click("Remove filter: uninsured",true,false);
+      click("Saved",true,false);
+      click("Missing photos",true,true);
+      click("Remove filter: Missing photos",true,false);
       click("E2E Camera", false, false);
-      click("Edit item", true, true);
+      click("Edit", true, true);
       fill("Item name", "E2E Camera edited");
       click("Save Changes", true, true);
       dismissOptionalOk();
       click("Items", true, false);
       find("E2E Camera edited", false, false, false);
+      click("E2E Camera edited",true,false);
+      click("Item actions",true,true);
+      click("Duplicate item",true,false);
+      find("E2E Camera edited (copy)",true,false,true);
+      click("Cancel",true,false);
       result.putString("result", "PASS: login/create/photo/edit");
       finish(0, result);
     } catch (Throwable error) {
+      try {captureNamed("native-failure.png");}catch(Exception ignored){}
       result.putString("result", "FAIL: " + error + "\n" + dump());
       finish(1, result);
     }
@@ -165,7 +187,7 @@ public class NativeFlow extends Instrumentation {
   }
   private String dump() {
     StringBuilder result=new StringBuilder();
-    for(AccessibilityNodeInfo n:nodes()) if(n.getText()!=null || n.getContentDescription()!=null) result.append(n.getText()).append(" | ").append(n.getContentDescription()).append('\n');
+    for(AccessibilityNodeInfo n:nodes()) if(n.getText()!=null || n.getContentDescription()!=null) {Rect bounds=new Rect();n.getBoundsInScreen(bounds);result.append(n.getText()).append(" | ").append(n.getContentDescription()).append(" ").append(bounds).append(" visible=").append(n.isVisibleToUser()).append(" editable=").append(n.isEditable()).append('\n');}
     return result.toString();
   }
 }

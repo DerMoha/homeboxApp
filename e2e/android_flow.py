@@ -48,6 +48,8 @@ class Fixture(http.server.BaseHTTPRequestHandler):
             assert data["username"] == "test" and data["password"] == "test-password"
             STATE["logins"] += 1
             result = {"token": "fixture-token"}
+        elif path == "/api/v1/groups":
+            result = {"id": "fixture-group", "currency": "EUR", "name": "Fixture"}
         elif path.endswith("/users/logout"):
             pass
         elif path.endswith(("/tags", "/entities/tree", "/entity-types")):

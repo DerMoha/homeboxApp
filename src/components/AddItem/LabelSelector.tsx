@@ -1,248 +1,85 @@
-import React, {useMemo, useState} from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-} from 'react-native';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import {useTheme} from '../../theme/ThemeContext';
+import React, {useState} from 'react';
+import {Text, Pressable, View, StyleSheet} from 'react-native';
 import {Label} from '../../types';
-
-interface LabelSelectorProps {
-  labels: Label[];
-  selectedLabels: Label[];
-  onToggleLabel: (label: Label) => void;
-  enabled: boolean;
-}
-
-export const LabelSelector: React.FC<LabelSelectorProps> = ({
+import {useTheme} from '../../theme/ThemeContext';
+import {Sheet} from '../common/Sheet';
+import {Button} from '../common/Button';
+import {Input} from '../common/Input';
+export const LabelSelector = ({
   labels,
   selectedLabels,
   onToggleLabel,
   enabled,
+}: {
+  labels: Label[];
+  selectedLabels: Label[];
+  onToggleLabel: (label: Label) => void;
+  enabled: boolean;
 }) => {
   const {theme} = useTheme();
-  const [searchQuery, setSearchQuery] = useState('');
-
-  const filteredLabels = useMemo(() => {
-    return labels.filter(label =>
-      label.name.toLowerCase().includes(searchQuery.toLowerCase()),
-    );
-  }, [labels, searchQuery]);
-
-  const sectionTitleStyle = useMemo(
-    () => [styles.sectionTitle, {color: theme.colors.text.primary}],
-    [theme.colors.text.primary],
-  );
-
-  const searchInputStyle = useMemo(
-    () => [
-      styles.searchInput,
-      {
-        backgroundColor: theme.colors.background.secondary,
-        color: theme.colors.text.primary,
-        borderColor: theme.colors.border,
-      },
-    ],
-    [
-      theme.colors.background.secondary,
-      theme.colors.border,
-      theme.colors.text.primary,
-    ],
-  );
-
-  const labelsListStyle = useMemo(
-    () => [
-      styles.labelsList,
-      {
-        backgroundColor: theme.colors.background.secondary,
-        borderColor: theme.colors.border,
-      },
-    ],
-    [theme.colors.background.secondary, theme.colors.border],
-  );
-
-  const labelItemSelectedStyle = useMemo(
-    () => ({backgroundColor: theme.colors.primary}),
-    [theme.colors.primary],
-  );
-
-  const labelNameStyle = useMemo(
-    () => [styles.labelName, {color: theme.colors.text.primary}],
-    [theme.colors.text.primary],
-  );
-
-  const labelNameSelectedStyle = useMemo(
-    () => [styles.labelName, {color: theme.colors.text.inverse}],
-    [theme.colors.text.inverse],
-  );
-
-  const labelDescriptionStyle = useMemo(
-    () => [styles.labelDescription, {color: theme.colors.text.secondary}],
-    [theme.colors.text.secondary],
-  );
-
-  const labelDescriptionSelectedStyle = useMemo(
-    () => [styles.labelDescription, styles.labelDescriptionSelected],
-    [],
-  );
-
-  const selectedLabelsTitleStyle = useMemo(
-    () => [styles.selectedLabelsTitle, {color: theme.colors.text.secondary}],
-    [theme.colors.text.secondary],
-  );
-
-  const labelChipStyle = useMemo(
-    () => [styles.labelChip, {backgroundColor: theme.colors.primary}],
-    [theme.colors.primary],
-  );
-
-  const labelChipTextStyle = useMemo(
-    () => [styles.labelChipText, {color: theme.colors.text.inverse}],
-    [theme.colors.text.inverse],
-  );
-
-  const isLabelSelected = (labelId: string) => {
-    return selectedLabels.some(l => l.id === labelId);
-  };
-
+  const [visible, setVisible] = useState(false);
+  const [query, setQuery] = useState('');
   if (!enabled) {
     return null;
   }
-
   return (
-    <View style={styles.section}>
-      <Text style={sectionTitleStyle}>Labels (Optional)</Text>
-
-      <TextInput
-        style={searchInputStyle}
-        placeholder="Search labels..."
-        placeholderTextColor={theme.colors.text.secondary}
-        value={searchQuery}
-        onChangeText={setSearchQuery}
+    <>
+      <Button
+        title={
+          selectedLabels.length
+            ? `${selectedLabels.length} labels selected`
+            : 'Choose labels'
+        }
+        variant="secondary"
+        onPress={() => setVisible(true)}
       />
-
-      <ScrollView style={labelsListStyle} nestedScrollEnabled>
-        {filteredLabels.map(label =>
-          (() => {
-            const isSelected = isLabelSelected(label.id);
-            const labelItemStyle = isSelected
-              ? [styles.labelItem, labelItemSelectedStyle]
-              : styles.labelItem;
-            const labelTextStyle = isSelected
-              ? labelNameSelectedStyle
-              : labelNameStyle;
-            const descriptionStyle = isSelected
-              ? labelDescriptionSelectedStyle
-              : labelDescriptionStyle;
-            return (
-              <TouchableOpacity
-                key={label.id}
-                style={labelItemStyle}
-                onPress={() => onToggleLabel(label)}>
-                <View style={styles.labelInfo}>
-                  <Text style={labelTextStyle}>{label.name}</Text>
-                  {label.description && (
-                    <Text style={descriptionStyle} numberOfLines={1}>
-                      {label.description}
-                    </Text>
-                  )}
-                </View>
-                {isSelected && (
-                  <MaterialIcons
-                    name="check"
-                    size={20}
-                    color={theme.colors.text.inverse}
-                  />
-                )}
-              </TouchableOpacity>
-            );
-          })(),
-        )}
-      </ScrollView>
-
-      {selectedLabels.length > 0 && (
-        <View style={styles.selectedLabelsContainer}>
-          <Text style={selectedLabelsTitleStyle}>
-            Selected ({selectedLabels.length}):
-          </Text>
-          <View style={styles.selectedLabelsChips}>
-            {selectedLabels.map(label => (
-              <View key={label.id} style={labelChipStyle}>
-                <Text style={labelChipTextStyle}>{label.name}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-      )}
-    </View>
+      <View style={styles.selected}>
+        {selectedLabels.map(label => (
+          <Button
+            key={label.id}
+            title={`${label.name} ×`}
+            variant="ghost"
+            size="small"
+            onPress={() => onToggleLabel(label)}
+          />
+        ))}
+      </View>
+      <Sheet
+        title="Choose labels"
+        visible={visible}
+        onClose={() => setVisible(false)}>
+        <Input label="Search labels" value={query} onChangeText={setQuery} />
+        {labels
+          .filter(label =>
+            label.name.toLocaleLowerCase().includes(query.toLocaleLowerCase()),
+          )
+          .map(label => (
+            <Pressable
+              key={label.id}
+              accessibilityRole="checkbox"
+              accessibilityState={{
+                checked: selectedLabels.some(value => value.id === label.id),
+              }}
+              onPress={() => onToggleLabel(label)}
+              style={styles.row}>
+              <Text style={{color: theme.colors.text.primary}}>
+                {label.name}
+              </Text>
+              <Text style={{color: theme.colors.accent.primary}}>
+                {selectedLabels.some(value => value.id === label.id) ? '✓' : ''}
+              </Text>
+            </Pressable>
+          ))}
+      </Sheet>
+    </>
   );
 };
-
 const styles = StyleSheet.create({
-  section: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  searchInput: {
-    padding: 12,
-    borderRadius: 8,
-    fontSize: 14,
-    borderWidth: 1,
-    marginBottom: 8,
-  },
-  labelsList: {
-    maxHeight: 160,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  labelItem: {
+  selected: {flexDirection: 'row', flexWrap: 'wrap', gap: 8},
+  row: {
+    minHeight: 48,
+    paddingVertical: 12,
     flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.05)',
-  },
-  labelInfo: {
-    flex: 1,
-  },
-  labelName: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  labelDescription: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  labelDescriptionSelected: {
-    color: 'rgba(255, 255, 255, 0.8)',
-  },
-  selectedLabelsContainer: {
-    marginTop: 8,
-  },
-  selectedLabelsTitle: {
-    fontSize: 12,
-    marginBottom: 4,
-  },
-  selectedLabelsChips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  labelChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  labelChipText: {
-    fontSize: 12,
-    fontWeight: '500',
+    justifyContent: 'space-between',
   },
 });

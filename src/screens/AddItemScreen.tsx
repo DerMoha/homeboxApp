@@ -8,6 +8,7 @@ import {
   Keyboard,
   Alert,
 } from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useTheme} from '../theme/ThemeContext';
 import {
   RouteProp,
@@ -41,6 +42,7 @@ import {KeyboardFormScrollView} from '../components/common/KeyboardFormScrollVie
 
 const AddItemScreen: React.FC = () => {
   const {theme} = useTheme();
+  const insets = useSafeAreaInsets();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList, 'AddItem'>>();
   const route = useRoute<RouteProp<RootStackParamList, 'AddItem'>>();
@@ -53,9 +55,9 @@ const AddItemScreen: React.FC = () => {
   const formCardStyle = [
     styles.formCard,
     {
-      backgroundColor: theme.colors.background.secondary,
+      backgroundColor: theme.colors.background.primary,
       borderColor: theme.colors.borderSubtle,
-      borderRadius: theme.borderRadius.lg,
+      borderRadius: 0,
     },
   ];
 
@@ -338,6 +340,7 @@ const AddItemScreen: React.FC = () => {
               {
                 backgroundColor: theme.colors.background.primary,
                 borderColor: theme.colors.borderSubtle,
+                paddingBottom: Math.max(insets.bottom, 16),
               },
             ]}>
             <TouchableOpacity

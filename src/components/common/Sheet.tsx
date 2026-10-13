@@ -18,12 +18,14 @@ export function Sheet({
   onClose,
   children,
   scrollable = true,
+  onDismiss,
 }: {
   visible: boolean;
   title: string;
   onClose: () => void;
   children: React.ReactNode;
   scrollable?: boolean;
+  onDismiss?: () => void;
 }) {
   const {theme} = useTheme();
   const insets = useSafeAreaInsets();
@@ -32,10 +34,11 @@ export function Sheet({
       visible={visible}
       transparent
       animationType="slide"
-      onRequestClose={onClose}>
+      onRequestClose={onClose}
+      onDismiss={onDismiss}>
       <KeyboardAvoidingView
         style={styles.overlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <Pressable
           style={StyleSheet.absoluteFill}
           accessibilityRole="button"
@@ -67,6 +70,7 @@ export function Sheet({
           {scrollable ? (
             <ScrollView
               keyboardShouldPersistTaps="handled"
+              style={styles.scroll}
               contentContainerStyle={styles.content}>
               {children}
             </ScrollView>
@@ -86,6 +90,7 @@ const styles = StyleSheet.create({
   },
   sheet: {
     maxHeight: '90%',
+    flexShrink: 1,
     padding: 16,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
@@ -97,5 +102,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   title: {fontSize: 22, fontWeight: '600', flex: 1},
+  scroll: {flexShrink: 1},
   content: {gap: 8, paddingBottom: 8},
 });

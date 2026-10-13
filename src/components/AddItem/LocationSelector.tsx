@@ -129,7 +129,7 @@ export const LocationSelector = ({
 };
 const styles = StyleSheet.create({
   body: {flexShrink: 1},
-  list: {maxHeight: 320, flexGrow: 0, flexShrink: 1},
+  list: {height: 240, flexGrow: 0, flexShrink: 1},
   row: {
     minHeight: 52,
     paddingVertical: 12,

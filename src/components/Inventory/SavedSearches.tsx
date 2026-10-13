@@ -83,7 +83,8 @@ export const SavedSearches = ({
   return (
     <>
       <Button
-        title="Saved searches"
+        title="Saved"
+        icon="bookmark-outline"
         onPress={() => setVisible(true)}
         variant="secondary"
         size="small"
@@ -150,8 +151,7 @@ export const SavedSearches = ({
           accessibilityRole="header"
           style={{
             color: theme.colors.text.primary,
-            ...styles.heading,
-            marginTop: 24,
+            ...styles.reviewHeading,
           }}>
           Review lists
         </Text>

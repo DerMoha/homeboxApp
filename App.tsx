@@ -4,6 +4,7 @@ import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import AddItemScreen from './src/screens/AddItemScreen';
 import {Button} from './src/components/common/Button';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {RootStackParamList} from './src/navigation/types';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import type {BottomTabBarProps} from '@react-navigation/bottom-tabs';
@@ -42,6 +43,17 @@ TextComponent.defaultProps = {
   ...TextComponent.defaultProps,
   style: mergedTextStyle,
 };
+
+const cancelFormAction =
+  (navigation: NativeStackNavigationProp<RootStackParamList, 'AddItem'>) =>
+  () => (
+    <Button
+      title="Cancel"
+      size="small"
+      variant="ghost"
+      onPress={() => navigation.goBack()}
+    />
+  );
 
 const MainTabs: React.FC = () => {
   const {theme} = useTheme();
@@ -175,14 +187,7 @@ const AppContent: React.FC = () => {
           options={({navigation, route}) => ({
             presentation: 'modal',
             title: route.params?.itemId ? 'Edit item' : 'Add item',
-            headerLeft: () => (
-              <Button
-                title="Cancel"
-                size="small"
-                variant="ghost"
-                onPress={() => navigation.goBack()}
-              />
-            ),
+            headerLeft: cancelFormAction(navigation),
           })}
         />
       </RootStack.Navigator>

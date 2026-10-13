@@ -159,7 +159,6 @@ export const FilterModal = (props: Props) => {
         }
         onPress={() => {
           props.onApply();
-          props.onClose();
         }}
       />
       <Button title="Clear filters" variant="ghost" onPress={props.onClear} />
