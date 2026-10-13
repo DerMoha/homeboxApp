@@ -271,7 +271,7 @@ const LocationsScreen: React.FC = () => {
           );
         }
 
-        const response = await axiosInstance.get('/api/v1/locations/tree');
+        const response = await axiosInstance.get('/api/v1/entities/tree');
         return response.data;
       },
       {
@@ -299,7 +299,7 @@ const LocationsScreen: React.FC = () => {
             'No active server connection. Please check your server settings.',
           );
         }
-        const response = await axiosInstance.get('/api/v1/locations/tree');
+        const response = await axiosInstance.get('/api/v1/entities/tree');
         return response.data;
       },
       {isRefresh: true},

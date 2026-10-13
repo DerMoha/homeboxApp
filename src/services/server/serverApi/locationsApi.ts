@@ -2,27 +2,19 @@ import {AxiosInstance} from 'axios';
 import {
   ApiResponse,
   InventoryResponse,
-  Item,
-  Location,
   LocationResponse,
 } from '../../../types';
 import {logger} from '../../../utils/logger';
-import {findLocationInTree, getNodeItems} from '../locationTree';
 import {toBootstrapError} from '../serverErrors';
-import {TreeNode} from '../types';
+import {EntityListResult, TreeNode} from '../types';
+import {
+  mapEntitySummaryToLocation,
+  mapEntityToItem,
+} from './entityAdapter';
 
 const noConnectionResponse = <T>(): ApiResponse<T> => ({
   success: false,
   error: 'No active server connection or authentication token',
-});
-
-const transformLocationsResponse = (
-  locations: Location[],
-): LocationResponse => ({
-  locations,
-  page: 1,
-  pageSize: locations.length,
-  total: locations.length,
 });
 
 export const getLocations = async (
@@ -34,8 +26,22 @@ export const getLocations = async (
       return noConnectionResponse();
     }
 
-    const response = await axiosInstance.get('/api/v1/locations');
-    return {success: true, data: transformLocationsResponse(response.data)};
+    const response = await axiosInstance.get('/api/v1/entities', {
+      params: {isLocation: true, page: 1, pageSize: 1000, orderBy: 'name'},
+    });
+
+    const result: EntityListResult = response.data;
+    const locations = (result.items ?? []).map(mapEntitySummaryToLocation);
+
+    return {
+      success: true,
+      data: {
+        locations,
+        page: 1,
+        pageSize: locations.length,
+        total: result.total ?? locations.length,
+      },
+    };
   } catch (error) {
     return toBootstrapError(error as any) as ApiResponse<LocationResponse>;
   }
@@ -50,19 +56,17 @@ export const getLocationItems = async (
       return {success: false, error: 'No active server connection'};
     }
 
-    const response = await axiosInstance.get('/api/v1/locations/tree');
-    const locationNode = findLocationInTree(response.data, locationId);
-    let items = getNodeItems(locationNode);
+    const response = await axiosInstance.get('/api/v1/entities', {
+      params: {
+        parentIds: locationId,
+        isLocation: false,
+        page: 1,
+        pageSize: 1000,
+      },
+    });
 
-    if (!items.length) {
-      const itemsResponse = await axiosInstance.get('/api/v1/items', {
-        params: {page: 1, pageSize: 1000},
-      });
-      const allItems = itemsResponse.data.items || [];
-      items = allItems.filter(
-        (item: Item) => item.location && item.location.id === locationId,
-      );
-    }
+    const result: EntityListResult = response.data;
+    const items = (result.items ?? []).map(mapEntityToItem);
 
     return {
       success: true,
@@ -87,7 +91,7 @@ export const getLocationTree = async (
       return {success: false, error: 'No active server connection'};
     }
 
-    const response = await axiosInstance.get('/api/v1/locations/tree');
+    const response = await axiosInstance.get('/api/v1/entities/tree');
     return {success: true, data: response.data};
   } catch (error) {
     logger.error('Error getting location tree', {error});

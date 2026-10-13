@@ -9,11 +9,11 @@ import ServerService from '../services/serverService';
  *
  * @example
  * const url = getImageUrl('123', 'abc-456');
- * // Returns: "http://server.com/api/v1/items/123/attachments/abc-456"
+ * // Returns: "http://server.com/api/v1/entities/123/attachments/abc-456"
  */
 export const getImageUrl = (itemId: string, imageId: string): string => {
   const service = ServerService.getInstance();
-  return `${service.getBaseUrl()}/api/v1/items/${itemId}/attachments/${imageId}`;
+  return `${service.getBaseUrl()}/api/v1/entities/${itemId}/attachments/${imageId}`;
 };
 
 /**

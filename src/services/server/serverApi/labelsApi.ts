@@ -1,6 +1,8 @@
 import {AxiosInstance} from 'axios';
 import {ApiResponse, Label} from '../../../types';
 import {toBootstrapError} from '../serverErrors';
+import {TagSummary} from '../types';
+import {mapTagSummaryToLabel} from './entityAdapter';
 
 export const getLabels = async (
   axiosInstance: AxiosInstance | null,
@@ -14,8 +16,12 @@ export const getLabels = async (
       };
     }
 
-    const response = await axiosInstance.get('/api/v1/labels');
-    return {success: true, data: response.data};
+    const response = await axiosInstance.get('/api/v1/tags');
+    const tags: TagSummary[] = Array.isArray(response.data)
+      ? response.data
+      : [];
+
+    return {success: true, data: tags.map(mapTagSummaryToLabel)};
   } catch (error) {
     return toBootstrapError(error as any) as ApiResponse<Label[]>;
   }

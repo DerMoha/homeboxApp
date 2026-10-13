@@ -378,22 +378,35 @@ describe('ServerService', () => {
     });
 
     it('should fetch item successfully', async () => {
-      const mockItem = {
+      const mockEntity = {
         id: 'item-1',
         name: 'Test Item',
         quantity: 5,
       };
 
       mockAxiosInstance.get.mockResolvedValueOnce({
-        data: mockItem,
+        data: mockEntity,
       });
 
       const result = await serverService.getItemById('item-1');
 
       expect(result.success).toBe(true);
-      expect(result.data).toEqual(mockItem);
+      expect(result.data).toEqual({
+        ...mockEntity,
+        description: '',
+        location: null,
+        labels: [],
+        archived: false,
+        assetId: '',
+        createdAt: '',
+        updatedAt: '',
+        imageId: null,
+        insured: false,
+        purchasePrice: 0,
+        barcode: null,
+      });
       expect(mockAxiosInstance.get).toHaveBeenCalledWith(
-        '/api/v1/items/item-1',
+        '/api/v1/entities/item-1',
       );
     });
 
