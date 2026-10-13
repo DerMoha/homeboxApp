@@ -88,6 +88,7 @@ public class NativeFlow extends Instrumentation {
       click("Missing photos",true,true);
       click("Remove filter: Missing photos",true,false);
       click("E2E Camera", false, false);
+      assertItemMenuVisible();
       click("Edit", true, true);
       fill("Item name", "E2E Camera edited");
       click("Save Changes", true, true);
@@ -151,6 +152,11 @@ public class NativeFlow extends Instrumentation {
   private void dismissOptionalOk() {
     pause(700);
     for(AccessibilityNodeInfo n:nodes()) if(matches(n.getText(),"OK",true)) {n.performAction(AccessibilityNodeInfo.ACTION_CLICK);pause(500);return;}
+  }
+  private void assertItemMenuVisible() {
+    AccessibilityNodeInfo node=find("Item actions",true,false,false);
+    Rect menu=new Rect(),parent=new Rect();node.getBoundsInScreen(menu);node.getParent().getBoundsInScreen(parent);
+    if(menu.width()<1 || menu.left<parent.left || menu.right>parent.right) throw new AssertionError("Item menu clipped: "+menu+" in "+parent);
   }
   private void assertLocationResultsVisible() {
     Rect input=new Rect(), match=new Rect();

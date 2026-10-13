@@ -749,6 +749,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
+    flex: 1,
+    minWidth: 0,
     marginBottom: 6,
   },
   titleRow: {
