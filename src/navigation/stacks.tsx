@@ -75,7 +75,7 @@ export const SettingsStackScreen: React.FC = () => {
       <SettingsStack.Screen
         name="InventorySettings"
         component={InventorySettingsScreen}
-        options={{title: 'Inventory Display'}}
+        options={{title: 'Item display'}}
       />
       <SettingsStack.Screen
         name="AddItemSettings"
@@ -112,7 +112,7 @@ export const InventoryStackScreen: React.FC = () => {
       <InventoryStack.Screen
         name="Inventory"
         component={InventoryScreen}
-        options={{title: 'Inventory', headerLargeTitle: true}}
+        options={{title: 'Items', headerLargeTitle: true}}
       />
       <InventoryStack.Screen
         name="ItemDetail"

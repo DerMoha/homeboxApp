@@ -172,7 +172,7 @@ const InventorySettingsScreen: React.FC = () => {
               fontFamily: theme.typography.fonts.semibold,
             },
           ]}>
-          Inventory Display
+          Item display
         </Text>
         <Text
           style={[

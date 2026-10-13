@@ -61,7 +61,7 @@ const formatShortDate = (value: string) => {
   if (Number.isNaN(date.getTime())) {
     return '—';
   }
-  return date.toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
+  return date.toLocaleDateString(undefined, {month: 'short', day: 'numeric'});
 };
 
 const getTimestamp = (value?: string) => {

@@ -32,7 +32,7 @@ const VARIANT_CONFIG: Record<
   },
   'empty-inventory': {
     icon: 'inventory-2',
-    message: 'Your inventory is empty',
+    message: 'No items yet',
     subtitle: 'Start tracking your items by adding your first one.',
     actionLabel: 'Add Your First Item',
   },

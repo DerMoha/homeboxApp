@@ -301,7 +301,7 @@ const SettingsScreen: React.FC = () => {
 
       <SettingsItem
         icon="delete-sweep"
-        title="Clear offline inventory"
+        title="Clear offline items"
         theme={theme}
         onPress={() => {
           const config = ServerService.getInstance().getBrowsingConfig();
@@ -309,7 +309,7 @@ const SettingsScreen: React.FC = () => {
             return;
           }
           Alert.alert(
-            'Clear offline inventory?',
+            'Clear offline items?',
             `Remove downloaded inventory and photos for ${config.name || config.host}? Drafts and pending saves are kept.`,
             [
               {text: 'Cancel', style: 'cancel'},
@@ -337,7 +337,7 @@ const SettingsScreen: React.FC = () => {
       <View style={styles.settingsGroup}>
         <SettingsItem
           icon="view-list"
-          title="Inventory Display"
+          title="Item display"
           onPress={() => navigation.navigate('InventorySettings')}
           theme={theme}
         />

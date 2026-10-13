@@ -103,11 +103,46 @@ class ServerService {
     await this.disconnect();
     const {password: _password, ...safeConfig} = config;
     this.browsingConfig = safeConfig;
+    const cached = await offlineCacheService.get<{currency: string}>(
+      config.id,
+      'group-currency',
+    );
+    if (cached?.data.currency) {
+      this.currencies.set(config.id, cached.data.currency);
+    }
     await this.setLastUsedServer(config.id);
   }
 
   public getBrowsingConfig() {
     return this.currentConfig || this.browsingConfig;
+  }
+
+  private currencies = new Map<string, string>();
+  public getCurrency(): string | undefined {
+    const server = this.getBrowsingConfig()?.id;
+    return server ? this.currencies.get(server) : undefined;
+  }
+  private async loadCurrency(server: string, client: AxiosInstance) {
+    const cached = await offlineCacheService.get<{currency: string}>(
+      server,
+      'group-currency',
+    );
+    if (cached?.data.currency) {
+      this.currencies.set(server, cached.data.currency);
+    }
+    try {
+      const response = await client.get<{currency?: string}>('/api/v1/groups');
+      const currency = response.data.currency?.toUpperCase();
+      if (currency && /^[A-Z]{3}$/.test(currency)) {
+        new Intl.NumberFormat(undefined, {style: 'currency', currency}).format(
+          0,
+        );
+        this.currencies.set(server, currency);
+        await offlineCacheService.set(server, 'group-currency', {currency});
+      }
+    } catch {
+      /* Missing currency stays unlabelled rather than assuming dollars. */
+    }
   }
 
   private constructor() {}
@@ -158,6 +193,7 @@ class ServerService {
       };
       this.token = authResult.token;
       applyAuthorizationHeader(nextAxiosInstance, authResult.token);
+      await this.loadCurrency(config.id, nextAxiosInstance);
 
       if (previousAxiosInstance && previousToken) {
         await logoutServer(previousAxiosInstance);

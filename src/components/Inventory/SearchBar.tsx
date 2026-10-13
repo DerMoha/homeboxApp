@@ -112,7 +112,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           style={styles.searchIcon}
         />
         <TextInput
-          accessibilityLabel="Search inventory on server"
+          accessibilityLabel="Search items"
           style={inputStyle}
           placeholder="Search items..."
           placeholderTextColor={theme.colors.text.secondary}

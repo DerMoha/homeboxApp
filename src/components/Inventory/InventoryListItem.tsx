@@ -1,3 +1,4 @@
+import {formatMoney} from '../../utils/valueFormatting';
 import React, {useMemo, useCallback} from 'react';
 import {View, Text, Image, StyleSheet} from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
@@ -293,7 +294,7 @@ const InventoryListItemComponent: React.FC<InventoryListItemProps> = ({
             item.purchasePrice > 0 && (
               <MetaItem
                 icon="attach-money"
-                text={`$${item.purchasePrice.toFixed(2)}`}
+                text={formatMoney(item.purchasePrice)}
                 theme={theme}
               />
             )}

@@ -1,12 +1,5 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Image,
-  Share,
-} from 'react-native';
+import {View, Text, StyleSheet, ScrollView, Image, Share} from 'react-native';
 import {
   RouteProp,
   useRoute,
@@ -15,6 +8,7 @@ import {
 } from '@react-navigation/native';
 import {NavigationProp} from '@react-navigation/native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import {formatMoney} from '../utils/valueFormatting';
 import ServerService from '../services/serverService';
 import {Item} from '../types';
 import {RootTabParamList} from '../types/navigation';
@@ -42,7 +36,7 @@ function formatCurrency(value?: number): string {
   if (!value || value <= 0) {
     return '—';
   }
-  return `$${value.toFixed(2)}`;
+  return formatMoney(value);
 }
 
 interface StatCardProps {
@@ -288,7 +282,7 @@ const ItemDetailScreen: React.FC = () => {
     }
     lines.push(`Quantity: ${item.quantity}`);
     if (item.purchasePrice && item.purchasePrice > 0) {
-      lines.push(`Purchase Price: $${item.purchasePrice.toFixed(2)}`);
+      lines.push(`Purchase price: ${formatMoney(item.purchasePrice)}`);
     }
     if (description) {
       lines.push(`Description: ${description}`);

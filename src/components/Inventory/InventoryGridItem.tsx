@@ -1,3 +1,4 @@
+import {formatMoney} from '../../utils/valueFormatting';
 import React, {useMemo, useCallback, useRef} from 'react';
 import {
   View,
@@ -244,7 +245,7 @@ const InventoryGridItemComponent: React.FC<InventoryGridItemProps> = ({
   );
 
   const formatPrice = useCallback((price: number) => {
-    return `$${price.toFixed(2)}`;
+    return formatMoney(price);
   }, []);
 
   return (
