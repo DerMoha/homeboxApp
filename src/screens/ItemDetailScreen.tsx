@@ -6,7 +6,6 @@ import {
   ScrollView,
   Image,
   Share,
-  TouchableOpacity,
 } from 'react-native';
 import {
   RouteProp,
@@ -24,6 +23,7 @@ import {useTheme} from '../theme/ThemeContext';
 import {useAsyncState} from '../hooks/useAsyncState';
 import {getImageSource, formatDateTime} from '../utils/imageUtils';
 import {AttachmentList} from '../components/ItemDetail/AttachmentList';
+import {ActionMenu} from '../components/common/ActionMenu';
 import {Button} from '../components/common/Button';
 import {LoadingState} from '../components/common/LoadingState';
 import {ErrorState} from '../components/common/ErrorState';
@@ -534,6 +534,35 @@ const ItemDetailScreen: React.FC = () => {
     ],
   );
 
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () =>
+        item ? (
+          <View style={styles.headerActions}>
+            <Button
+              title="Edit"
+              size="small"
+              variant="ghost"
+              disabled={Boolean(cacheInfo.fromCache)}
+              onPress={() => navigation.navigate('AddItem', {itemId: item.id})}
+            />
+            <ActionMenu
+              title="Item actions"
+              actions={[
+                {
+                  title: 'Duplicate item',
+                  disabled: Boolean(cacheInfo.fromCache),
+                  onPress: () =>
+                    navigation.navigate('AddItem', {duplicateItemId: item.id}),
+                },
+                {title: 'Share item', onPress: handleShare},
+              ]}
+            />
+          </View>
+        ) : null,
+    });
+  }, [navigation, item, cacheInfo.fromCache, handleShare]);
+
   if (isLoading) {
     return <LoadingState message="Loading item details..." />;
   }
@@ -552,28 +581,6 @@ const ItemDetailScreen: React.FC = () => {
         contentContainerStyle={scrollContentStyle}
         showsVerticalScrollIndicator={false}>
         <CacheStatus info={cacheInfo} />
-        <Button
-          title="Edit item"
-          variant="secondary"
-          disabled={Boolean(cacheInfo.fromCache)}
-          onPress={() =>
-            navigation.navigate('AddItem', {
-              itemId: item.id,
-              duplicateItemId: undefined,
-            })
-          }
-        />
-        <Button
-          title="Duplicate item"
-          variant="secondary"
-          disabled={Boolean(cacheInfo.fromCache)}
-          onPress={() =>
-            navigation.navigate('AddItem', {
-              itemId: undefined,
-              duplicateItemId: item.id,
-            })
-          }
-        />
         <View style={heroCardStyle}>
           <View style={accentStripeStyle} />
           <View style={heroContentStyle}>
@@ -596,21 +603,6 @@ const ItemDetailScreen: React.FC = () => {
               <View style={styles.heroText}>
                 <View style={styles.titleRow}>
                   <Text style={titleStyle}>{item.name}</Text>
-                  <TouchableOpacity
-                    onPress={handleShare}
-                    style={[
-                      styles.shareButton,
-                      {
-                        backgroundColor: theme.colors.accent.muted,
-                        borderRadius: theme.borderRadius.sm,
-                      },
-                    ]}>
-                    <MaterialIcons
-                      name="share"
-                      size={20}
-                      color={theme.colors.accent.primary}
-                    />
-                  </TouchableOpacity>
                 </View>
                 <Text style={descStyle}>
                   {description || 'No description added yet.'}
@@ -719,6 +711,7 @@ const ItemDetailScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  headerActions: {flexDirection: 'row', alignItems: 'center'},
   container: {
     flex: 1,
   },

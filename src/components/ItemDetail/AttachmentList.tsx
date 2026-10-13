@@ -1,6 +1,7 @@
 import React, {useState} from 'react';
 import {
   Alert,
+  Pressable,
   Modal,
   ScrollView,
   Text,
@@ -13,6 +14,7 @@ import {Item} from '../../types';
 import {openAttachment} from '../../services/attachmentService';
 import ServerService from '../../services/serverService';
 import {useTheme} from '../../theme/ThemeContext';
+import {ActionMenu} from '../common/ActionMenu';
 import {Button} from '../common/Button';
 import {PhotoGallery} from './PhotoGallery';
 
@@ -61,75 +63,85 @@ export function AttachmentList({
       )}
       {files.map(file => (
         <View key={file.id} style={styles.file}>
-          <Text style={{color: theme.colors.text.primary}}>
-            {attachmentName(file)}
-            {file.primary ? ' · Primary photo' : ''}
-          </Text>
-          <Button
-            title={`Open ${attachmentName(file)}`}
-            variant="secondary"
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Open ${attachmentName(file)}`}
             disabled={busy}
-            onPress={() => perform(() => openAttachment(item.id, file))}
-          />
-          {file.type === 'photo' && !file.primary && (
-            <Button
-              title="Set as primary photo"
-              variant="ghost"
-              disabled={offline || busy}
-              onPress={() =>
-                perform(async () => {
-                  const result =
-                    await ServerService.getInstance().updateAttachment(
-                      item.id,
-                      file.id,
-                      {primary: true, type: file.type, title: file.title},
-                    );
-                  if (!result.success) {
-                    throw new Error(result.error);
-                  }
-                  onChanged();
-                })
-              }
-            />
-          )}
-          <Button
-            title="Rename attachment"
-            variant="ghost"
-            disabled={offline || busy}
-            onPress={() => {
-              setTitle(attachmentName(file));
-              setEditing(file.id);
-            }}
-          />
-          <Button
-            title={`Remove ${attachmentName(file)}`}
-            variant="danger"
-            disabled={offline || busy}
-            onPress={() =>
-              Alert.alert(
-                'Remove attachment?',
-                'This removes the file from the server.',
-                [
-                  {text: 'Cancel', style: 'cancel'},
-                  {
-                    text: 'Remove',
-                    style: 'destructive',
-                    onPress: () =>
-                      perform(async () => {
-                        const result =
-                          await ServerService.getInstance().deleteAttachment(
-                            item.id,
-                            file.id,
-                          );
-                        if (!result.success) {
-                          throw new Error(result.error);
-                        }
-                        onChanged();
-                      }),
-                  },
-                ],
-              )
-            }
+            style={styles.fileInfo}
+            onPress={() => perform(() => openAttachment(item.id, file))}>
+            <Text style={{color: theme.colors.text.primary}}>
+              {attachmentName(file)}
+            </Text>
+            <Text style={{color: theme.colors.text.secondary}}>
+              {file.primary ? 'Primary photo' : file.type || 'Document'}
+            </Text>
+          </Pressable>
+          <ActionMenu
+            title={`Actions for ${attachmentName(file)}`}
+            actions={[
+              ...(file.type === 'photo' && !file.primary
+                ? [
+                    {
+                      title: 'Set as primary photo',
+                      disabled: offline || busy,
+                      onPress: () =>
+                        perform(async () => {
+                          const result =
+                            await ServerService.getInstance().updateAttachment(
+                              item.id,
+                              file.id,
+                              {
+                                primary: true,
+                                type: file.type,
+                                title: file.title,
+                              },
+                            );
+                          if (!result.success) {
+                            throw new Error(result.error);
+                          }
+                          onChanged();
+                        }),
+                    },
+                  ]
+                : []),
+              {
+                title: 'Rename',
+                disabled: offline || busy,
+                onPress: () => {
+                  setTitle(attachmentName(file));
+                  setEditing(file.id);
+                },
+              },
+              {
+                title: 'Remove',
+                disabled: offline || busy,
+                destructive: true,
+                onPress: () =>
+                  Alert.alert(
+                    'Remove attachment?',
+                    'This removes the file from the server.',
+                    [
+                      {text: 'Cancel', style: 'cancel'},
+                      {
+                        text: 'Remove',
+                        style: 'destructive',
+                        onPress: () =>
+                          perform(async () => {
+                            const result =
+                              await ServerService.getInstance().deleteAttachment(
+                                item.id,
+                                file.id,
+                              );
+                            if (!result.success) {
+                              throw new Error(result.error);
+                            }
+                            onChanged();
+                          }),
+                      },
+                    ],
+                  ),
+              },
+            ]}
           />
         </View>
       ))}
@@ -188,5 +200,11 @@ export function AttachmentList({
 }
 const styles = StyleSheet.create({
   container: {padding: 16, gap: 12},
-  file: {gap: 8, paddingVertical: 12},
+  file: {
+    gap: 8,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  fileInfo: {flex: 1, minHeight: 48, justifyContent: 'center'},
 });
