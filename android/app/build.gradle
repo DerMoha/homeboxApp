@@ -113,15 +113,20 @@ android {
             signingConfig signingConfigs.debug
         }
         release {
-            if (!hasReleaseSigning) {
-                throw new GradleException("Release signing credentials are missing. Set HOMEBOX_RELEASE_STORE_FILE, HOMEBOX_RELEASE_STORE_PASSWORD, HOMEBOX_RELEASE_KEY_ALIAS, and HOMEBOX_RELEASE_KEY_PASSWORD before building a release.")
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
             }
-
-            signingConfig signingConfigs.release
             minifyEnabled enableProguardInReleaseBuilds
             shrinkResources enableShrinkResourcesInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }
+    }
+}
+
+gradle.taskGraph.whenReady { taskGraph ->
+    def releaseRequested = taskGraph.allTasks.any { it.name.toLowerCase().contains("release") }
+    if (releaseRequested && !hasReleaseSigning) {
+        throw new GradleException("Release signing credentials are missing. Set HOMEBOX_RELEASE_STORE_FILE, HOMEBOX_RELEASE_STORE_PASSWORD, HOMEBOX_RELEASE_KEY_ALIAS, and HOMEBOX_RELEASE_KEY_PASSWORD before building a release.")
     }
 }
 
