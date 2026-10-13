@@ -27,8 +27,8 @@ export const useFormInputFocus = (spaceBelow = 24) => {
 
 /** Android resizes the viewport; iOS uses padding to avoid the keyboard. */
 export const KeyboardFormScrollView: React.FC<
-  ScrollViewProps & {resetScrollKey?: number}
-> = ({resetScrollKey, ...props}) => {
+  ScrollViewProps & {resetScrollKey?: number; footer?: React.ReactNode}
+> = ({resetScrollKey, footer, ...props}) => {
   const scrollRef = useRef<React.ElementRef<typeof ScrollView>>(null);
   const offset = useRef(0);
   const reservedSpace = useRef(24);
@@ -121,6 +121,7 @@ export const KeyboardFormScrollView: React.FC<
             revealFocusedInput();
           }}
         />
+        {footer}
       </FormInputFocusContext.Provider>
     </KeyboardAvoidingView>
   );

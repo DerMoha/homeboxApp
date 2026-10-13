@@ -339,6 +339,55 @@ const AddItemScreen: React.FC = () => {
   return (
     <View style={screenStyle}>
       <KeyboardFormScrollView
+        footer={
+          <View
+            style={[
+              styles.saveFooter,
+              {
+                backgroundColor: theme.colors.background.primary,
+                borderColor: theme.colors.borderSubtle,
+              },
+            ]}>
+            <TouchableOpacity
+              style={submitButtonStyle}
+              onPress={handleSubmit}
+              disabled={isLoading || isPreparingItem || !draftReady}
+              accessibilityRole="button"
+              accessibilityLabel={
+                isEditing
+                  ? 'Save Changes'
+                  : isQuickEntry
+                    ? 'Save & next'
+                    : 'Add Item'
+              }
+              accessibilityState={{
+                disabled: isLoading || isPreparingItem || !draftReady,
+                busy: isLoading,
+              }}
+              activeOpacity={0.8}>
+              {isLoading ? (
+                <ActivityIndicator color={theme.colors.text.inverse} />
+              ) : (
+                <>
+                  <View style={submitIconStyle}>
+                    <MaterialIcons
+                      name={isEditing ? 'edit' : 'add'}
+                      size={20}
+                      color={theme.colors.text.inverse}
+                    />
+                  </View>
+                  <Text style={submitButtonTextStyle}>
+                    {isEditing
+                      ? 'Save Changes'
+                      : isQuickEntry
+                        ? 'Save & next'
+                        : 'Add Item'}
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        }
         resetScrollKey={savedCount}
         style={styles.scrollView}
         contentContainerStyle={contentStyle}
@@ -349,7 +398,8 @@ const AddItemScreen: React.FC = () => {
             photos and attachments stay with the original item.
           </Text>
         )}
-        {draftStatus ? (
+        {draftStatus &&
+        (!isQuickEntry || draftStatus !== 'Draft saved on this device') ? (
           <View>
             <Text
               accessibilityLiveRegion="polite"
@@ -391,9 +441,7 @@ const AddItemScreen: React.FC = () => {
             accessibilityRole="button"
             style={styles.modeButton}>
             <Text style={{color: theme.colors.accent.primary}}>
-              {quickEntry
-                ? 'Quick entry · Show all fields'
-                : 'All fields · Switch to quick entry'}
+              {quickEntry ? 'More details' : 'Fewer details'}
             </Text>
           </TouchableOpacity>
         )}
@@ -406,7 +454,9 @@ const AddItemScreen: React.FC = () => {
               : 'Name, photo, location, save. The location stays selected for your next item.'}
           </Text>
         )}
-        <SectionHeader title="Item Details" icon="info" variant="withIcon" />
+        {!isQuickEntry && (
+          <SectionHeader title="Item Details" icon="info" variant="withIcon" />
+        )}
 
         <View style={formCardStyle}>
           <ItemFormFields
@@ -459,13 +509,15 @@ const AddItemScreen: React.FC = () => {
           />
         </View>
 
-        <AttachmentQueue
-          attachments={attachments}
-          onChange={setAttachments}
-          imageUri={selectedImage}
-          clearImage={clearImage}
-          disabled={isLoading}
-        />
+        {!isQuickEntry && (
+          <AttachmentQueue
+            attachments={attachments}
+            onChange={setAttachments}
+            imageUri={selectedImage}
+            clearImage={clearImage}
+            disabled={isLoading}
+          />
+        )}
 
         {!isQuickEntry && enabledFields.labels && (
           <>
@@ -489,45 +541,6 @@ const AddItemScreen: React.FC = () => {
           </>
         )}
 
-        <TouchableOpacity
-          style={submitButtonStyle}
-          onPress={handleSubmit}
-          disabled={isLoading || isPreparingItem || !draftReady}
-          accessibilityRole="button"
-          accessibilityLabel={
-            isEditing
-              ? 'Save Changes'
-              : isQuickEntry
-                ? 'Save & next'
-                : 'Add Item'
-          }
-          accessibilityState={{
-            disabled: isLoading || isPreparingItem || !draftReady,
-            busy: isLoading,
-          }}
-          activeOpacity={0.8}>
-          {isLoading ? (
-            <ActivityIndicator color={theme.colors.text.inverse} />
-          ) : (
-            <>
-              <View style={submitIconStyle}>
-                <MaterialIcons
-                  name={isEditing ? 'edit' : 'add'}
-                  size={20}
-                  color={theme.colors.text.inverse}
-                />
-              </View>
-              <Text style={submitButtonTextStyle}>
-                {isEditing
-                  ? 'Save Changes'
-                  : isQuickEntry
-                    ? 'Save & next'
-                    : 'Add Item'}
-              </Text>
-            </>
-          )}
-        </TouchableOpacity>
-
         <View style={styles.bottomSpacer} />
       </KeyboardFormScrollView>
 
@@ -541,6 +554,7 @@ const AddItemScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  saveFooter: {padding: 16, borderTopWidth: StyleSheet.hairlineWidth},
   modeButton: {paddingVertical: 12},
   entryHint: {marginBottom: 8},
   container: {
@@ -580,7 +594,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 16,
     paddingHorizontal: 18,
-    marginTop: 32,
+    marginTop: 0,
     gap: 10,
   },
   submitIconContainer: {
