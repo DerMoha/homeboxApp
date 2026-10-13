@@ -1,16 +1,12 @@
-import React, {useEffect, useRef} from 'react';
-import {View, Text, StyleSheet, Animated} from 'react-native';
+import React from 'react';
+import {View, Text, StyleSheet} from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useTheme} from '../../theme/ThemeContext';
 import {Button} from './Button';
 import {hapticImpact} from '../../utils/haptics';
 
 type EmptyStateVariant =
-  | 'default'
-  | 'empty-inventory'
-  | 'no-results'
-  | 'no-location-items'
-  | 'error';
+  'default' | 'empty-inventory' | 'no-results' | 'no-location-items' | 'error';
 
 interface EmptyStateProps {
   message?: string;
@@ -71,30 +67,6 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   const finalSubtitle = subtitle ?? config.subtitle;
   const finalActionLabel = actionLabel ?? config.actionLabel;
   const {theme} = useTheme();
-  const floatAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const floatAnimation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(floatAnim, {
-          toValue: -8,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(floatAnim, {
-          toValue: 0,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-      ]),
-    );
-    floatAnimation.start();
-
-    return () => {
-      floatAnimation.stop();
-    };
-  }, [floatAnim]);
-
   const handleActionPress = () => {
     hapticImpact('medium');
     onAction?.();
@@ -112,13 +84,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           {backgroundColor: theme.colors.accent.muted},
         ]}
       />
-      <Animated.View
-        style={[
-          styles.iconContainer,
-          {
-            transform: [{translateY: floatAnim}],
-          },
-        ]}>
+      <View style={styles.iconContainer}>
         <View
           style={[
             styles.iconBackground,
@@ -138,7 +104,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
             color={theme.colors.accent.primary}
           />
         </View>
-      </Animated.View>
+      </View>
       <Text
         style={[
           styles.message,
