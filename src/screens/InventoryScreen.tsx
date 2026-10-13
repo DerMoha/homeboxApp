@@ -499,7 +499,7 @@ const InventoryScreen: React.FC = () => {
                 disabled={isLoading}
               />
               <Button
-                title="Load all results and cache inventory"
+                title={debouncedQuery ? 'Load all matches' : 'Load all items'}
                 onPress={loadAll}
                 disabled={isLoading}
               />
