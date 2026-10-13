@@ -13,6 +13,7 @@ import {
   useFocusEffect,
   useNavigation,
 } from '@react-navigation/native';
+import {Button} from '../components/common/Button';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {CacheStatus, CacheInfo} from '../components/common/CacheStatus';
 import {useTheme} from '../theme/ThemeContext';
@@ -402,10 +403,7 @@ const HomeScreen: React.FC = () => {
         return;
       }
 
-      navigation.navigate('AddItemTab', {
-        screen: 'AddItem',
-        params: {barcode: barcode.trim()},
-      });
+      navigation.navigate('AddItem', {barcode: barcode.trim()});
     },
     [navigation],
   );
@@ -427,6 +425,11 @@ const HomeScreen: React.FC = () => {
       ]}
       contentContainerStyle={styles.contentContainer}
       showsVerticalScrollIndicator={false}>
+      <Button
+        title="Add item"
+        icon="add"
+        onPress={() => navigation.navigate('AddItem')}
+      />
       <CacheStatus info={cacheInfo} />
       <View style={styles.brandingArea}>
         <View

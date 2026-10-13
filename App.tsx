@@ -1,6 +1,10 @@
-import React, {useCallback, useEffect, useMemo} from 'react';
+import React, {useEffect, useMemo} from 'react';
 import {Text, TextStyle} from 'react-native';
 import {NavigationContainer} from '@react-navigation/native';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import AddItemScreen from './src/screens/AddItemScreen';
+import {Button} from './src/components/common/Button';
+import {RootStackParamList} from './src/navigation/types';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import type {BottomTabBarProps} from '@react-navigation/bottom-tabs';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
@@ -12,7 +16,6 @@ import {
   SettingsStackScreen,
   LocationsStackScreen,
   InventoryStackScreen,
-  AddItemStackScreen,
 } from './src/navigation/stacks';
 import HomeScreen from './src/screens/HomeScreen';
 import {useServerConnection} from './src/hooks/useServerConnection';
@@ -21,6 +24,7 @@ import {logger} from './src/utils/logger';
 
 type FontWeight = TextStyle['fontWeight'];
 
+const RootStack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
 const defaultFontFamily = 'Sora';
@@ -32,11 +36,43 @@ const baseTextStyle: TextStyle = {fontFamily: defaultFontFamily};
 const mergedTextStyle = Array.isArray(existingDefaultStyle)
   ? [baseTextStyle, ...existingDefaultStyle]
   : existingDefaultStyle
-  ? [baseTextStyle, existingDefaultStyle]
-  : [baseTextStyle];
+    ? [baseTextStyle, existingDefaultStyle]
+    : [baseTextStyle];
 TextComponent.defaultProps = {
   ...TextComponent.defaultProps,
   style: mergedTextStyle,
+};
+
+const MainTabs: React.FC = () => {
+  const {theme} = useTheme();
+  const screenOptions = {
+    headerStyle: {backgroundColor: theme.colors.background.primary},
+    headerTintColor: theme.colors.text.primary,
+    headerShadowVisible: false,
+  };
+  const renderTabBar = (props: BottomTabBarProps) => (
+    <CustomTabBar {...props} />
+  );
+  return (
+    <Tab.Navigator tabBar={renderTabBar} screenOptions={screenOptions}>
+      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen
+        name="InventoryTab"
+        component={InventoryStackScreen}
+        options={{headerShown: false}}
+      />
+      <Tab.Screen
+        name="Locations"
+        component={LocationsStackScreen}
+        options={{headerShown: false}}
+      />
+      <Tab.Screen
+        name="SettingsTab"
+        component={SettingsStackScreen}
+        options={{headerShown: false}}
+      />
+    </Tab.Navigator>
+  );
 };
 
 const AppContent: React.FC = () => {
@@ -121,40 +157,35 @@ const AppContent: React.FC = () => {
     [theme],
   );
 
-  const renderTabBar = useCallback(
-    (props: BottomTabBarProps) => <CustomTabBar {...props} />,
-    [],
-  );
-
   if (isConnecting) {
     return <LoadingState message="Connecting..." />;
   }
 
   return (
     <NavigationContainer theme={navigationTheme}>
-      <Tab.Navigator tabBar={renderTabBar} screenOptions={screenOptions}>
-        <Tab.Screen name="Home" component={HomeScreen} />
-        <Tab.Screen
-          name="InventoryTab"
-          component={InventoryStackScreen}
+      <RootStack.Navigator screenOptions={screenOptions}>
+        <RootStack.Screen
+          name="Main"
+          component={MainTabs}
           options={{headerShown: false}}
         />
-        <Tab.Screen
-          name="AddItemTab"
-          component={AddItemStackScreen}
-          options={{headerShown: false}}
+        <RootStack.Screen
+          name="AddItem"
+          component={AddItemScreen}
+          options={({navigation, route}) => ({
+            presentation: 'modal',
+            title: route.params?.itemId ? 'Edit item' : 'Add item',
+            headerLeft: () => (
+              <Button
+                title="Cancel"
+                size="small"
+                variant="ghost"
+                onPress={() => navigation.goBack()}
+              />
+            ),
+          })}
         />
-        <Tab.Screen
-          name="Locations"
-          component={LocationsStackScreen}
-          options={{headerShown: false}}
-        />
-        <Tab.Screen
-          name="SettingsTab"
-          component={SettingsStackScreen}
-          options={{headerShown: false}}
-        />
-      </Tab.Navigator>
+      </RootStack.Navigator>
     </NavigationContainer>
   );
 };

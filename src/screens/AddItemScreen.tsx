@@ -10,7 +10,6 @@ import {
 } from 'react-native';
 import {useTheme} from '../theme/ThemeContext';
 import {
-  NavigationProp,
   RouteProp,
   useFocusEffect,
   useNavigation,
@@ -37,16 +36,14 @@ import {LocalAttachment} from '../services/attachmentService';
 import {CreateMetadataButton} from '../components/AddItem/CreateMetadataButton';
 import {SectionHeader} from '../components/SectionHeader';
 import {BarcodeScannerModal} from '../components/BarcodeScanner';
-import {AddItemStackParamList, RootTabParamList} from '../navigation/types';
+import {RootStackParamList} from '../navigation/types';
 import {KeyboardFormScrollView} from '../components/common/KeyboardFormScrollView';
 
 const AddItemScreen: React.FC = () => {
   const {theme} = useTheme();
   const navigation =
-    useNavigation<
-      NativeStackNavigationProp<AddItemStackParamList, 'AddItem'>
-    >();
-  const route = useRoute<RouteProp<AddItemStackParamList, 'AddItem'>>();
+    useNavigation<NativeStackNavigationProp<RootStackParamList, 'AddItem'>>();
+  const route = useRoute<RouteProp<RootStackParamList, 'AddItem'>>();
 
   const screenStyle = [
     styles.container,
@@ -150,11 +147,7 @@ const AddItemScreen: React.FC = () => {
     });
 
   const handleMissingItem = useCallback(() => {
-    navigation
-      .getParent<NavigationProp<RootTabParamList>>()
-      ?.navigate('InventoryTab', {
-        screen: 'Inventory',
-      });
+    navigation.goBack();
   }, [navigation]);
 
   const {isPreparingItem, preparedItemId} = useEditableItemLoader(

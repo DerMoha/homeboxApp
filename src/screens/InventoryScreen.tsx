@@ -184,10 +184,7 @@ const InventoryScreen: React.FC = () => {
 
   const handleEditItem = useCallback(
     (itemId: string) => {
-      navigation.navigate('AddItemTab', {
-        screen: 'AddItem',
-        params: {itemId},
-      });
+      navigation.navigate('AddItem', {itemId});
     },
     [navigation],
   );
@@ -420,9 +417,7 @@ const InventoryScreen: React.FC = () => {
 
   const handleAddItem = useCallback(() => {
     hapticImpact('medium');
-    navigation.navigate('AddItemTab', {
-      screen: 'AddItem',
-    });
+    navigation.navigate('AddItem');
   }, [navigation]);
 
   if (isLoading && inventory.length === 0) {
@@ -448,6 +443,12 @@ const InventoryScreen: React.FC = () => {
         styles.container,
         {backgroundColor: theme.colors.background.primary},
       ]}>
+      <Button
+        title="Add item"
+        icon="add"
+        size="small"
+        onPress={handleAddItem}
+      />
       <CacheStatus info={cacheInfo} />
       {error ? <ErrorState error={error} onRetry={loadInventory} /> : null}
       <SearchBar

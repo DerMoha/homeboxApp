@@ -557,9 +557,9 @@ const ItemDetailScreen: React.FC = () => {
           variant="secondary"
           disabled={Boolean(cacheInfo.fromCache)}
           onPress={() =>
-            navigation.navigate('AddItemTab', {
-              screen: 'AddItem',
-              params: {itemId: item.id, duplicateItemId: undefined},
+            navigation.navigate('AddItem', {
+              itemId: item.id,
+              duplicateItemId: undefined,
             })
           }
         />
@@ -568,9 +568,9 @@ const ItemDetailScreen: React.FC = () => {
           variant="secondary"
           disabled={Boolean(cacheInfo.fromCache)}
           onPress={() =>
-            navigation.navigate('AddItemTab', {
-              screen: 'AddItem',
-              params: {itemId: undefined, duplicateItemId: item.id},
+            navigation.navigate('AddItem', {
+              itemId: undefined,
+              duplicateItemId: item.id,
             })
           }
         />

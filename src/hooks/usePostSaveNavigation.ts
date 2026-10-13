@@ -1,11 +1,10 @@
 import {useCallback} from 'react';
-import {NavigationProp} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {Item} from '../types';
-import {AddItemStackParamList, RootTabParamList} from '../navigation/types';
+import {RootStackParamList} from '../navigation/types';
 
 export const usePostSaveNavigation = (
-  navigation: NativeStackNavigationProp<AddItemStackParamList, 'AddItem'>,
+  navigation: NativeStackNavigationProp<RootStackParamList, 'AddItem'>,
   resetForm: () => void,
   clearImage: () => void,
 ) => {
@@ -13,17 +12,11 @@ export const usePostSaveNavigation = (
     (item: Item) => {
       resetForm();
       clearImage();
-      navigation.setParams({
-        barcode: undefined,
-        itemId: undefined,
-        duplicateItemId: undefined,
+      navigation.goBack();
+      navigation.navigate('Main', {
+        screen: 'InventoryTab',
+        params: {screen: 'ItemDetail', params: {itemId: item.id}},
       });
-      navigation
-        .getParent<NavigationProp<RootTabParamList>>()
-        ?.navigate('InventoryTab', {
-          screen: 'ItemDetail',
-          params: {itemId: item.id},
-        });
     },
     [clearImage, navigation, resetForm],
   );

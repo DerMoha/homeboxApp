@@ -25,10 +25,15 @@ export type AddItemStackParamList = {
     {barcode?: string; itemId?: string; duplicateItemId?: string} | undefined;
 };
 
+export type RootStackParamList = {
+  Main: NavigatorScreenParams<RootTabParamList> | undefined;
+  AddItem: AddItemStackParamList['AddItem'];
+};
+
 export type RootTabParamList = {
   Home: undefined;
   InventoryTab: NavigatorScreenParams<InventoryStackParamList> | undefined;
-  AddItemTab: NavigatorScreenParams<AddItemStackParamList> | undefined;
+  AddItem: AddItemStackParamList['AddItem'];
   Locations: NavigatorScreenParams<LocationsStackParamList> | undefined;
   SettingsTab: NavigatorScreenParams<SettingsStackParamList> | undefined;
 };
