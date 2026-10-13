@@ -33,7 +33,6 @@ const ItemCardBaseComponent: React.FC<ItemCardBaseProps> = ({
         borderRadius: theme.borderRadius.lg,
         borderWidth: isSelected ? 1.5 : StyleSheet.hairlineWidth,
       },
-      theme.shadows.sm,
       style,
     ],
     [
@@ -43,7 +42,6 @@ const ItemCardBaseComponent: React.FC<ItemCardBaseProps> = ({
       theme.colors.accent.primary,
       theme.colors.card.background,
       theme.colors.card.border,
-      theme.shadows.sm,
     ],
   );
 

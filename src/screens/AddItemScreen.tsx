@@ -57,7 +57,6 @@ const AddItemScreen: React.FC = () => {
       borderColor: theme.colors.borderSubtle,
       borderRadius: theme.borderRadius.lg,
     },
-    theme.shadows.sm,
   ];
 
   const contentStyle = useMemo(
@@ -572,8 +571,8 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   formCard: {
-    padding: 16,
-    borderWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 12,
+    borderWidth: 0,
   },
   submitButton: {
     flexDirection: 'row',

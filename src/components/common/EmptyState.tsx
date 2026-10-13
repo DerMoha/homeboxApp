@@ -78,24 +78,15 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         styles.container,
         {backgroundColor: theme.colors.background.primary},
       ]}>
-      <View
-        style={[
-          styles.backgroundHalo,
-          {backgroundColor: theme.colors.accent.muted},
-        ]}
-      />
       <View style={styles.iconContainer}>
         <View
           style={[
             styles.iconBackground,
             styles.iconBorder,
-            styles.iconShadow,
             {
               backgroundColor: theme.colors.background.secondary,
               borderRadius: theme.borderRadius.full,
               borderColor: theme.colors.borderSubtle,
-              shadowColor: theme.colors.accent.primary,
-              shadowOffset: {width: 0, height: 4},
             },
           ]}>
           <MaterialIcons
