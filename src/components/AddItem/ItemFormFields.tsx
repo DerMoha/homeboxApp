@@ -85,9 +85,9 @@ export const ItemFormFields: React.FC<ItemFormFieldsProps> = ({
   const inputStyle = [
     styles.input,
     {
-      backgroundColor: theme.colors.background.secondary,
+      backgroundColor: theme.colors.background.tertiary,
       color: theme.colors.text.primary,
-      borderColor: theme.colors.borderSubtle,
+      borderColor: theme.colors.text.tertiary,
       borderRadius: theme.borderRadius.md,
       paddingHorizontal: theme.spacing.md,
       paddingVertical: theme.spacing.sm,
@@ -263,7 +263,8 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
   },
   input: {
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
+    minHeight: 52,
   },
   textArea: {
     minHeight: 120,
