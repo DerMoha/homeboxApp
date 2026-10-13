@@ -1,9 +1,26 @@
 # Homebox mobile UX roadmap
 
-Updated 12 October 2026. Implementation and verification details are tracked in
+Updated 13 October 2026. Implementation and verification details are tracked in
 [the implementation checklist](docs/implementation-progress.md).
 
 ## Implemented
+
+The [UI cleanup checklist](docs/ui-cleanup.md) records the completed navigation,
+form, toolbar, picker, and presentation changes.
+
+- Four destination tabs: Home, Items, Locations, and Settings. Add/Edit open a
+  separate modal form with Cancel; draft autosave preserves dismissed work.
+- Quick entry keeps name, location, and photo together, collapses optional details,
+  and pins Save above the keyboard with safe-area padding.
+- Items places Display, Filters, and Saved together, with removable filter/review
+  chips and a separate Add action. Display includes sorting, list/grid, and density.
+- Location selection/creation and label selection use searchable shared sheets.
+  Fields, filters, saved views, rename, and batch pickers share control patterns.
+- Edit is in the item header; Duplicate/Share and per-file actions use overflow
+  menus. Form sections are flatter, and error states have no idle animation.
+- Prices use the Homebox group currency and device locale. Offline currency is
+  server scoped; unknown currency displays a number without an assumed symbol.
+  Absolute dates use the device locale.
 
 - Item drafts autosave fields, location, labels, photos, and selected documents on
   this device. Drafts are isolated by server and by new/edit/duplicate item. Users
