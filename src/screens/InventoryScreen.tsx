@@ -1,14 +1,8 @@
 import React, {useCallback, useMemo, useState} from 'react';
-import {
-  View,
-  StyleSheet,
-  FlatList,
-  RefreshControl,
-  Alert,
-  ScrollView,
-} from 'react-native';
+import {View, StyleSheet, FlatList, RefreshControl, Alert} from 'react-native';
 import {Text} from 'react-native';
 import {Button} from '../components/common/Button';
+import {ActiveFilterChips} from '../components/Inventory/ActiveFilterChips';
 import {SavedSearches} from '../components/Inventory/SavedSearches';
 import {matchesReview, ReviewList} from '../services/savedSearchService';
 import {CacheStatus} from '../components/common/CacheStatus';
@@ -29,7 +23,6 @@ import {
   BatchActionBar,
   LabelPickerModal,
   InventoryHeader,
-  SortModal,
   InventoryListItem,
   InventoryGridItem,
   LocationPickerModal,
@@ -93,9 +86,7 @@ const InventoryScreen: React.FC = () => {
     viewMode,
     itemsPerRow,
     listZoom,
-    sortModalVisible,
     filterModalVisible,
-    setSortModalVisible,
     setFilterModalVisible,
     toggleViewMode,
     increaseItemsPerRow,
@@ -162,7 +153,8 @@ const InventoryScreen: React.FC = () => {
         onDecreaseItemsPerRow={decreaseItemsPerRow}
         onIncreaseZoom={increaseListZoom}
         onDecreaseZoom={decreaseListZoom}
-        onOpenSort={() => setSortModalVisible(true)}
+        sortOption={sortOption}
+        onSelectSort={updateSortOption}
         onOpenFilter={() => setFilterModalVisible(true)}
         activeFilterCount={activeFilterCount}
       />
@@ -176,9 +168,10 @@ const InventoryScreen: React.FC = () => {
       decreaseItemsPerRow,
       increaseListZoom,
       decreaseListZoom,
-      setSortModalVisible,
       setFilterModalVisible,
       activeFilterCount,
+      sortOption,
+      updateSortOption,
     ],
   );
 
@@ -455,9 +448,6 @@ const InventoryScreen: React.FC = () => {
         styles.container,
         {backgroundColor: theme.colors.background.primary},
       ]}>
-      <ScrollView horizontal style={styles.controlsScroller}>
-        {renderHeaderRight()}
-      </ScrollView>
       <CacheStatus info={cacheInfo} />
       {error ? <ErrorState error={error} onRetry={loadInventory} /> : null}
       <SearchBar
@@ -466,6 +456,18 @@ const InventoryScreen: React.FC = () => {
         onClear={clearSearch}
         resultCount={filteredInventory.length}
         totalCount={total}
+      />
+      {renderHeaderRight()}
+      <ActiveFilterChips
+        filters={filters}
+        locations={locations}
+        labels={labels}
+        review={review}
+        onReviewChange={setReview}
+        onChange={next => {
+          setFilters(next);
+          setTempFilters(next);
+        }}
       />
       <SavedSearches
         current={{query: searchQuery, filters, sort: sortOption, review}}
@@ -480,8 +482,9 @@ const InventoryScreen: React.FC = () => {
       <FlatList
         ListHeaderComponent={
           <Text style={{color: theme.colors.text.secondary}}>
-            Showing {filteredInventory.length} matches from {inventory.length}{' '}
-            loaded of {total}. Filters and sorting apply to loaded items.
+            {filteredInventory.length} shown · {inventory.length} of {total}{' '}
+            loaded
+            {hasMore ? ' · Load all for complete filtering and sorting' : ''}
           </Text>
         }
         ListFooterComponent={
@@ -551,16 +554,6 @@ const InventoryScreen: React.FC = () => {
         onSelectAll={() => batchSelection.selectAll(filteredIds)}
         onClearSelection={batchSelection.exitSelectionMode}
         isAllSelected={isAllSelected}
-      />
-
-      <SortModal
-        visible={sortModalVisible}
-        sortOption={sortOption}
-        onClose={() => setSortModalVisible(false)}
-        onSelectSort={option => {
-          updateSortOption(option);
-          setSortModalVisible(false);
-        }}
       />
 
       <FilterModal

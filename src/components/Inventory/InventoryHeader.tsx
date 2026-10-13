@@ -1,328 +1,137 @@
-import React, {useCallback, useMemo, useRef} from 'react';
-import {View, Text, TouchableOpacity, StyleSheet, Animated} from 'react-native';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import {useReducedMotion} from '../../hooks/useReducedMotion';
+import React, {useState} from 'react';
+import {View, Text, StyleSheet} from 'react-native';
+import {Button} from '../common/Button';
+import {Sheet} from '../common/Sheet';
 import {useTheme} from '../../theme/ThemeContext';
-
+import {SortOption} from '../../types';
 export type ViewMode = 'list' | 'grid';
-
-interface InventoryHeaderProps {
+interface Props {
   viewMode: ViewMode;
   itemsPerRow: number;
   listZoom: number;
+  sortOption: SortOption;
   onToggleView: () => void;
   onIncreaseItemsPerRow: () => void;
   onDecreaseItemsPerRow: () => void;
   onIncreaseZoom: () => void;
   onDecreaseZoom: () => void;
-  onOpenSort: () => void;
+  onSelectSort: (value: SortOption) => void;
   onOpenFilter: () => void;
   activeFilterCount?: number;
+  savedSearches?: React.ReactNode;
 }
-
-interface AnimatedButtonProps {
-  onPress: () => void;
-  disabled?: boolean;
-  isActive?: boolean;
-  icon: string;
-  theme: ReturnType<typeof useTheme>['theme'];
-}
-
-interface StateIndicatorProps {
-  value: string | number;
-  theme: ReturnType<typeof useTheme>['theme'];
-}
-
-const ZOOM_LEVEL_NAMES = ['Compact', 'Standard', 'Detailed'] as const;
-
-const StateIndicator: React.FC<StateIndicatorProps> = ({value, theme}) => {
-  const containerStyle = useMemo(
-    () => [
-      styles.stateIndicatorContainer,
-      {
-        backgroundColor: theme.colors.background.tertiary,
-        borderRadius: theme.borderRadius.md,
-      },
-    ],
-    [theme.colors.background.tertiary, theme.borderRadius.md],
-  );
-
-  const textStyle = useMemo(
-    () => [
-      styles.stateIndicatorText,
-      {
-        color: theme.colors.text.secondary,
-        fontSize: theme.typography.sizes.sm,
-      },
-    ],
-    [theme.colors.text.secondary, theme.typography.sizes.sm],
-  );
-
-  return (
-    <View style={containerStyle}>
-      <Text style={textStyle}>{value}</Text>
-    </View>
-  );
-};
-
-const AnimatedHeaderButton: React.FC<AnimatedButtonProps> = ({
-  onPress,
-  disabled = false,
-  isActive = false,
-  icon,
-  theme,
-}) => {
-  const reducedMotion = useReducedMotion();
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-
-  const handlePressIn = useCallback(() => {
-    if (reducedMotion) {
-      return;
-    }
-    Animated.spring(scaleAnim, {
-      toValue: 0.9,
-      useNativeDriver: true,
-      tension: 100,
-      friction: 10,
-    }).start();
-  }, [scaleAnim, reducedMotion]);
-
-  const handlePressOut = useCallback(() => {
-    if (reducedMotion) {
-      return;
-    }
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      useNativeDriver: true,
-      tension: 100,
-      friction: 10,
-    }).start();
-  }, [scaleAnim, reducedMotion]);
-
-  const animatedStyle = useMemo(
-    () => ({transform: [{scale: scaleAnim}]}),
-    [scaleAnim],
-  );
-
-  const buttonStyle = useMemo(
-    () => [
-      styles.headerButton,
-      {
-        backgroundColor: isActive
-          ? theme.colors.accent.muted
-          : theme.colors.background.secondary,
-        borderRadius: theme.borderRadius.md,
-        borderWidth: StyleSheet.hairlineWidth,
-        borderColor: isActive
-          ? theme.colors.accent.primary
-          : theme.colors.borderSubtle,
-        opacity: disabled ? 0.4 : 1,
-      },
-    ],
-    [
-      disabled,
-      isActive,
-      theme.borderRadius.md,
-      theme.colors.accent.primary,
-      theme.colors.accent.muted,
-      theme.colors.background.secondary,
-      theme.colors.borderSubtle,
-    ],
-  );
-
-  const iconColor = isActive
-    ? theme.colors.accent.primary
-    : theme.colors.text.secondary;
-
-  return (
-    <Animated.View style={animatedStyle}>
-      <TouchableOpacity
-        accessibilityRole="button"
-        accessibilityLabel={
-          (
-            {
-              sort: 'Sort items',
-              'zoom-in': 'Increase item detail',
-              'zoom-out': 'Decrease item detail',
-              'filter-list': 'Filter items',
-              'view-list': 'Switch to list',
-              'grid-view': 'Switch to grid',
-              add: 'Increase density or zoom',
-              remove: 'Decrease density or zoom',
-            } as Record<string, string>
-          )[icon] || icon
-        }
-        accessibilityState={{disabled, selected: isActive}}
-        hitSlop={8}
-        style={buttonStyle}
-        onPress={onPress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        disabled={disabled}
-        activeOpacity={1}>
-        <MaterialIcons name={icon} size={20} color={iconColor} />
-      </TouchableOpacity>
-    </Animated.View>
-  );
-};
-
-export const InventoryHeader: React.FC<InventoryHeaderProps> = ({
-  viewMode,
-  itemsPerRow,
-  listZoom,
-  onToggleView,
-  onIncreaseItemsPerRow,
-  onDecreaseItemsPerRow,
-  onIncreaseZoom,
-  onDecreaseZoom,
-  onOpenSort,
-  onOpenFilter,
-  activeFilterCount = 0,
-}) => {
+const sorts: [SortOption, string][] = [
+  ['name', 'Name'],
+  ['quantity', 'Quantity'],
+  ['createdAt', 'Date added'],
+  ['updatedAt', 'Last updated'],
+  ['location', 'Location'],
+];
+export const InventoryHeader = (props: Props) => {
+  const [visible, setVisible] = useState(false);
   const {theme} = useTheme();
-
-  const headerControlsStyle = useMemo(
-    () => [styles.headerControls, {gap: theme.spacing.sm}],
-    [theme.spacing.sm],
+  const heading = (title: string) => (
+    <Text
+      accessibilityRole="header"
+      style={[styles.heading, {color: theme.colors.text.primary}]}>
+      {title}
+    </Text>
   );
-
-  const badgeStyle = useMemo(
-    () => [
-      styles.badge,
-      {
-        backgroundColor: theme.colors.background.secondary,
-        borderRadius: theme.borderRadius.full,
-        borderColor: theme.colors.borderSubtle,
-        borderWidth: StyleSheet.hairlineWidth,
-      },
-    ],
-    [
-      theme.borderRadius.full,
-      theme.colors.background.secondary,
-      theme.colors.borderSubtle,
-    ],
-  );
-
-  const badgeTextStyle = useMemo(
-    () => [
-      styles.badgeText,
-      {
-        color: theme.colors.text.primary,
-        fontSize: theme.typography.sizes.xs,
-        fontWeight: theme.typography.weights.semibold,
-        fontFamily: theme.typography.fonts.semibold,
-      },
-    ],
-    [
-      theme.colors.text.primary,
-      theme.typography.fonts.semibold,
-      theme.typography.sizes.xs,
-      theme.typography.weights.semibold,
-    ],
-  );
-
-  const zoomLevelName = ZOOM_LEVEL_NAMES[listZoom] || 'Standard';
-
   return (
-    <View style={headerControlsStyle}>
-      {viewMode === 'grid' ? (
-        <>
-          <AnimatedHeaderButton
-            onPress={onDecreaseItemsPerRow}
-            disabled={itemsPerRow <= 1}
-            icon="remove"
-            theme={theme}
-          />
-          <StateIndicator value={itemsPerRow} theme={theme} />
-          <AnimatedHeaderButton
-            onPress={onIncreaseItemsPerRow}
-            disabled={itemsPerRow >= 5}
-            icon="add"
-            theme={theme}
-          />
-        </>
-      ) : (
-        <>
-          <AnimatedHeaderButton
-            onPress={onDecreaseZoom}
-            disabled={listZoom <= 0}
-            icon="zoom-out"
-            theme={theme}
-          />
-          <StateIndicator value={zoomLevelName} theme={theme} />
-          <AnimatedHeaderButton
-            onPress={onIncreaseZoom}
-            disabled={listZoom >= 2}
-            icon="zoom-in"
-            theme={theme}
-          />
-        </>
-      )}
-      <AnimatedHeaderButton
-        onPress={onToggleView}
-        icon={viewMode === 'list' ? 'grid-view' : 'view-list'}
-        isActive={false}
-        theme={theme}
-      />
-      <View>
-        <AnimatedHeaderButton
-          onPress={onOpenFilter}
+    <>
+      <View style={styles.toolbar}>
+        <Button
+          title={
+            props.activeFilterCount
+              ? `Filters (${props.activeFilterCount})`
+              : 'Filters'
+          }
           icon="filter-list"
-          isActive={activeFilterCount > 0}
-          theme={theme}
+          variant="secondary"
+          size="small"
+          onPress={props.onOpenFilter}
         />
-        {activeFilterCount > 0 && (
-          <View style={badgeStyle}>
-            <Text style={badgeTextStyle}>
-              {activeFilterCount > 9 ? '9+' : activeFilterCount}
-            </Text>
-          </View>
-        )}
+        <Button
+          title="Display"
+          icon="tune"
+          variant="secondary"
+          size="small"
+          onPress={() => setVisible(true)}
+        />
+        {props.savedSearches}
       </View>
-      <AnimatedHeaderButton
-        onPress={onOpenSort}
-        icon="sort"
-        isActive={false}
-        theme={theme}
-      />
-    </View>
+      <Sheet
+        title="Display items"
+        visible={visible}
+        onClose={() => setVisible(false)}>
+        {heading('View')}
+        <Button
+          title={props.viewMode === 'list' ? 'List ✓' : 'List'}
+          variant="ghost"
+          onPress={() => {
+            if (props.viewMode !== 'list') {
+              props.onToggleView();
+            }
+          }}
+        />
+        <Button
+          title={props.viewMode === 'grid' ? 'Grid ✓' : 'Grid'}
+          variant="ghost"
+          onPress={() => {
+            if (props.viewMode !== 'grid') {
+              props.onToggleView();
+            }
+          }}
+        />
+        {heading(
+          props.viewMode === 'grid'
+            ? `Columns: ${props.itemsPerRow}`
+            : `Details: ${['Compact', 'Standard', 'Detailed'][props.listZoom]}`,
+        )}
+        <View style={styles.toolbar}>
+          <Button
+            title="Less"
+            variant="secondary"
+            disabled={
+              props.viewMode === 'grid'
+                ? props.itemsPerRow <= 1
+                : props.listZoom <= 0
+            }
+            onPress={
+              props.viewMode === 'grid'
+                ? props.onDecreaseItemsPerRow
+                : props.onDecreaseZoom
+            }
+          />
+          <Button
+            title="More"
+            variant="secondary"
+            disabled={
+              props.viewMode === 'grid'
+                ? props.itemsPerRow >= 5
+                : props.listZoom >= 2
+            }
+            onPress={
+              props.viewMode === 'grid'
+                ? props.onIncreaseItemsPerRow
+                : props.onIncreaseZoom
+            }
+          />
+        </View>
+        {heading('Sort loaded items')}
+        {sorts.map(([value, label]) => (
+          <Button
+            key={value}
+            title={label + (value === props.sortOption ? ' ✓' : '')}
+            variant="ghost"
+            onPress={() => props.onSelectSort(value)}
+          />
+        ))}
+      </Sheet>
+    </>
   );
 };
-
 const styles = StyleSheet.create({
-  headerControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 8,
-  },
-  headerButton: {
-    width: 44,
-    minHeight: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  stateIndicatorContainer: {
-    paddingHorizontal: 10,
-    minWidth: 60,
-    minHeight: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  stateIndicatorText: {
-    fontWeight: '500',
-  },
-  badge: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    minWidth: 18,
-    height: 18,
-    paddingHorizontal: 4,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1,
-  },
-  badgeText: {
-    lineHeight: 18,
-  },
+  toolbar: {flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingVertical: 8},
+  heading: {fontSize: 16, fontWeight: '600', marginTop: 8},
 });

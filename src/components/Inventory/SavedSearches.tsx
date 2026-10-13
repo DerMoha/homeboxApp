@@ -89,7 +89,7 @@ export const SavedSearches = ({
   return (
     <>
       <Button
-        title="Saved searches and review lists"
+        title="Saved searches"
         onPress={() => setVisible(true)}
         variant="secondary"
         size="small"
